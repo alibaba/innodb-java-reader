@@ -8,3 +8,4 @@ language: java
 
 after_success:
   - mvn jacoco:report coveralls:report
+  - bash <(curl -s https://codecov.io/bash)
