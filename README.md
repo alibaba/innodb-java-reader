@@ -1,6 +1,6 @@
 # MySQL InnoDB Java Reader
 
-[![Build Status](https://travis-ci.org/alibaba/innodb-java-reader.svg?branch=dev)](https://travis-ci.org/alibaba/innodb-java-reader)
+[![Build Status](https://travis-ci.org/alibaba/innodb-java-reader.svg?branch=develop)](https://travis-ci.org/alibaba/innodb-java-reader)
 [![Coverage Status](https://coveralls.io/repos/github/alibaba/innodb-java-reader/badge.svg?branch=dev)](https://coveralls.io/github/alibaba/innodb-java-reader?branch=dev)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/18c6b42e14b24f2ab3dd4467555488af)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alibaba/innodb-java-reader&amp;utm_campaign=Badge_Grade)
 
