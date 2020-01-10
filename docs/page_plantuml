@@ -1,0 +1,9 @@
+@startuml
+AbstractPage <|-- FspHdrXes
+AbstractPage <|-- IbufBitmap
+AbstractPage <|-- INode
+AbstractPage <|-- Index
+AbstractPage <|-- AllocatedPage
+AbstractPage <|-- Blob
+AbstractPage <|-- SDIPage
+@enduml
