@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,51 +60,82 @@ import java.util.Map;
  *
  * @author xu.zx
  */
-public class MysqlCharset {
+public class CharsetMapping {
 
-  public static final Map<String, Integer> TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP = new HashMap<>();
+  public static final Map<String, MySqlCharset> MYSQL_CHARSET_MAP;
 
   static {
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("big5", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("dec8", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp850", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("hp8", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("koi8r", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("latin1", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("latin2", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("swe7", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("ascii", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("ujis", 3);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("sjis", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("hebrew", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("tis620", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("euckr", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("koi8u", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("gb2312", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("greek", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp1250", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("gbk", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("latin5", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("armscii8", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("utf8", 3);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("ucs2", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp866", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("keybcs2", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("macce", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("macroman", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp852", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("latin7", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("utf8mb4", 4);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp1251", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("utf16", 4);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("utf16le", 4);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp1256", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp1257", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("utf32", 4);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("binary", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("geostd8", 1);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("cp932", 2);
-    TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.put("eucjpms", 3);
+    Map<String, MySqlCharset> map = new HashMap<>();
+    map.put("big5", new MySqlCharset(2, "Big5"));
+    map.put("dec8", new MySqlCharset(1, "Cp1252"));
+    map.put("cp850", new MySqlCharset(1, "Cp850"));
+    map.put("hp8", new MySqlCharset(1, "Cp1252"));
+    map.put("koi8r", new MySqlCharset(1, "KOI8_R"));
+    map.put("latin1", new MySqlCharset(1, "Cp1252"));
+    map.put("latin2", new MySqlCharset(1, "ISO8859_2"));
+    map.put("swe7", new MySqlCharset(1, "Cp1252"));
+    map.put("ascii", new MySqlCharset(1, "ASCII"));
+    map.put("ujis", new MySqlCharset(3, "EUC_JP"));
+    map.put("sjis", new MySqlCharset(2, "SHIFT_JIS"));
+    map.put("hebrew", new MySqlCharset(1, "ISO8859_8"));
+    map.put("tis620", new MySqlCharset(1, "TIS620"));
+    map.put("euckr", new MySqlCharset(2, "EUC-KR"));
+    map.put("koi8u", new MySqlCharset(1, "KOI8_R"));
+    map.put("gb2312", new MySqlCharset(2, "GB2312"));
+    map.put("greek", new MySqlCharset(1, "ISO8859_7"));
+    map.put("cp1250", new MySqlCharset(1, "Cp1250"));
+    map.put("gbk", new MySqlCharset(2, "GBK"));
+    map.put("latin5", new MySqlCharset(1, "ISO8859_9"));
+    map.put("armscii8", new MySqlCharset(1, "Cp1252"));
+    map.put("utf8", new MySqlCharset(3, "UTF-8"));
+    map.put("ucs2", new MySqlCharset(2, "UnicodeBig"));
+    map.put("cp866", new MySqlCharset(1, "Cp866"));
+    map.put("keybcs2", new MySqlCharset(1, "Cp852"));
+    map.put("macce", new MySqlCharset(1, "MacCentralEurope"));
+    map.put("macroman", new MySqlCharset(1, "MacRoman"));
+    map.put("cp852", new MySqlCharset(1, "Cp852"));
+    map.put("latin7", new MySqlCharset(1, "ISO-8859-13"));
+    map.put("utf8mb4", new MySqlCharset(4, "UTF-8"));
+    map.put("cp1251", new MySqlCharset(1, "Cp1251"));
+    map.put("utf16", new MySqlCharset(4, "UTF-16"));
+    map.put("utf16le", new MySqlCharset(4, "UTF-16LE"));
+    map.put("cp1256", new MySqlCharset(1, "Cp1256"));
+    map.put("cp1257", new MySqlCharset(1, "Cp1257"));
+    map.put("utf32", new MySqlCharset(4, "UTF-32"));
+    map.put("binary", new MySqlCharset(1, "ISO8859_1"));
+    map.put("geostd8", new MySqlCharset(1, "Cp1252"));
+    map.put("cp932", new MySqlCharset(2, "WINDOWS-31J"));
+    map.put("eucjpms", new MySqlCharset(3, "EUC_JP_Solaris"));
+
+    MYSQL_CHARSET_MAP = Collections.unmodifiableMap(map);
+  }
+
+  public static String getJavaEncodingForMysqlCharset(String mysqlCharsetName) {
+    MySqlCharset mySqlCharset = MYSQL_CHARSET_MAP.get(mysqlCharsetName);
+    if (mySqlCharset == null) {
+      throw new UnsupportedOperationException(mysqlCharsetName + " not supported");
+    }
+    return mySqlCharset.javaCharset;
+  }
+
+  public static int getMaxByteLengthForMysqlCharset(String mysqlCharsetName) {
+    MySqlCharset mySqlCharset = MYSQL_CHARSET_MAP.get(mysqlCharsetName);
+    if (mySqlCharset == null) {
+      throw new UnsupportedOperationException(mysqlCharsetName + " not supported");
+    }
+    return mySqlCharset.maxByteLen;
+  }
+
+  static class MySqlCharset {
+
+    private final int maxByteLen;
+
+    private final String javaCharset;
+
+    MySqlCharset(int maxByteLen, String javaCharset) {
+      this.maxByteLen = maxByteLen;
+      this.javaCharset = javaCharset;
+    }
   }
 
 }

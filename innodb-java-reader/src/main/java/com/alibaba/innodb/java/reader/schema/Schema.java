@@ -3,7 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.schema;
 
-import com.alibaba.innodb.java.reader.MysqlCharset;
+import com.alibaba.innodb.java.reader.CharsetMapping;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,16 +55,16 @@ public class Schema {
   private String charset = DEFAULT_CHARSET;
 
   /**
-   * table DDL charset, for example can be latin(ISO8895-1), utf8(UTF-8), utf8mb4(UTF-8)
+   * Table DDL charset, for example can be latin(ISO8895-1), utf8(UTF-8), utf8mb4(UTF-8)
    */
   private String tableCharset = "utf8";
 
   /**
    * // TODO this is a workaround.
-   * by default if table charset set to utf8, then it will consume up to 3 bytes for one character.
-   * if it is utf8mb4, then it must be set to 4
+   * For example, if table charset set to utf8, then it will consume up to 3 bytes for one character.
+   * if it is utf8mb4, then it must be set to 4.
    */
-  private int maxBytesForOneChar = MysqlCharset.TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.get(tableCharset);
+  private int maxBytesForOneChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
 
   public Schema() {
     this.columnList = new ArrayList<>();
@@ -171,10 +171,8 @@ public class Schema {
 
   public Schema setTableCharset(String tableCharset) {
     this.tableCharset = tableCharset;
-    if (!MysqlCharset.TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.containsKey(tableCharset)) {
-      throw new IllegalArgumentException("table charset not supported " + tableCharset);
-    }
-    this.maxBytesForOneChar = MysqlCharset.TABLE_CHARSET_TO_MAX_BYTES_ONE_CHAR_MAP.get(tableCharset);
+    this.charset = CharsetMapping.getJavaEncodingForMysqlCharset(tableCharset);
+    this.maxBytesForOneChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
     return this;
   }
 
