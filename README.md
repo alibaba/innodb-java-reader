@@ -430,7 +430,7 @@ try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
 
 ### 6.1 Usage
 
-Checkout the project and [build](http://gitlab.alibaba-inc.com/xu.zx/innodb-java-reader#7-building), use the executable jar under `innodb-java-reader-cli/target`. Usage shows as below.
+Checkout the project and [build](#7-building), use the executable jar under `innodb-java-reader-cli/target`. Usage shows as below.
 
 ````
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>] [-h]
