@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS `tb16`;
+CREATE TABLE `tb16`
+(`id` int(11) NOT NULL AUTO_INCREMENT,
+`a` year NOT NULL,
+`b` date NOT NULL,
+PRIMARY KEY (`id`))
+ENGINE=InnoDB;
+
+insert into tb16 values(null, 1969, '1969-10-02');
+insert into tb16 values(null, 1901, '1901-12-31');
+insert into tb16 values(null, 2020, '2020-01-29');

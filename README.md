@@ -1,13 +1,11 @@
 # MySQL InnoDB Java Reader
 
 [![Build Status](https://travis-ci.org/alibaba/innodb-java-reader.svg?branch=develop)](https://travis-ci.org/alibaba/innodb-java-reader)
-[![Coverage Status](https://coveralls.io/repos/github/alibaba/innodb-java-reader/badge.svg?branch=dev)](https://coveralls.io/github/alibaba/innodb-java-reader?branch=dev)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/18c6b42e14b24f2ab3dd4467555488af)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alibaba/innodb-java-reader&amp;utm_campaign=Badge_Grade)
-
+[![codecov](https://codecov.io/gh/alibaba/innodb-java-reader/branch/develop/graph/badge.svg)](https://codecov.io/gh/alibaba/innodb-java-reader)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.alibaba/innodb-java-reader/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.alibaba/innodb-java-reader)
+[![GitHub release](https://img.shields.io/github/release/alibaba/druid.svg)](https://github.com/alibaba/druid/releases)
 [![javadoc](https://javadoc.io/badge2/com.alibaba/innodb-java-reader/javadoc.svg)](https://javadoc.io/doc/com.alibaba/innodb-java-reader)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-
 
 innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides some basic read-only features like examining pages, looking up record by primary key and generating page heatmap by LSN or filling rate. This project is useful for prototyping and learning MySQL.
 
@@ -53,12 +51,11 @@ The row format of a table determines how rows are physically stored, which in tu
 
 Supported column types are listed below.
 
-| Support column types |
-| -------------------- |
-| TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE |       |
-| CHAR, VARCHAR, BINARY, VARBINARY |  |
-| TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT |
-| DATETIME, TIMESTAMP                |
+| Type | Support column types |
+| ---- | -------------------- |
+| Numeric | TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE |       |
+| String and Binary | CHAR, VARCHAR, BINARY, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT |
+| Date and Time | DATETIME, TIMESTAMP, YEAR, DATE                |
 
 ## 4. Quickstart
 

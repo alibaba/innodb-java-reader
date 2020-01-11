@@ -6,6 +6,7 @@ package com.alibaba.innodb.java.reader.column;
 import com.alibaba.innodb.java.reader.exception.ParseException;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +36,20 @@ public class ColumnFactory {
       throw new ParseException("Column parser not supported for type " + columnType);
     }
     return result;
+  }
+
+  /**
+   * This works the same as <code>RowSetMetaDataImpl#getColumnClassName(int columnIndex)</code> in MySQL JDBC driver
+   *
+   * @param columnType column type
+   * @return column java class
+   */
+  public static Class<?> getColumnJavaType(String columnType) {
+    ColumnParser<?> result = TYPE_TO_COLUMN_PARSER_MAP.get(columnType);
+    if (result == null) {
+      throw new ParseException("Column parser not supported for type " + columnType);
+    }
+    return result.typeClass();
   }
 
   private static final ColumnParser<Integer> UNSIGNED_TINYINT = new AbstractColumnParser<Integer>() {
@@ -155,10 +170,7 @@ public class ColumnFactory {
     @Override
     public Long readFrom(SliceInput input) {
       long result = input.readLong();
-      // TODO there is no readUnsignedLong in java, must use biginteger
-      if (result < 0) {
-        throw new IllegalStateException("UNSIGNED_BIGINT overflow, the column value is not correct");
-      }
+      // TODO there is no readUnsignedLong in java, must use BigInteger
       return result;
     }
 
@@ -324,7 +336,7 @@ public class ColumnFactory {
    * fptr.print());
    * }
    */
-  private static final ColumnParser<Date> DATETIME = new AbstractColumnParser<Date>() {
+  private static final ColumnParser<Date> DATETIME2 = new AbstractColumnParser<Date>() {
 
     @Override
     public Date readFrom(SliceInput input) {
@@ -363,17 +375,52 @@ public class ColumnFactory {
     }
   };
 
-  private static final ColumnParser<Long> TIMESTAMP = new AbstractColumnParser<Long>() {
+  private static final ColumnParser<Timestamp> TIMESTAMP = new AbstractColumnParser<Timestamp>() {
 
     @Override
-    public Long readFrom(SliceInput input) {
+    public Timestamp readFrom(SliceInput input) {
       long timestamp = input.readUnsignedInt();
-      return timestamp * 1000L;
+      return new Timestamp(timestamp * 1000L);
     }
 
     @Override
     public Class<?> typeClass() {
-      return Long.class;
+      return Timestamp.class;
+    }
+  };
+
+  private static final ColumnParser<Short> YEAR = new AbstractColumnParser<Short>() {
+
+    @Override
+    public Short readFrom(SliceInput input) {
+      return (short) (input.readUnsignedByte() + 1900);
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return Short.class;
+    }
+  };
+
+  private static final ColumnParser<Date> DATE = new AbstractColumnParser<Date>() {
+
+    @Override
+    public Date readFrom(SliceInput input) {
+      int encodedDate = (input.read3BytesInt() ^ (-1 << (SIZE_OF_MEDIUMINT * 8 - 1))) & 0xffffff;
+      int day = (encodedDate & 31);
+      int month = (encodedDate >> 5 & 15);
+      int year = (encodedDate >> 9);
+      Calendar calendar = Calendar.getInstance();
+      calendar.clear();
+      calendar.set(Calendar.YEAR, year);
+      calendar.set(Calendar.MONTH, month - 1);
+      calendar.set(Calendar.DATE, day);
+      return calendar.getTime();
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return Date.class;
     }
   };
 
@@ -399,7 +446,7 @@ public class ColumnFactory {
 
     @Override
     public Class<?> typeClass() {
-      return Float.class;
+      return Double.class;
     }
   };
 
@@ -426,8 +473,10 @@ public class ColumnFactory {
     TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.BLOB, BLOB);
     TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.MEDIUMBLOB, BLOB);
     TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.LONGBLOB, BLOB);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DATETIME, DATETIME);
+    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DATETIME, DATETIME2);
     TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.TIMESTAMP, TIMESTAMP);
+    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.YEAR, YEAR);
+    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DATE, DATE);
     TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.FLOAT, FLOAT);
     TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DOUBLE, DOUBLE);
   }

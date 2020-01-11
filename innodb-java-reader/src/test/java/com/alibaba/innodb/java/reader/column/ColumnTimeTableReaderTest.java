@@ -10,6 +10,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.junit.Test;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -65,9 +66,9 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       assertThat(r1.getPrimaryKey(), is(1));
       assertThat(r1.get("a"), is(100));
       assertThat(r1.get("b"), is(formatter.parseDateTime("2019-10-02 10:59:59").toDate()));
-      // FIXME
-      //assertThat(r1.get("c"), is(formatter.parseDateTime("2019-10-02 10:59:59").getMillis()));
-      assertThat(((Long) r1.get("c")) >= 1569985199000L, is(true));
+      // FIXME not working in travis
+      // assertThat(r1.get("c"), is(formatter.parseDateTime("2019-10-02 10:59:59").getMillis()));
+      assertThat(((Timestamp) r1.get("c")).getTime() >= 1569985199000L, is(true));
 
       GenericRecord r2 = recordList.get(1);
       Object[] v2 = r2.getValues();
@@ -75,7 +76,7 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       assertThat(r2.getPrimaryKey(), is(2));
       assertThat(r2.get("a"), is(101));
       assertThat(r2.get("b"), is(formatter.parseDateTime("1970-01-01 08:00:01").toDate()));
-      //assertThat(r2.get("c"), is(formatter.parseDateTime("1970-01-01 08:00:01").getMillis()));
+      //assertThat(((Timestamp) r2.get("c")).getTime(), is(formatter.parseDateTime("1970-01-01 08:00:01").getMillis()));
 
       GenericRecord r3 = recordList.get(2);
       Object[] v3 = r3.getValues();
@@ -83,7 +84,7 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       assertThat(r3.getPrimaryKey(), is(3));
       assertThat(r3.get("a"), is(102));
       assertThat(r3.get("b"), is(formatter.parseDateTime("2008-11-23 09:23:00").toDate()));
-      //assertThat(r3.get("c"), is(formatter.parseDateTime("2008-11-23 09:23:00").getMillis()));
+      //assertThat(((Timestamp) r3.get("c")).getTime(), is(formatter.parseDateTime("2008-11-23 09:23:00").getMillis()));
     }
   }
 }
