@@ -168,6 +168,9 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
 
       recordList = reader.rangeQueryByPrimaryKey(null, 1);
       assertThat(recordList.size(), is(0));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, null);
+      assertThat(recordList.size(), is(10));
     }
   }
 

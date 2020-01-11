@@ -29,18 +29,18 @@ innodb-java-reader is a java implementation to access MySQL InnoDB storage engin
 
 InnoDB is a general-purpose storage engine that balances high reliability and high performance in MySQL, since 5.6 InnoDB has become the default MySQL storage engine.
 
-Everybody knows MySQL is a row-oriented OLTP database with B+ tree clustered index to store records. In Alibaba, I encountered one MySQL performance issue, and this led me to deep dive into InnoDB internal mechanism, but it turned out to be hard since the source code is too complex to know every detail. The are few internal documentations either.
+Everybody knows MySQL is a row oriented OLTP database with B+ tree clustered index to store records. In Alibaba, I encountered one MySQL performance issue, and this led me to deep dive into InnoDB internal mechanism, but it turned out to be hard since the source code is too complex to know every detail. There are few internal documentations either.
 
-So to better understand how InnoDB stores data, I introduce the project for prototyping, and I choose Java language to implement because it is widely used and more understandable. Some of the works are inspired by [Jeremy Cole](https://blog.jcole.us/)'s blog about InnoDB, which helps me a lot, many thanks to Jcole.
+To better understand how InnoDB stores data, I introduce the project for prototyping, and I choose Java language to implement because it is widely used and more understandable. Some of the works are inspired by [Jeremy Cole](https://blog.jcole.us/)'s blog about InnoDB, which helps me a lot, many thanks to Jcole.
 
 ## 2. Prerequisites
 
 * Java 8 or later version.
 * MySQL 5.6, 5.7 or 8.0 (partially supported).
-* [InnoDB row format](https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html) is either `COMPACT` or `DYNAMIC`.
-* Enable `innodb_file_per_table` , which will create an standalone `*.ibd` file for each table.
+* Make sure [InnoDB row format](https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html) is either `COMPACT` or `DYNAMIC`.
+* Enable `innodb_file_per_table` , which will create standalone `*.ibd` file for each table.
 * InnoDB file page size is set to 16K.
-* Make sure all pages are flushed or else the result might be incorrect.
+* Be aware that if pages are not flushed from Buffer pool to disk, the result is inconsistent.
 * For tables to read, make sure one and only one column primary key is defined. It will not work if MySQL uses the first non-NULL unique key as primary key or a 48-bit hidden Row ID field as primary key. Multiple columns for primary key and secondary index will be supported in the future.
 
 ## 3. Features
@@ -113,13 +113,17 @@ Checkout the project and [build](#7-building), use the executable jar under `inn
 `t.ibd` is the InnoDB ibd file path, `t.sql` is where the output of `SHOW CREATE TABLE <table_name>` saved as content. Arguments are the lower bound target key (inclusive) and the upper bound target key (exclusive), separated by comma.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c range-query-by-pk -args "1,3"
+java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c range-query-by-pk -args "1,3" > output.dat
 ```
-output:
+Output shows as below, the result is the same by running `mysql -N -uuser_name -ppassword -e "select * from test.t where id >= and id < 3" > output && cat output | tr "\t" "," > output.dat`.
 ```
-[1, 2, aaaaaaaa]
-[2, 4, bbbbbbbb]
+1,2,aaaaaaaa
+2,4,bbbbbbbb
 ```
+
+You can also use `query-all` command to dump the whole table. 
+
+But to be aware that if pages are not flushed from InnoDB Buffer pool to disk, then **the result maybe not consistent**. How long do dirty pages usually stay dirty in memory? That is a tough question, InnoDB leverages WAL in terms of performance, so there is no command available to flush all dirty pages. Only internal mechanism controls when there need pages to flush, like Page Cleaner thread, adaptive flushing, etc.
 
 Here's another example to generate heatmap.
 
@@ -280,7 +284,7 @@ try (TableReader reader = new TableReader(ibdFilePath, schema)) {
 }
 ```
 
-### 5.4 Querying a tablesapce file
+### 5.4 Querying a tablespace file
 
 #### Query all records
 
@@ -316,7 +320,7 @@ GenericRecord represents one row.
 
 `queryAll` accepts an optional argument `Predicate<Record> ` to filter.
 
-This feature enables you to dump data if data presists in InnoDB file by offloading MySQL.
+This feature enables you to dump data if data persists in InnoDB file by offloading MySQL.
 
 #### Query by page number
 
@@ -361,7 +365,7 @@ try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
 }
 ```
 
-Note that in MySQL 5.7 or earlier version, usually page 3 will be the root page of the clustered index, page 4 will be the root of the first secondary key, etc. After MySQL 8.0 or later, page 3 is usually the SDI page with data dictionary, and root page will usually goes next to page 4. `innodb-java-reader` assumes the root page is either page 3 or 4 and can work smartly to determine where to start.
+Note that in MySQL 5.7 or earlier version, usually page 3 will be the root page of the clustered index, page 4 will be the root of the first secondary key, etc. After MySQL 8.0 or later, page 3 is usually the SDI page with data dictionary, and root page will usually go next to page 4. `innodb-java-reader` assumes the root page is either page 3 or 4 and can work smartly to determine where to start.
 
 #### Range query by primary key
 
@@ -563,7 +567,7 @@ Arguments are the output html file path, the heatmap width and height.
 java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c gen-filling-rate-heatmap -args "./out.html 800 1000"
 ```
 
-Filling rate, also known as page filling factor, means how efficient for InnoDB to make use of storage space. InnoDB store records in row-oriented layout, usually this is good for OLTP scenario. While in big data industry, columnar storage format is more preferred, because for performance, it can read required data, skip unnecessary deserialization, leverage specific encoding and better for compression, so the storage space is much more saved. Although, row-oriented format is not friendly in term of file size, we still want to know the space occupied by data , InnoDB file can be fragmented due to logical deletion or B+ tree splitting. Filling rate for every page is calculated by examining `used space / page size`, used space equals to `heap_top_position + page_directory_slots_bytes + FilTrailer - garbage_space`. This is different from `data_free` value when you examine a table through `information_schema.TABLES`, `data_free` means the space allocated on disk for, but not used.
+Filling rate, also known as page filling factor, means how efficient for InnoDB to make use of storage space. InnoDB store records in row-oriented layout, usually this is good for OLTP scenario. While in big data industry, columnar storage format is more preferred, because for performance, it can read required data, skip unnecessary deserialization, leverage specific encoding and better for compression, so the storage space is much more saved. Although, row-oriented format is not friendly in term of file size, we still want to know the space occupied by data, InnoDB file can be fragmented due to logical deletion or B+ tree splitting. Filling rate for every page is calculated by examining `used space / page size`, used space equals to `heap_top_position + page_directory_slots_bytes + FilTrailer - garbage_space`. This is different from `data_free` value when you examine a table through `information_schema.TABLES`, `data_free` means the space allocated on disk for, but not used.
 
 Assume we build a table by inserting rows in sequential order. The page filling rate will be more than 90 percent initially.
 
