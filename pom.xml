@@ -337,7 +337,6 @@
     <scm>
         <url>scm:git:git@github.com:alibaba/innodb-java-reader</url>
         <connection>scm:git:git@github.com:alibaba/innodb-java-reader</connection>
-        <tag>innodb-java-reader-parent-1.0.0</tag>
     </scm>
 
     <url>https://github.com/alibaba/innodb-java-reader</url>
