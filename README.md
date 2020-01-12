@@ -597,7 +597,7 @@ mvn clean install
 
 ## 8 Future works
 
-* Support more commonly used data types including DECIMAL, YEAR, TIME, DATE, etc.
+* Support all data types.
 * Support MySQL 8.0 newly introduced LOB page.
 * Support multiple columns primary key and default 6 bytes ROW ID if no primary key is defined by user.
 * Look up and range query by secondary key.
