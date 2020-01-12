@@ -112,6 +112,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
+                <version>${gpg.version}</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

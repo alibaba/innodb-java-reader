@@ -22,6 +22,7 @@
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
+        <gpg.version>1.6</gpg.version>
     </properties>
 
     <inceptionYear>2019</inceptionYear>
@@ -387,7 +388,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
+                        <version>${gpg.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

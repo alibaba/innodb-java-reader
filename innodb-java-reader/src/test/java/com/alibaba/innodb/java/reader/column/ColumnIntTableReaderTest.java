@@ -8,6 +8,7 @@ import com.alibaba.innodb.java.reader.schema.Schema;
 
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
@@ -85,7 +86,7 @@ public class ColumnIntTableReaderTest extends AbstractTest {
       assertThat(r1.get("c_mediumint"), is(1000000));
       assertThat(r1.get("c_uint"), is(10000000L));
       assertThat(r1.get("c_int"), is(10000000));
-      assertThat(r1.get("c_ubigint"), is(100000000000L));
+      assertThat(r1.get("c_ubigint"), is(BigInteger.valueOf(100000000000L)));
       assertThat(r1.get("c_bigint"), is(100000000000L));
 
       GenericRecord r2 = recordList.get(1);
@@ -100,7 +101,7 @@ public class ColumnIntTableReaderTest extends AbstractTest {
       assertThat(r2.get("c_mediumint"), is(8388607));
       assertThat(r2.get("c_uint"), is(2147483647L));
       assertThat(r2.get("c_int"), is(2147483647));
-      assertThat(r2.get("c_ubigint"), is(9223372036854775805L));
+      assertThat(r2.get("c_ubigint"), is(BigInteger.valueOf(9223372036854775805L)));
       assertThat(r2.get("c_bigint"), is(9223372036854775807L));
 
       GenericRecord r3 = recordList.get(2);
@@ -115,7 +116,7 @@ public class ColumnIntTableReaderTest extends AbstractTest {
       assertThat(r3.get("c_mediumint"), is(-8388608));
       assertThat(r3.get("c_uint"), is(2147483648L));
       assertThat(r3.get("c_int"), is(Integer.MIN_VALUE));
-      assertThat(r3.get("c_ubigint"), is(9223372036854775806L));
+      assertThat(r3.get("c_ubigint"), is(BigInteger.valueOf(9223372036854775806L)));
       assertThat(r3.get("c_bigint"), is(Long.MIN_VALUE + 1));
 
       GenericRecord r4 = recordList.get(3);
@@ -130,7 +131,7 @@ public class ColumnIntTableReaderTest extends AbstractTest {
       assertThat(r4.get("c_mediumint"), is(-8388607));
       assertThat(r4.get("c_uint"), is(2147483649L));
       assertThat(r4.get("c_int"), is(Integer.MIN_VALUE + 1));
-      assertThat(r4.get("c_ubigint"), is(9223372036854775807L));
+      assertThat(r4.get("c_ubigint"), is(BigInteger.valueOf(9223372036854775807L)));
       assertThat(r4.get("c_bigint"), is(Long.MIN_VALUE + 2));
 
       GenericRecord r5 = recordList.get(4);

@@ -6,6 +6,7 @@ package com.alibaba.innodb.java.reader.column;
 import com.alibaba.innodb.java.reader.exception.ParseException;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
@@ -26,6 +27,11 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
 public class ColumnFactory {
 
   private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP = new HashMap<>();
+
+  /**
+   * The max ulonglong - 0x ff ff ff ff ff ff ff ff
+   */
+  public static final BigInteger BIGINT_MAX_VALUE = new BigInteger("18446744073709551615");
 
   private ColumnFactory() {
   }
@@ -117,6 +123,25 @@ public class ColumnFactory {
     }
   };
 
+  /**
+   * <pre>
+   * static inline int32 sint3korr(const uchar *A)
+   * {
+   *   return
+   *     ((int32) (((A[2]) & 128) ?
+   *               (((uint32) 255L << 24) |
+   *                (((uint32) A[2]) << 16) |
+   *                (((uint32) A[1]) << 8) |
+   *                ((uint32) A[0])) :
+   *               (((uint32) A[2]) << 16) |
+   *               (((uint32) A[1]) << 8) |
+   *               ((uint32) A[0])))
+   *     ;
+   * }
+   * </pre>
+   *
+   * @see my_byteorder.h
+   */
   private static final ColumnParser<Integer> MEDIUMINT = new AbstractColumnParser<Integer>() {
 
     private static final int CONST_0X800000 = 0x800000;
@@ -124,11 +149,8 @@ public class ColumnFactory {
     @Override
     public Integer readFrom(SliceInput input) {
       int v = (input.read3BytesInt() ^ (-1 << (SIZE_OF_MEDIUMINT * 8 - 1))) & 0xffffff;
-      // FIXME
       if ((v & CONST_0X800000) != 0) {
-        int delta = v - 0x800000;
-        v = ~v + 1;
-        v = v + delta * 2;
+        v = (int) ((255L << 24) | v);
       }
       return v;
     }
@@ -165,18 +187,17 @@ public class ColumnFactory {
     }
   };
 
-  private static final ColumnParser<Long> UNSIGNED_BIGINT = new AbstractColumnParser<Long>() {
+  private static final ColumnParser<BigInteger> UNSIGNED_BIGINT = new AbstractColumnParser<BigInteger>() {
 
     @Override
-    public Long readFrom(SliceInput input) {
-      long result = input.readLong();
-      // TODO there is no readUnsignedLong in java, must use BigInteger
-      return result;
+    public BigInteger readFrom(SliceInput input) {
+      long long64 = input.readLong();
+      return (long64 >= 0) ? BigInteger.valueOf(long64) : BIGINT_MAX_VALUE.add(BigInteger.valueOf(1 + long64));
     }
 
     @Override
     public Class<?> typeClass() {
-      return Long.class;
+      return BigInteger.class;
     }
   };
 

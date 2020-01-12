@@ -2,6 +2,7 @@ package com.alibaba.innodb.java.reader.column;
 
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
 
@@ -24,7 +25,7 @@ public class ColumnFactoryTest {
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.INT).getName(), is(Integer.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_INT).getName(), is(Integer.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.BIGINT).getName(), is(Long.class.getName()));
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_BIGINT).getName(), is(Long.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_BIGINT).getName(), is(BigInteger.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.CHAR).getName(), is(String.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.VARCHAR).getName(), is(String.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.BINARY).getName(), is(byte[].class.getName()));
