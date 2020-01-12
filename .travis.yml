@@ -7,5 +7,6 @@ language: java
 #    mvn test
 
 after_success:
-  - mvn jacoco:report coveralls:report
+  # - mvn jacoco:report coveralls:report
+  - mvn jacoco:report
   - bash <(curl -s https://codecov.io/bash)
