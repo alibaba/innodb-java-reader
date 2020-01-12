@@ -3,9 +3,10 @@
  */
 package com.alibaba.innodb.java.reader.page.index;
 
+import com.google.common.collect.Maps;
+
 import com.alibaba.innodb.java.reader.util.IdAble;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -44,7 +45,7 @@ public enum PageFormat implements IdAble<Integer> {
 
   // ---------- template method ---------- //
 
-  private static Map<Integer, PageFormat> KVS = new HashMap<>(values().length);
+  private static Map<Integer, PageFormat> KVS = Maps.newHashMapWithExpectedSize(values().length);
 
   static {
     for (PageFormat recordType : values()) {

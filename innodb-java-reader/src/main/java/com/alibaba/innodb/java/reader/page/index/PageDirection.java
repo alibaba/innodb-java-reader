@@ -3,9 +3,10 @@
  */
 package com.alibaba.innodb.java.reader.page.index;
 
+import com.google.common.collect.Maps;
+
 import com.alibaba.innodb.java.reader.util.IdAble;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -50,7 +51,7 @@ public enum PageDirection implements IdAble<Integer> {
 
   // ---------- template method ---------- //
 
-  private static Map<Integer, PageDirection> KVS = new HashMap<>(values().length);
+  private static Map<Integer, PageDirection> KVS = Maps.newHashMapWithExpectedSize(values().length);
 
   static {
     for (PageDirection recordType : values()) {
