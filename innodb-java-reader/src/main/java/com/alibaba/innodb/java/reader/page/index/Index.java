@@ -50,7 +50,7 @@ public class Index extends AbstractPage {
     this.infimum = new GenericRecord(infimumHeader, schema, innerPage.getPageNumber());
     this.infimum.setPrimaryKeyPosition(sliceInput.position());
     String infimumString = sliceInput.readUTF8String(SIZE_OF_MUM_RECORD);
-    checkState(infimumString.startsWith("infimum"));
+    checkState("infimum".equals(infimumString));
 
     // 5 (record header) + 8 ("supremum") = 13 bytes
     // end offset = 107 + 13 = 120
