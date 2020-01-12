@@ -308,7 +308,7 @@ public class ColumnFactory {
   };
 
   /**
-   * //TODO 暂不支持毫秒
+   * //TODO 暂不支持Fraction
    *
    * As of MySQL 5.6.4 the TIME, TIMESTAMP, and DATETIME types can have a fractional seconds part.
    * Storage for these types is big endian (for memcmp() compatibility purposes), with the nonfractional
