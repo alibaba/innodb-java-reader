@@ -10,6 +10,10 @@ package com.alibaba.innodb.java.reader;
  */
 public interface Constants {
 
+  String DEFAULT_JAVA_CHARSET = "UTF-8";
+
+  String DEFAULT_MYSQL_CHARSET = "utf8";
+
   /**
    * for mysql 5.6 and 5.7 the root page is usually page 3, but in mysql8 there introduces SDI page,
    * which may make root page number down from 4.

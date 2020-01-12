@@ -8,7 +8,7 @@ import com.alibaba.innodb.java.reader.column.ColumnType;
 
 import org.apache.commons.lang3.StringUtils;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.ToString;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author xu.zx
  */
-@Data
+@Getter
 public class Column {
 
   private String name;
@@ -31,6 +31,7 @@ public class Column {
 
   /**
    * Note this can only be set internally.
+   * //TODO for time type like datetime, time, timestamp this could represents fractional seconds.
    */
   private int maxVarLen;
 
@@ -67,6 +68,11 @@ public class Column {
 
   public Column setPrimaryKey(boolean primaryKey) {
     isPrimaryKey = primaryKey;
+    return this;
+  }
+
+  public Column setVarLenChar(boolean varLenChar) {
+    isVarLenChar = varLenChar;
     return this;
   }
 

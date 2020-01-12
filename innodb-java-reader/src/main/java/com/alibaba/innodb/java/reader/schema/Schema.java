@@ -16,6 +16,8 @@ import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.alibaba.innodb.java.reader.Constants.DEFAULT_JAVA_CHARSET;
+import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_CHARSET;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -28,8 +30,6 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
  */
 @Slf4j
 public class Schema {
-
-  public static final String DEFAULT_CHARSET = "UTF-8";
 
   private List<String> columnNames;
 
@@ -52,12 +52,13 @@ public class Schema {
   /**
    * for decoding string in Java
    */
-  private String charset = DEFAULT_CHARSET;
+  private String charset = DEFAULT_JAVA_CHARSET;
 
   /**
-   * Table DDL charset, for example can be latin(ISO8895-1), utf8(UTF-8), utf8mb4(UTF-8)
+   * Table DDL charset, for example can be latin, utf8, utf8mb4.
+   * //TODO use table charset for every column.
    */
-  private String tableCharset = "utf8";
+  private String tableCharset = DEFAULT_MYSQL_CHARSET;
 
   /**
    * // TODO this is a workaround.
