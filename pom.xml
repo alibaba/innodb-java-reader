@@ -330,8 +330,9 @@
     </organization>
 
     <scm>
-        <url>scm:git:git@github.com:alibaba/innodb-java-reader</url>
-        <connection>scm:git:git@github.com:alibaba/innodb-java-reader</connection>
+        <url>https://github.com/alibaba/innodb-java-reader</url>
+        <connection>scm:git:https://github.com/alibaba/innodb-java-reader.git</connection>
+        <developerConnection>scm:git:https://github.com/alibaba/innodb-java-reader.git</developerConnection>
     </scm>
 
     <url>https://github.com/alibaba/innodb-java-reader</url>
