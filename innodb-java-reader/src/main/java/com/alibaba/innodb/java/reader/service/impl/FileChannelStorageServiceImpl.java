@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkState;
  * <p/>
  * Note that to achieve GC-less load, we prefer to use {@link sun.nio.ch.DirectBuffer} in ThreadLocal. We could create one
  * {@link java.nio.DirectByteBuffer} pool to make the same result, but here we use {@link java.nio.HeapByteBuffer}
- * because direct byte buffer cannot be release once page is load, the lifecycle has to be extended until decoding by
+ * because direct byte buffer cannot be released once page is load, the lifecycle has to be extended until decoding by
  * {@link com.alibaba.innodb.java.reader.service.IndexService} is done, so we cannot simply add
  * try-finally to clean the buffer after load and recycle them to the pool. The lifecycle of the direct byte buffer must be
  * managed by index service as well, this will be enhanced in the future.
