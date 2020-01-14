@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * <pre>
- *   mysql> SHOW CHARACTER SET;
+ * mysql&gt; SHOW CHARACTER SET;
  * +----------+-----------------------------+---------------------+--------+
  * | Charset  | Description                 | Default collation   | Maxlen |
  * +----------+-----------------------------+---------------------+--------+

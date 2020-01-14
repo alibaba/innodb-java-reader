@@ -21,7 +21,7 @@ public interface StorageService extends Closeable {
    * open file
    *
    * @param ibdFilePath file path
-   * @throws IOException
+   * @throws IOException throws IOException when open file fails
    */
   void open(String ibdFilePath) throws IOException;
 
@@ -30,7 +30,7 @@ public interface StorageService extends Closeable {
    *
    * @param pageNumber page number
    * @return InnerPage
-   * @throws ReaderException
+   * @throws ReaderException throws ReaderException when internal errors occurs
    */
   InnerPage loadPage(long pageNumber) throws ReaderException;
 
@@ -39,7 +39,7 @@ public interface StorageService extends Closeable {
    *
    * @param pageNumber page number
    * @return FilHeader
-   * @throws ReaderException
+   * @throws ReaderException throws ReaderException when internal errors occurs
    */
   FilHeader loadPageHeader(long pageNumber) throws ReaderException;
 

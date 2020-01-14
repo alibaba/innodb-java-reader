@@ -17,7 +17,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Slice of a {@link ByteBuffer}.
- * <p/>
+ * <p>
  * This class is not thread-safe. Use big-endian to read number from buffer.
  *
  * @author xu.zx

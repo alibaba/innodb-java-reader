@@ -25,11 +25,11 @@ import static com.google.common.base.Preconditions.checkState;
 
 /**
  * FileChannelStorageServiceImpl
- * <p/>
+ * <p>
  * Use Java NIO2.0 to read file, leverage page cache, data are read into JVM direct memory then copy to heap.
- * <p/>
- * Note that to achieve GC-less load, we prefer to use {@link sun.nio.ch.DirectBuffer} in ThreadLocal. We could create one
- * {@link java.nio.DirectByteBuffer} pool to make the same result, but here we use {@link java.nio.HeapByteBuffer}
+ * <p>
+ * Note that to achieve GC-less load, we prefer to use DirectBuffer in ThreadLocal. We could create one
+ * DirectByteBuffer pool to make the same result, but here we use HeapByteBuffer
  * because direct byte buffer cannot be released once page is load, the lifecycle has to be extended until decoding by
  * {@link com.alibaba.innodb.java.reader.service.IndexService} is done, so we cannot simply add
  * try-finally to clean the buffer after load and recycle them to the pool. The lifecycle of the direct byte buffer must be

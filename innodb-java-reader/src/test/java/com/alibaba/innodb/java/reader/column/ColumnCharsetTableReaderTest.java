@@ -31,7 +31,7 @@ import static org.junit.Assert.assertThat;
  * “65535”不是单个varchar(N)中N的最大限制，而是整个表非大字段类型的字段的bytes总合。
  * Every table (regardless of storage engine) has a maximum row size of 65,535 bytes.
  * Storage engines may place additional constraints on this limit, reducing the effective maximum row size.
- * <p/>
+ * <p>
  * 不同的字符集对字段可存储的max会有影响，例如，UTF8字符需要3个字节存储，对于VARCHAR（255）CHARACTER SET UTF8列，会占用255×3 =765的字节。
  * 故该表不能包含超过65,535/765=85这样的列。GBK是双字节的以此类推。
  *

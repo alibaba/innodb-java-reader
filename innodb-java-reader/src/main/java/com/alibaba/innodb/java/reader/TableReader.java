@@ -79,7 +79,8 @@ public class TableReader implements Closeable {
 
   /**
    * Get number of pages. If page size is 16KiB, then the value will be <code>file size / 16384</code>.
-   * @return
+   *
+   * @return number of pages
    */
   public long getNumOfPages() {
     checkNotNull(storageService, "storageService should not null, please make sure TableReader is opened");

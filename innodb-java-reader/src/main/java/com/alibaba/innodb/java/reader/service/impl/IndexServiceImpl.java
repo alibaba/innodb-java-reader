@@ -55,7 +55,7 @@ import static com.alibaba.innodb.java.reader.util.Utils.tryCastString;
 
 /**
  * Index service implementation
- * <p/>
+ * <p>
  * Only work for clustered index currently.
  *
  * @author xu.zx
@@ -318,7 +318,7 @@ public class IndexServiceImpl implements IndexService, Constants {
 
   /**
    * linear search from a record in one page.
-   * <p/>
+   * <p>
    * Algorithm looks like <code>page_cur_search_with_match</code> function in <code>page0page.cc</code>.
    *
    * @param pageNumber page number
@@ -567,18 +567,18 @@ public class IndexServiceImpl implements IndexService, Constants {
 
   /**
    * If the var-len needs 2 bytes
-   * <p/>
+   * <p>
    * see rem0rec.cc
-   * <p/>
+   * <p>
    * https://docs.oracle.com/cd/E17952_01/mysql-8.0-en/innodb-row-format.html
-   * <p/>
+   * <p>
    * For each non-NULL variable-length field, the record header contains the length of the column in one or
    * two bytes. Two bytes are only needed if part of the column is stored externally in overflow pages
    * or the maximum length exceeds 255 bytes and the actual length exceeds 127 bytes.
    * For an externally stored column, the 2-byte length indicates the length of the internally stored
    * part plus the 20-byte pointer to the externally stored part. The internal part is 768 bytes, so the length
    * is 768+20. The 20-byte pointer stores the true length of the column.
-   * <p/>
+   * <p>
    * Add by me. Note that charset will be considered when calculating max length of var-len field.
    *
    * @param varColumn column

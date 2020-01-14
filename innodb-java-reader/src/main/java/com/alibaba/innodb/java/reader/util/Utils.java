@@ -75,6 +75,10 @@ public class Utils {
    *        col9  col2 col4
    *   [00000001][0,1,0,1,0,0,0,0]
    * </pre>
+   *
+   * @param input     SliceInput
+   * @param numOfBits number of bits
+   * @return bit array
    */
   public static int[] getBitArray(SliceInput input, int numOfBits) {
     int size = (numOfBits + 7) / 8;
@@ -125,7 +129,7 @@ public class Utils {
 
   /**
    * Use {@link StringBuilder} to build string out of an array.
-   * <p/>
+   * <p>
    * Sometimes by reusing StringBuilder, we can avoid creating many StringBuilder and good to garbage collection.
    *
    * @param a array

@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * PageType
- * <p/>
+ * <p>
  * Please refer to i_ss.cc or fil0fil.h
  *
  * @author xu.zx

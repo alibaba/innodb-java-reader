@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 /**
  * SliceInput
  *
- * @author
+ * @author xu.zx
  */
 public final class SliceInput extends InputStream implements DataInput {
 
@@ -110,6 +110,7 @@ public final class SliceInput extends InputStream implements DataInput {
    * Gets an unsigned 32-bit integer at the current {@code position}
    * and increases the {@code position} by {@code 4} in this buffer.
    *
+   * @return unsigned integer
    * @throws IndexOutOfBoundsException if {@code this.available()} is less than {@code 4}
    */
   public long readUnsignedInt() {
@@ -184,6 +185,7 @@ public final class SliceInput extends InputStream implements DataInput {
    * reaches its limit, and increases the {@code position} by the
    * number of the transferred bytes.
    *
+   * @param destination destination
    * @throws IndexOutOfBoundsException if {@code destination.remaining()} is greater than
    *                                   {@code this.available()}
    */

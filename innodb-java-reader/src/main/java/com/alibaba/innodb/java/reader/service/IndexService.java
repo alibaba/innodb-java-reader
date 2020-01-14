@@ -43,7 +43,7 @@ public interface IndexService {
 
   /**
    * query all records of a tablespace
-   * <p/>
+   * <p>
    * Note this will cause out-of-memory if the table is too big
    *
    * @param recordPredicate optional. evaluating record, if true then it will be added to result set, else skip it
@@ -53,7 +53,7 @@ public interface IndexService {
 
   /**
    * range query records by primary key in a tablespace
-   * <p/>
+   * <p>
    * Note this will cause out-of-memory if there are too many records within the range
    *
    * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
@@ -65,7 +65,7 @@ public interface IndexService {
 
   /**
    * Return an iterator to query all records of a tablespace
-   * <p/>
+   * <p>
    * This is friendly to memory since only one page is loaded per batch
    *
    * @return record iterator
@@ -74,7 +74,7 @@ public interface IndexService {
 
   /**
    * Return an iterator to do range query records by primary key in a tablespace
-   * <p/>
+   * <p>
    * This is friendly to memory since only one page is loaded per batch
    *
    * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower

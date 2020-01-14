@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 /**
  * EnumUtil
- * <p/>
+ * <p>
  * This util class is useful to find enum from an identifier. For example,
  * <code>EnumUtil.find(PageType.class, 3)</code>.
  * For hot code, the performance might be a problem, especially for cases when null is returned.
