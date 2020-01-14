@@ -85,22 +85,22 @@ public class Index extends AbstractPage {
    * Get used bytes in a page. For example, given a page like below, the used bytes is
    * <code>1000 + 376 + 8 - 240 = 1144</code>
    * <pre>
-   *      0 +----------------------+  <= page offset 0
+   *      0 +----------------------+  ... page offset 0
    *        |      FilHeader       |
    *     38 +----------------------+
    *    138 |        row 1         |
    *    400 |        row 2         |
-   *    660 | row 3 (mark deleted) |  <= Deleted record will be counted as free space
+   *    660 | row 3 (mark deleted) |  ... Deleted record will be counted as free space
    *    800 |        row 4         |
-   *    920 |        row 5         |  <= Heap top position. The byte offset of the "end" of the currently used space
+   *    920 |        row 5         |  ... Heap top position. The byte offset of the "end" of the currently used space
    *   1000 +----------------------+
    *        |                      |
-   *        |                      |  <= Free space
+   *        |                      |  ... Free space
    *  16000 +----------------------+
    *        |   Directory slots    |
    *  16376 +----------------------+
    *        |      FilTrailer      |
-   *  16384 +----------------------+ <= page offset SIZE_OF_PAGE, usually 16KiB
+   *  16384 +----------------------+  ... page offset SIZE_OF_PAGE, usually 16KiB
    * </pre>
    *
    * @return used bytes
