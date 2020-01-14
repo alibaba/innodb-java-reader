@@ -9,6 +9,7 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +27,7 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
  */
 public class ColumnFactory {
 
-  private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP = new HashMap<>();
+  private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP;
 
   /**
    * The max ulonglong - 0x ff ff ff ff ff ff ff ff
@@ -472,33 +473,35 @@ public class ColumnFactory {
   };
 
   static {
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.TINYINT, TINYINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.UNSIGNED_TINYINT, UNSIGNED_TINYINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.SMALLINT, SMALLINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.UNSIGNED_SMALLINT, UNSIGNED_SMALLINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.MEDIUMINT, MEDIUMINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.UNSIGNED_MEDIUMINT, UNSIGNED_MEDIUMINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.INT, INT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.UNSIGNED_INT, UNSIGNED_INT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.BIGINT, BIGINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.UNSIGNED_BIGINT, UNSIGNED_BIGINT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.CHAR, CHAR);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.VARCHAR, VARCHAR);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.BINARY, BINARY);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.VARBINARY, VARBINARY);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.TINYTEXT, TEXT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.TEXT, TEXT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.MEDIUMTEXT, TEXT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.LONGTEXT, TEXT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.TINYBLOB, BLOB);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.BLOB, BLOB);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.MEDIUMBLOB, BLOB);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.LONGBLOB, BLOB);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DATETIME, DATETIME2);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.TIMESTAMP, TIMESTAMP);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.YEAR, YEAR);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DATE, DATE);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.FLOAT, FLOAT);
-    TYPE_TO_COLUMN_PARSER_MAP.put(ColumnType.DOUBLE, DOUBLE);
+    Map<String, ColumnParser<?>> typeToColumnParserMap = new HashMap<>();
+    typeToColumnParserMap.put(ColumnType.TINYINT, TINYINT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_TINYINT, UNSIGNED_TINYINT);
+    typeToColumnParserMap.put(ColumnType.SMALLINT, SMALLINT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_SMALLINT, UNSIGNED_SMALLINT);
+    typeToColumnParserMap.put(ColumnType.MEDIUMINT, MEDIUMINT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_MEDIUMINT, UNSIGNED_MEDIUMINT);
+    typeToColumnParserMap.put(ColumnType.INT, INT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_INT, UNSIGNED_INT);
+    typeToColumnParserMap.put(ColumnType.BIGINT, BIGINT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_BIGINT, UNSIGNED_BIGINT);
+    typeToColumnParserMap.put(ColumnType.CHAR, CHAR);
+    typeToColumnParserMap.put(ColumnType.VARCHAR, VARCHAR);
+    typeToColumnParserMap.put(ColumnType.BINARY, BINARY);
+    typeToColumnParserMap.put(ColumnType.VARBINARY, VARBINARY);
+    typeToColumnParserMap.put(ColumnType.TINYTEXT, TEXT);
+    typeToColumnParserMap.put(ColumnType.TEXT, TEXT);
+    typeToColumnParserMap.put(ColumnType.MEDIUMTEXT, TEXT);
+    typeToColumnParserMap.put(ColumnType.LONGTEXT, TEXT);
+    typeToColumnParserMap.put(ColumnType.TINYBLOB, BLOB);
+    typeToColumnParserMap.put(ColumnType.BLOB, BLOB);
+    typeToColumnParserMap.put(ColumnType.MEDIUMBLOB, BLOB);
+    typeToColumnParserMap.put(ColumnType.LONGBLOB, BLOB);
+    typeToColumnParserMap.put(ColumnType.DATETIME, DATETIME2);
+    typeToColumnParserMap.put(ColumnType.TIMESTAMP, TIMESTAMP);
+    typeToColumnParserMap.put(ColumnType.YEAR, YEAR);
+    typeToColumnParserMap.put(ColumnType.DATE, DATE);
+    typeToColumnParserMap.put(ColumnType.FLOAT, FLOAT);
+    typeToColumnParserMap.put(ColumnType.DOUBLE, DOUBLE);
+    TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);
   }
 }
