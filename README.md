@@ -1,9 +1,9 @@
 # MySQL InnoDB Java Reader
 
-[![Build Status](https://travis-ci.org/alibaba/innodb-java-reader.svg?branch=develop)](https://travis-ci.org/alibaba/innodb-java-reader)
-[![codecov](https://codecov.io/gh/alibaba/innodb-java-reader/branch/develop/graph/badge.svg)](https://codecov.io/gh/alibaba/innodb-java-reader)
+[![Build Status](https://travis-ci.org/alibaba/innodb-java-reader.svg?branch=master)](https://travis-ci.org/alibaba/innodb-java-reader)
+[![codecov](https://codecov.io/gh/alibaba/innodb-java-reader/branch/master/graph/badge.svg)](https://codecov.io/gh/alibaba/innodb-java-reader)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.alibaba/innodb-java-reader/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.alibaba/innodb-java-reader)
-[![GitHub release](https://img.shields.io/github/release/alibaba/druid.svg)](https://github.com/alibaba/druid/releases)
+[![GitHub release](https://img.shields.io/github/release/alibaba/innodb-java-reader.svg)](https://github.com/alibaba/innodb-java-reader/releases)
 [![javadoc](https://javadoc.io/badge2/com.alibaba/innodb-java-reader/javadoc.svg)](https://javadoc.io/doc/com.alibaba/innodb-java-reader)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -71,11 +71,7 @@ Supported column types are listed below.
 </dependency>
 ```
 
-**Gradle**
-
-```
-compile "com.alibaba:innodb-java-reader:1.0.0"
-```
+To use snapshot version, please refer to this [doc](docs/how_to_use_snapshot_version.md).
 
 #### API examples
 
@@ -108,7 +104,7 @@ More usage you can jump to [API usage](#5-api-usage) section. The best place to 
 
 Here's an example to range query records in a table by primary key with command-line tool.
 
-Checkout the project and [build](#7-building), use the executable jar under `innodb-java-reader-cli/target`.
+You can download latest version of `innodb-java-reader-cli.jar` from [release page](https://github.com/alibaba/innodb-java-reader/releases) or [build](#7-building) from source.
 
 `t.ibd` is the InnoDB ibd file path, `t.sql` is where the output of `SHOW CREATE TABLE <table_name>` saved as content. Arguments are the lower bound target key (inclusive) and the upper bound target key (exclusive), separated by comma.
 
@@ -430,7 +426,9 @@ try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
 
 ### 6.1 Usage
 
-Checkout the project and [build](#7-building), use the executable jar under `innodb-java-reader-cli/target`. Usage shows as below.
+You can download latest version of `innodb-java-reader-cli.jar` from [release page](https://github.com/alibaba/innodb-java-reader/releases) or [build](#7-building) from source.
+
+Usage shows as below.
 
 ````
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>] [-h]
@@ -594,6 +592,8 @@ java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t
 ```
 mvn clean install
 ```
+
+Use the executable jar under `innodb-java-reader-cli/target/innodb-java-reader-cli.jar` to run command.
 
 ## 8 Future works
 
