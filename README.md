@@ -593,7 +593,7 @@ java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t
 mvn clean install
 ```
 
-Use the executable jar under `innodb-java-reader-cli/target/innodb-java-reader-cli.jar` to run command.
+Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar` to run command.
 
 ## 8 Future works
 

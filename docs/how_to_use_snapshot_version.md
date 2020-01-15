@@ -1,3 +1,5 @@
+## How to use snapshot version
+
 Snapshot version is also able to work normally. Please add the following repository to your repositories if you are using the snapshot version. See more on [sonatype](https://oss.sonatype.org/content/repositories/snapshots/com/alibaba/innodb-java-reader/).
 
 ```
