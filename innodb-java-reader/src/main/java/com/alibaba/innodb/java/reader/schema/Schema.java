@@ -56,16 +56,15 @@ public class Schema {
 
   /**
    * Table DDL charset, for example can be latin, utf8, utf8mb4.
-   * //TODO use table charset for every column.
    */
   private String tableCharset = DEFAULT_MYSQL_CHARSET;
 
   /**
-   * // TODO this is a workaround.
+   * //TODO make sure this is the right way to implement
    * For example, if table charset set to utf8, then it will consume up to 3 bytes for one character.
    * if it is utf8mb4, then it must be set to 4.
    */
-  private int maxBytesForOneChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
+  private int maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
 
   public Schema() {
     this.columnList = new ArrayList<>();
@@ -114,6 +113,7 @@ public class Schema {
     checkNotNull(column, "column should not be null");
     checkArgument(StringUtils.isNotEmpty(column.getName()), "column name is empty");
     checkArgument(StringUtils.isNotEmpty(column.getType()), "column type is empty");
+    checkArgument(!nameToFieldMap.containsKey(column.getName()), "duplicate column name");
     if (column.isPrimaryKey()) {
       checkState(primaryKeyColumn == null, "primary key is already defined");
       primaryKeyColumn = column;
@@ -125,7 +125,7 @@ public class Schema {
     if (column.isVariableLength()) {
       variableLengthColumnList.add(column);
       variableLengthColumnNum++;
-    } else if (CHAR.equals(column.getType()) && maxBytesForOneChar > 1) {
+    } else if (CHAR.equals(column.getType()) && maxBytesPerChar > 1) {
       // 多字符集则设置为varchar的读取方式
       column.setVarLenChar(true);
       variableLengthColumnList.add(column);
@@ -173,16 +173,16 @@ public class Schema {
   public Schema setTableCharset(String tableCharset) {
     this.tableCharset = tableCharset;
     this.charset = CharsetMapping.getJavaEncodingForMysqlCharset(tableCharset);
-    this.maxBytesForOneChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
+    this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
     return this;
   }
 
-  public int getMaxBytesForOneChar() {
-    return maxBytesForOneChar;
+  public int getMaxBytesPerChar() {
+    return maxBytesPerChar;
   }
 
-  public Schema setMaxBytesForOneChar(int maxBytesForOneChar) {
-    this.maxBytesForOneChar = maxBytesForOneChar;
+  public Schema setMaxBytesPerChar(int maxBytesPerChar) {
+    this.maxBytesPerChar = maxBytesPerChar;
     return this;
   }
 
@@ -214,7 +214,7 @@ public class Schema {
       sb.append(multiLine ? "\n" : ",");
       sb.append(column.getName()).append(" ");
       sb.append(column.getType());
-      //TODO add extra info like maxVarLen or decimal scale and precision
+      //TODO add extra info like maxVarLen, time precision, and decimal precision and scale
       sb.append(" ");
       if (!column.isNullable()) {
         sb.append("NOT NULL ");

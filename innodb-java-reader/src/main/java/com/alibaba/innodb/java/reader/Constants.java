@@ -26,31 +26,6 @@ public interface Constants {
 
   String CONST_UNSIGNED_LOWER = "unsigned";
 
-  interface Symbol {
-    /**
-     * 空
-     */
-    String EMPTY = "";
-    /**
-     * 空格
-     */
-    String SPACE = " ";
-    /**
-     * 逗号
-     */
-    String COMMA = ",";
-    /**
-     * 左小括号
-     */
-    String LEFT_PARENTHESES = "(";
-    /**
-     * 右小括号
-     */
-    String RIGHT_PARENTHESES = ")";
-    /**
-     * BACKTICK
-     */
-    String BACKTICK = "`";
-  }
+  int PRECISION_LIMIT = 5;
 
 }

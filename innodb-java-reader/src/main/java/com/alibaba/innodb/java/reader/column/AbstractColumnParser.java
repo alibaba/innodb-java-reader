@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.column;
 
+import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 
 /**
@@ -13,7 +14,7 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 public abstract class AbstractColumnParser<V> implements ColumnParser<V> {
 
   @Override
-  public V readFrom(SliceInput input) {
+  public V readFrom(SliceInput input, int len) {
     throw new UnsupportedOperationException();
   }
 
@@ -23,7 +24,12 @@ public abstract class AbstractColumnParser<V> implements ColumnParser<V> {
   }
 
   @Override
-  public V readFrom(SliceInput input, int len) {
+  public V readFrom(SliceInput input, Column column) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Class<?> typeClass() {
     throw new UnsupportedOperationException();
   }
 

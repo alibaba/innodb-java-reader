@@ -4,16 +4,18 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.exception.ParseException;
+import com.alibaba.innodb.java.reader.schema.Column;
+import com.alibaba.innodb.java.reader.util.MysqlDecimal;
 import com.alibaba.innodb.java.reader.util.SliceInput;
+import com.alibaba.innodb.java.reader.util.Symbol;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.innodb.java.reader.Constants.PRECISION_LIMIT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BYTE;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_INT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_LONG;
@@ -30,10 +32,8 @@ public class ColumnFactory {
   private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP;
 
   /**
-   * The max ulonglong - 0x ff ff ff ff ff ff ff ff
+   * Prevent instantiation
    */
-  public static final BigInteger BIGINT_MAX_VALUE = new BigInteger("18446744073709551615");
-
   private ColumnFactory() {
   }
 
@@ -62,7 +62,7 @@ public class ColumnFactory {
   private static final ColumnParser<Integer> UNSIGNED_TINYINT = new AbstractColumnParser<Integer>() {
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
       return input.readUnsignedByte();
     }
 
@@ -72,10 +72,30 @@ public class ColumnFactory {
     }
   };
 
+  /**
+   * For example,
+   * <ul>
+   * <li> Decimal: -128 </li>
+   * <li> Hexadecimal: 0x80 </li>
+   * </ul>
+   * By the following operation, we can get the right result. (no signed extension)
+   * <pre>
+   *   0x00000080 ^ 0xffffff00 = 0xffffff80
+   * </pre>
+   * <p>
+   * <ul>
+   * <li> Decimal: -15 </li>
+   * <li> Hexadecimal: 0xf1 </li>
+   * </ul>
+   * By the following operation, we can get the right result. (no signed extension)
+   * <pre>
+   *   0x000000f1 ^ 0xffffff00 = 0xfffffff1
+   * </pre>
+   */
   private static final ColumnParser<Integer> TINYINT = new AbstractColumnParser<Integer>() {
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
       return input.readByte() ^ (-1 << (SIZE_OF_BYTE * 8 - 1));
     }
 
@@ -88,7 +108,7 @@ public class ColumnFactory {
   private static final ColumnParser<Integer> UNSIGNED_SMALLINT = new AbstractColumnParser<Integer>() {
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
       return input.readUnsignedShort();
     }
 
@@ -101,7 +121,7 @@ public class ColumnFactory {
   private static final ColumnParser<Integer> SMALLINT = new AbstractColumnParser<Integer>() {
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
       return input.readShort() ^ (-1 << (SIZE_OF_SHORT * 8 - 1));
     }
 
@@ -114,7 +134,7 @@ public class ColumnFactory {
   private static final ColumnParser<Integer> UNSIGNED_MEDIUMINT = new AbstractColumnParser<Integer>() {
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
       return input.readUnsigned3BytesInt();
     }
 
@@ -125,6 +145,7 @@ public class ColumnFactory {
   };
 
   /**
+   * Decoding method works the same way as inline function <code>sint3korr</code> from <code>my_byteorder.h</code>
    * <pre>
    * static inline int32 sint3korr(const uchar *A)
    * {
@@ -140,15 +161,14 @@ public class ColumnFactory {
    *     ;
    * }
    * </pre>
-   *
-   * @see my_byteorder.h
    */
   private static final ColumnParser<Integer> MEDIUMINT = new AbstractColumnParser<Integer>() {
 
     private static final int CONST_0X800000 = 0x800000;
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
+      // read signed value
       int v = (input.read3BytesInt() ^ (-1 << (SIZE_OF_MEDIUMINT * 8 - 1))) & 0xffffff;
       if ((v & CONST_0X800000) != 0) {
         v = (int) ((255L << 24) | v);
@@ -165,7 +185,7 @@ public class ColumnFactory {
   private static final ColumnParser<Long> UNSIGNED_INT = new AbstractColumnParser<Long>() {
 
     @Override
-    public Long readFrom(SliceInput input) {
+    public Long readFrom(SliceInput input, Column column) {
       return input.readUnsignedInt();
     }
 
@@ -178,7 +198,7 @@ public class ColumnFactory {
   private static final ColumnParser<Integer> INT = new AbstractColumnParser<Integer>() {
 
     @Override
-    public Integer readFrom(SliceInput input) {
+    public Integer readFrom(SliceInput input, Column column) {
       return input.readInt() ^ (-1 << (SIZE_OF_INT * 8 - 1));
     }
 
@@ -191,9 +211,8 @@ public class ColumnFactory {
   private static final ColumnParser<BigInteger> UNSIGNED_BIGINT = new AbstractColumnParser<BigInteger>() {
 
     @Override
-    public BigInteger readFrom(SliceInput input) {
-      long long64 = input.readLong();
-      return (long64 >= 0) ? BigInteger.valueOf(long64) : BIGINT_MAX_VALUE.add(BigInteger.valueOf(1 + long64));
+    public BigInteger readFrom(SliceInput input, Column column) {
+      return input.readUnsignedLong();
     }
 
     @Override
@@ -205,7 +224,7 @@ public class ColumnFactory {
   private static final ColumnParser<Long> BIGINT = new AbstractColumnParser<Long>() {
 
     @Override
-    public Long readFrom(SliceInput input) {
+    public Long readFrom(SliceInput input, Column column) {
       return input.readLong() ^ (-1L << (SIZE_OF_LONG * 8 - 1));
     }
 
@@ -309,8 +328,6 @@ public class ColumnFactory {
   };
 
   /**
-   * //TODO 暂不支持Fraction
-   *
    * As of MySQL 5.6.4 the TIME, TIMESTAMP, and DATETIME types can have a fractional seconds part.
    * Storage for these types is big endian (for memcmp() compatibility purposes), with the nonfractional
    * part followed by the fractional part. (Storage and encoding for the YEAR and DATE types remains unchanged.)
@@ -358,16 +375,11 @@ public class ColumnFactory {
    * fptr.print());
    * }
    */
-  private static final ColumnParser<Date> DATETIME2 = new AbstractColumnParser<Date>() {
+  private static final ColumnParser<String> DATETIME2 = new AbstractColumnParser<String>() {
 
     @Override
-    public Date readFrom(SliceInput input) {
-      byte[] data = input.readByteArray(5);
-      long packedValue = ((long) data[4] & 0xff)
-          | ((long) data[3] & 0xff) << 8
-          | ((long) data[2] & 0xff) << 16
-          | ((long) data[1] & 0xff) << 24
-          | ((long) data[0] & 0xff) << 32;
+    public String readFrom(SliceInput input, Column column) {
+      long packedValue = input.unpackBigendian(5);
       int sec = (int) (packedValue & 0x3fL);
       packedValue >>= 6;
       int min = (int) (packedValue & 0x3fL);
@@ -379,42 +391,85 @@ public class ColumnFactory {
       int yrMo = (int) (packedValue & 0x01ffffL);
       int month = yrMo % 13;
       int year = yrMo / 13;
-      Calendar calendar = Calendar.getInstance();
-      calendar.clear();
-      calendar.set(Calendar.YEAR, year);
-      calendar.set(Calendar.MONTH, month - 1);
-      calendar.set(Calendar.DATE, day);
-      calendar.set(Calendar.HOUR, hour);
-      calendar.set(Calendar.MINUTE, min);
-      calendar.set(Calendar.SECOND, sec);
-      Date date = calendar.getTime();
-      return date;
+      String fractionStr = getFractionString(input, column);
+      return String.format("%04d-%02d-%02d %02d:%02d:%02d%s", year, month, day, hour, min, sec, fractionStr);
     }
 
     @Override
     public Class<?> typeClass() {
-      return Date.class;
+      return String.class;
     }
   };
 
-  private static final ColumnParser<Timestamp> TIMESTAMP = new AbstractColumnParser<Timestamp>() {
+  private static final ColumnParser<String> TIMESTAMP2 = new AbstractColumnParser<String>() {
 
     @Override
-    public Timestamp readFrom(SliceInput input) {
-      long timestamp = input.readUnsignedInt();
-      return new Timestamp(timestamp * 1000L);
+    public String readFrom(SliceInput input, Column column) {
+      long packedValue = input.unpackBigendian(4);
+      String fractionStr = getFractionString(input, column);
+      return String.format("%d%s", packedValue, fractionStr);
     }
 
     @Override
     public Class<?> typeClass() {
-      return Timestamp.class;
+      return String.class;
+    }
+  };
+
+  private static final ColumnParser<String> TIME2 = new AbstractColumnParser<String>() {
+
+    @Override
+    public String readFrom(SliceInput input, Column column) {
+      int prec = column.getPrecision();
+      int fspSize = (1 + prec) / 2;
+      int bufSize = 3 + fspSize;
+      int fspBits = fspSize * 8;
+      int fspMask = (1 << fspBits) - 1;
+      int signPos = fspBits + 23;
+      long signVal = 1L << signPos;
+
+      /* Read the integer time from the buffer */
+      long packedValue = input.unpackBigendian(bufSize);
+
+      boolean isNegative;
+      /* Factor it out */
+      if ((packedValue & signVal) == signVal) {
+        isNegative = false;
+      } else {
+        isNegative = true;
+        // two's complement
+        packedValue = signVal - packedValue;
+      }
+      int usec = (int) (packedValue & fspMask);
+      packedValue >>= fspBits;
+      int second = (int) (packedValue & 0x3FL);
+      packedValue >>= 6;
+      int minute = (int) (packedValue & 0x3FL);
+      packedValue >>= 6;
+      int hour = (int) (packedValue & 0x03FFL);
+      packedValue >>= 10;
+
+      while (prec < PRECISION_LIMIT) {
+        usec *= 100;
+        prec += 2;
+      }
+
+      String fractionStr = column.getPrecision() > 0
+          ? String.format(".%06d", usec).substring(0, column.getPrecision() + 1) : Symbol.EMPTY;
+
+      return String.format("%s%02d:%02d:%02d%s", isNegative ? "-" : "", hour, minute, second, fractionStr);
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return String.class;
     }
   };
 
   private static final ColumnParser<Short> YEAR = new AbstractColumnParser<Short>() {
 
     @Override
-    public Short readFrom(SliceInput input) {
+    public Short readFrom(SliceInput input, Column column) {
       return (short) (input.readUnsignedByte() + 1900);
     }
 
@@ -424,32 +479,27 @@ public class ColumnFactory {
     }
   };
 
-  private static final ColumnParser<Date> DATE = new AbstractColumnParser<Date>() {
+  private static final ColumnParser<String> DATE = new AbstractColumnParser<String>() {
 
     @Override
-    public Date readFrom(SliceInput input) {
+    public String readFrom(SliceInput input, Column column) {
       int encodedDate = (input.read3BytesInt() ^ (-1 << (SIZE_OF_MEDIUMINT * 8 - 1))) & 0xffffff;
       int day = (encodedDate & 31);
       int month = (encodedDate >> 5 & 15);
       int year = (encodedDate >> 9);
-      Calendar calendar = Calendar.getInstance();
-      calendar.clear();
-      calendar.set(Calendar.YEAR, year);
-      calendar.set(Calendar.MONTH, month - 1);
-      calendar.set(Calendar.DATE, day);
-      return calendar.getTime();
+      return String.format("%04d-%02d-%02d", year, month, day);
     }
 
     @Override
     public Class<?> typeClass() {
-      return Date.class;
+      return String.class;
     }
   };
 
   private static final ColumnParser<Float> FLOAT = new AbstractColumnParser<Float>() {
 
     @Override
-    public Float readFrom(SliceInput input) {
+    public Float readFrom(SliceInput input, Column column) {
       return input.readFloat();
     }
 
@@ -462,7 +512,7 @@ public class ColumnFactory {
   private static final ColumnParser<Double> DOUBLE = new AbstractColumnParser<Double>() {
 
     @Override
-    public Double readFrom(SliceInput input) {
+    public Double readFrom(SliceInput input, Column column) {
       return input.readDouble();
     }
 
@@ -471,6 +521,58 @@ public class ColumnFactory {
       return Double.class;
     }
   };
+
+  private static final ColumnParser<BigDecimal> DECIMAL = new AbstractColumnParser<BigDecimal>() {
+
+    @Override
+    public BigDecimal readFrom(SliceInput input, Column column) {
+      int scale = column.getScale();
+      int precision = column.getPrecision();
+      MysqlDecimal myDecimal = new MysqlDecimal(precision, scale);
+      byte[] decBuf = input.readByteArray(myDecimal.getBinSize());
+      myDecimal.parse(decBuf);
+      return myDecimal.toDecimal();
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return BigDecimal.class;
+    }
+  };
+
+  private static final ColumnParser<Boolean> BOOLEAN = new AbstractColumnParser<Boolean>() {
+
+    @Override
+    public Boolean readFrom(SliceInput input, Column column) {
+      return (input.readByte() & 0x01) == 1;
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return Boolean.class;
+    }
+  };
+
+  private static String getFractionString(SliceInput input, Column column) {
+    if (column.getPrecision() > 0) {
+      int fraction = readFraction(input, column.getPrecision());
+      return String.format(".%06d", fraction).substring(0, column.getPrecision() + 1);
+    }
+    return Symbol.EMPTY;
+  }
+
+  private static int readFraction(SliceInput input, int precision) {
+    long usec = 0;
+    if (precision > 0) {
+      int bufsz = (1 + precision) / 2;
+      usec = input.unpackBigendian(bufsz);
+      while (precision < PRECISION_LIMIT) {
+        usec *= 100;
+        precision += 2;
+      }
+    }
+    return (int) usec;
+  }
 
   static {
     Map<String, ColumnParser<?>> typeToColumnParserMap = new HashMap<>();
@@ -497,11 +599,16 @@ public class ColumnFactory {
     typeToColumnParserMap.put(ColumnType.MEDIUMBLOB, BLOB);
     typeToColumnParserMap.put(ColumnType.LONGBLOB, BLOB);
     typeToColumnParserMap.put(ColumnType.DATETIME, DATETIME2);
-    typeToColumnParserMap.put(ColumnType.TIMESTAMP, TIMESTAMP);
+    typeToColumnParserMap.put(ColumnType.TIMESTAMP, TIMESTAMP2);
+    typeToColumnParserMap.put(ColumnType.TIME, TIME2);
     typeToColumnParserMap.put(ColumnType.YEAR, YEAR);
     typeToColumnParserMap.put(ColumnType.DATE, DATE);
     typeToColumnParserMap.put(ColumnType.FLOAT, FLOAT);
     typeToColumnParserMap.put(ColumnType.DOUBLE, DOUBLE);
+    typeToColumnParserMap.put(ColumnType.DECIMAL, DECIMAL);
+    typeToColumnParserMap.put(ColumnType.BOOL, BOOLEAN);
+    typeToColumnParserMap.put(ColumnType.BOOLEAN, BOOLEAN);
     TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);
   }
+
 }

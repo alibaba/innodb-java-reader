@@ -15,6 +15,7 @@ import com.alibaba.innodb.java.reader.page.fsphdr.FspHdrXes;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
+import com.alibaba.innodb.java.reader.schema.Schema;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import freemarker.template.TemplateException;
@@ -62,6 +63,8 @@ public class InnodbReaderBootstrap {
 
   public static final JsonMapper JSON_MAPPER = JsonMapper.buildNormalMapper();
 
+  private static boolean SHOW_HEADER = false;
+
   public static void main(String[] arguments) {
     CommandLineParser parser = new DefaultParser();
 
@@ -72,6 +75,7 @@ public class InnodbReaderBootstrap {
     options.addOption("s", "create-table-sql-file-path", true, "create table sql file path by running SHOW CREATE TABLE <table_name>");
     options.addOption("json", "json-style", false, "set to true if you would like to show page info in json format style");
     options.addOption("jsonpretty", "json-pretty-style", false, "set to true if you would like to show page info in json pretty format style");
+    options.addOption("showheader", "show-header", false, "set to true if you want to show table header");
     options.addOption("args", true, "arguments");
 
     String command = null;
@@ -123,6 +127,9 @@ public class InnodbReaderBootstrap {
       }
       if (line.hasOption("json-pretty-style")) {
         jsonPrettyStyle = true;
+      }
+      if (line.hasOption("show-header")) {
+        SHOW_HEADER = true;
       }
 
       CommandType commandType = EnumUtils.getEnum(CommandType.class, command.replace("-", "_").toUpperCase());
@@ -185,6 +192,7 @@ public class InnodbReaderBootstrap {
   private static void queryAll(String ibdFilePath, String createTableSql) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
+      showHeaderIfSet(reader);
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
@@ -197,6 +205,7 @@ public class InnodbReaderBootstrap {
   private static void queryByPageNumber(String ibdFilePath, String createTableSql, long pageNumber) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
+      showHeaderIfSet(reader);
       List<GenericRecord> recordList = reader.queryByPageNumber(pageNumber);
       StringBuilder b = new StringBuilder();
       if (CollectionUtils.isNotEmpty(recordList)) {
@@ -210,6 +219,7 @@ public class InnodbReaderBootstrap {
   private static void queryByPrimaryKey(String ibdFilePath, String createTableSql, String primaryKey) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
+      showHeaderIfSet(reader);
       GenericRecord record = reader.queryByPrimaryKey(primaryKey);
       StringBuilder b = new StringBuilder();
       if (record != null) {
@@ -221,6 +231,7 @@ public class InnodbReaderBootstrap {
   private static void rangeQueryByPrimaryKey(String ibdFilePath, String createTableSql, Object lowerInclusiveKey, Object upperExclusiveKey) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
+      showHeaderIfSet(reader);
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
@@ -337,6 +348,13 @@ public class InnodbReaderBootstrap {
       reader.open();
       System.out.println("Number of pages is " + reader.getNumOfPages());
       System.out.println("Index page filling rate is " + reader.getAllIndexPageFillingRate());
+    }
+  }
+
+  private static void showHeaderIfSet(TableReader reader) {
+    if (SHOW_HEADER) {
+      Schema schema = reader.getSchema();
+      System.out.println(schema.getColumnNames().stream().collect(Collectors.joining(",")));
     }
   }
 

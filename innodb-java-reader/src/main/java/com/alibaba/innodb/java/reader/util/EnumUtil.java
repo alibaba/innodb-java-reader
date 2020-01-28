@@ -43,7 +43,7 @@ public class EnumUtil {
     return result;
   }
 
-  public static <T> T invokeStaticMethod(Class<?> clazz, String methodName) {
+  private static <T> T invokeStaticMethod(Class<?> clazz, String methodName) {
     Method method;
     try {
       method = clazz.getDeclaredMethod(methodName);
@@ -57,7 +57,7 @@ public class EnumUtil {
     return invokeMethod(method, (Object) null, null);
   }
 
-  public static <T> T invokeMethod(Method method, Object target, Object... args) {
+  private static <T> T invokeMethod(Method method, Object target, Object... args) {
     if (method == null) {
       return null;
     }

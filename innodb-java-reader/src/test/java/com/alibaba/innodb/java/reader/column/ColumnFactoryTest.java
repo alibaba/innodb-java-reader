@@ -2,9 +2,8 @@ package com.alibaba.innodb.java.reader.column;
 
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.util.Date;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -38,12 +37,16 @@ public class ColumnFactoryTest {
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.BLOB).getName(), is(byte[].class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.MEDIUMBLOB).getName(), is(byte[].class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.LONGBLOB).getName(), is(byte[].class.getName()));
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.DATETIME).getName(), is(Date.class.getName()));
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.TIMESTAMP).getName(), is(Timestamp.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.DATETIME).getName(), is(String.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.TIMESTAMP).getName(), is(String.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.TIME).getName(), is(String.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.YEAR).getName(), is(Short.class.getName()));
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.DATE).getName(), is(Date.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.DATE).getName(), is(String.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.FLOAT).getName(), is(Float.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.DOUBLE).getName(), is(Double.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.DECIMAL).getName(), is(BigDecimal.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.BOOL).getName(), is(Boolean.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.BOOLEAN).getName(), is(Boolean.class.getName()));
   }
 
 }

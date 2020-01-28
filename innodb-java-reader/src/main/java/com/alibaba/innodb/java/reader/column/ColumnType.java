@@ -18,6 +18,7 @@ public final class ColumnType {
   public static final String BIT = "BIT";
   public static final String BOOL = "BOOL";
   public static final String BOOLEAN = "BOOLEAN";
+  public static final String ENUM = "ENUM";
 
   public static final String UNSIGNED_TINYINT = "TINYINT UNSIGNED";
   public static final String UNSIGNED_SMALLINT = "SMALLINT UNSIGNED";

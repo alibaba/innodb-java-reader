@@ -53,9 +53,10 @@ Supported column types are listed below.
 
 | Type | Support column types |
 | ---- | -------------------- |
-| Numeric | TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE |       |
+| Numeric | TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL |
 | String and Binary | CHAR, VARCHAR, BINARY, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT |
-| Date and Time | DATETIME, TIMESTAMP, YEAR, DATE                |
+| Date and Time | DATETIME, TIMESTAMP, TIME *(support precision)*, YEAR, DATE |
+| Other | BOOL, BOOLEAN |
 
 ## 4. Quickstart
 
@@ -597,7 +598,6 @@ Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar
 
 ## 8 Future works
 
-* Support all data types.
 * Support MySQL 8.0 newly introduced LOB page.
 * Support multiple columns primary key and default 6 bytes ROW ID if no primary key is defined by user.
 * Look up and range query by secondary key.

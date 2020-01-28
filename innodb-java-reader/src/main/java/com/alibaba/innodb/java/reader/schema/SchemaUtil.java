@@ -7,13 +7,13 @@ import com.google.common.base.Joiner;
 
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
 
-import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.create.table.Index;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,44 +35,45 @@ public class SchemaUtil {
     try {
       log.debug("sql is {}", sql);
       stmt = (CreateTable) CCJSqlParserUtil.parse(sql);
-    } catch (JSQLParserException e) {
+      checkNotNull(stmt, "CreateTable statement can not be null");
+      Schema schema = new Schema();
+      handleCharset(stmt, schema);
+      handleColumns(stmt, schema);
+      handleIndex(stmt, schema);
+
+      log.debug("origin sql:" + sql);
+      log.debug("parsed sql:" + stmt);
+      return schema;
+    } catch (Exception e) {
       throw new SqlParseException("parse create table sql " + sql + " failed " + e.getMessage(), e);
     }
-    checkNotNull(stmt, "CreateTable statement can not be null");
-    Schema schema = new Schema();
-    handleCharset(stmt, schema);
-    handleColumns(stmt, schema);
-    handleIndex(stmt, schema);
-
-    log.debug("origin sql:" + sql);
-    log.debug("parsed sql:" + stmt);
-    return schema;
   }
 
   private static void handleCharset(CreateTable stmt, Schema schema) {
     List<?> tableOptions = stmt.getTableOptionsStrings();
-    int indexOfCharset = tableOptions.indexOf("CHARSET");
-    if (indexOfCharset > 0) {
-      schema.setTableCharset((String) tableOptions.get(indexOfCharset + 2));
+    if (CollectionUtils.isNotEmpty(tableOptions)) {
+      int indexOfCharset = tableOptions.indexOf("CHARSET");
+      if (indexOfCharset > 0) {
+        schema.setTableCharset((String) tableOptions.get(indexOfCharset + 2));
+      }
     }
   }
 
   private static void handleIndex(CreateTable stmt, Schema schema) {
     List<Index> indices = stmt.getIndexes();
-    if (CollectionUtils.isEmpty(indices)) {
-      throw new SqlParseException("no indices found, there is at least on primary key index");
-    }
-    for (Index index : indices) {
-      if ("PRIMARY KEY".equals(index.getType().toUpperCase())) {
-        List<String> colNames = index.getColumnsNames();
-        if (CollectionUtils.isEmpty(colNames) || colNames.size() > 1) {
-          throw new SqlParseException("only one column supported for primary key");
-        }
-        String pkColumnName = colNames.get(0).replace("`", "");
-        if (schema.getColumnNames().contains(pkColumnName)) {
-          Column pk = schema.getField(pkColumnName).getColumn();
-          pk.setPrimaryKey(true);
-          schema.setPrimaryKeyColumn(pk);
+    if (CollectionUtils.isNotEmpty(indices)) {
+      for (Index index : indices) {
+        if ("PRIMARY KEY".equals(index.getType().toUpperCase())) {
+          List<String> colNames = index.getColumnsNames();
+          if (CollectionUtils.isEmpty(colNames) || colNames.size() > 1) {
+            throw new SqlParseException("only one column supported for primary key currently");
+          }
+          String pkColumnName = colNames.get(0).replace("`", "");
+          if (schema.getColumnNames().contains(pkColumnName)) {
+            Column pk = schema.getField(pkColumnName).getColumn();
+            pk.setPrimaryKey(true);
+            schema.setPrimaryKeyColumn(pk);
+          }
         }
       }
     }
@@ -86,23 +87,30 @@ public class SchemaUtil {
     for (ColumnDefinition col : stmt.getColumnDefinitions()) {
       Column column = new Column();
       column.setName(col.getColumnName());
-      column.setType(col.getColDataType().getDataType());
       List<String> argList = col.getColDataType().getArgumentsStringList();
       if (CollectionUtils.isNotEmpty(argList)) {
-        if (argList.size() > 1) {
-          throw new SqlParseException("column " + col.getColumnName() + " contains more than one argument");
+        if (argList.size() > 2) {
+          throw new SqlParseException("column " + col.getColumnName() + " contains more than two argument, " + argList);
         }
-        column.setType(column.getType() + "(" + argList.get(0) + ")");
+        column.setType(col.getColDataType().getDataType() + "(" + argList.stream().collect(Collectors.joining(",")) + ")");
+      } else {
+        column.setType(col.getColDataType().getDataType());
       }
+      if (StringUtils.isNotEmpty(col.getColDataType().getCharacterSet())) {
+        column.setCharset(col.getColDataType().getCharacterSet());
+      }
+      column.setNullable(true);
       if (col.getColumnSpecStrings() != null) {
         List<String> specList = col.getColumnSpecStrings().stream().map(String::toUpperCase).collect(Collectors.toList());
         if (specList.contains("UNSIGNED")) {
           column.setType(column.getType() + " UNSIGNED");
         }
-        if (Joiner.on(" ").join(specList).contains("NOT NULL")) {
+        String specString = Joiner.on(" ").join(specList);
+        if (specString.contains("NOT NULL")) {
           column.setNullable(false);
-        } else {
-          column.setNullable(true);
+        }
+        if (specString.contains("PRIMARY KEY")) {
+          column.setPrimaryKey(true);
         }
       }
       schema.addColumn(column);

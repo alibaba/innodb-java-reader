@@ -244,6 +244,10 @@ public class TableReader implements Closeable {
     return indexService.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
   }
 
+  public Schema getSchema() {
+    return schema;
+  }
+
   @Override
   public void close() {
     try {

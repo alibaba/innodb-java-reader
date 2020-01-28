@@ -24,6 +24,8 @@ import com.alibaba.innodb.java.reader.service.StorageService;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -36,9 +38,6 @@ import java.util.function.Predicate;
 
 import lombok.extern.slf4j.Slf4j;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkPositionIndex;
-import static com.google.common.base.Preconditions.checkState;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BODY;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_REC_HEADER;
 import static com.alibaba.innodb.java.reader.column.ColumnType.BLOB_TEXT_TYPES;
@@ -52,6 +51,9 @@ import static com.alibaba.innodb.java.reader.util.Utils.MAX;
 import static com.alibaba.innodb.java.reader.util.Utils.MIN;
 import static com.alibaba.innodb.java.reader.util.Utils.castCompare;
 import static com.alibaba.innodb.java.reader.util.Utils.tryCastString;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkPositionIndex;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Index service implementation
@@ -377,7 +379,7 @@ public class IndexServiceImpl implements IndexService, Constants {
    * @param index      index page
    * @param targetKey  search target key
    * @return GenericRecord
-   * @see https://leetcode-cn.com/problems/search-insert-position
+   * @see <a href="https://leetcode-cn.com/problems/search-insert-position">search-insert-position on leetcode</a>
    */
   private GenericRecord binarySearchByDirectory(long pageNumber, Index index, Object targetKey) {
     checkNotNull(index);
@@ -496,7 +498,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     bodyInput.setPosition(primaryKeyPos);
     GenericRecord record = new GenericRecord(header, schema, pageNumber);
     String primaryKeyColumnType = schema.getPrimaryKeyColumn().getType();
-    Object primaryKey = ColumnFactory.getColumnParser(primaryKeyColumnType).readFrom(bodyInput);
+    Object primaryKey = ColumnFactory.getColumnParser(primaryKeyColumnType).readFrom(bodyInput, schema.getPrimaryKeyColumn());
     if (log.isDebugEnabled()) {
       log.debug("read record, pkPos={}, key={}, recordHeader={}, nullColumnNames={}, varLenArray={}",
           primaryKeyPos, primaryKey, header, nullColumnNames, Arrays.toString(varLenArray));
@@ -533,17 +535,17 @@ public class IndexServiceImpl implements IndexService, Constants {
             // only a 20-byte pointer to the overflow page.
             // if (varLenArray[varLenIdx] <= 768) {
             if (!overflowPageArray[varLenIdx]) {
-              Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, varLenArray[varLenIdx], schema.getCharset());
+              Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, varLenArray[varLenIdx], getColumnCharset(column));
               record.put(column.getName(), val);
             } else {
               handleOverflowPage(bodyInput, record, column, varLenArray[varLenIdx]);
             }
             varLenIdx++;
           } else if (column.isFixedLength()) {
-            Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, column.getMaxVarLen(), schema.getCharset());
+            Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, column.getLength(), getColumnCharset(column));
             record.put(column.getName(), val);
           } else {
-            Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput);
+            Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, column);
             record.put(column.getName(), val);
           }
         }
@@ -588,10 +590,10 @@ public class IndexServiceImpl implements IndexService, Constants {
   private boolean isTwoBytesLen(Column varColumn, int len) {
     int factor = 1;
     if (CHAR_TYPES.contains(varColumn.getType())) {
-      factor = schema.getMaxBytesForOneChar();
+      factor = schema.getMaxBytesPerChar();
     }
     return len > 127
-        && (BLOB_TEXT_TYPES.contains(varColumn.getType()) || (varColumn.getMaxVarLen() * factor) > 255);
+        && (BLOB_TEXT_TYPES.contains(varColumn.getType()) || (varColumn.getLength() * factor) > 255);
   }
 
   private void handleOverflowPage(SliceInput bodyInput, GenericRecord record, Column column, int varLen) {
@@ -608,7 +610,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     int varLenWithoutOffPagePointer = varLen - 20;
     Object val = null;
     if (varLenWithoutOffPagePointer > 0) {
-      val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, varLenWithoutOffPagePointer, schema.getCharset());
+      val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, varLenWithoutOffPagePointer, getColumnCharset(column));
     }
     OverflowPagePointer overflowPagePointer = OverflowPagePointer.fromSlice(bodyInput);
     StringBuilder sb = new StringBuilder(varLenWithoutOffPagePointer + (int) overflowPagePointer.getLength());
@@ -637,7 +639,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     int varLenWithoutOffPagePointer = varLen - 20;
     Object val = null;
     if (varLenWithoutOffPagePointer > 0) {
-      val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, 768, schema.getCharset());
+      val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, 768, getColumnCharset(column));
     }
     OverflowPagePointer overflowPagePointer = OverflowPagePointer.fromSlice(bodyInput);
     ByteBuffer buffer = ByteBuffer.allocate(varLenWithoutOffPagePointer + (int) overflowPagePointer.getLength());
@@ -656,6 +658,19 @@ public class IndexServiceImpl implements IndexService, Constants {
       log.debug("read overflow page {}, content length={}, is end? = {}", overflowPagePointer, content.length, !blob.hasNext());
     } while (blob.hasNext());
     record.put(column.getName(), buffer.array());
+  }
+
+  /**
+   * Get java encoding charset for column. If charset is defined in column, use it, or else use table java charset.
+   *
+   * @param column column
+   * @return charset
+   */
+  private String getColumnCharset(Column column) {
+    if (StringUtils.isNotEmpty(column.getCharset())) {
+      return column.getCharset();
+    }
+    return schema.getCharset();
   }
 
 }

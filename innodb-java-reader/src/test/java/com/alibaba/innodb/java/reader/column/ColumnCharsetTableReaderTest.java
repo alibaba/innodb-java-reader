@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
  * |  2 | 你好这里是哪里           |
  * |  3 | 我爱你                   |
  * |  4 | 千里之行始于足下         |
- * |  5 | 不积跬步无以至千         |
+ * |  5 | 不积跬步无以至千里         |
  * +----+--------------------------+
  * </pre>
  *
@@ -56,7 +56,7 @@ public class ColumnCharsetTableReaderTest extends AbstractTest {
     testTableCharsetUtf8mb4(IBD_FILE_BASE_PATH_MYSQL57 + "column/char/tb05.ibd");
   }
 
-  //FIXME varchar(9) for 9 chinese characters not working under mysql8?
+  //FIXME varchar(9) for 9 chinese characters not working under mysql8? maybe environment issue
   @Ignore
   @Test
   public void testTableCharsetUtf8mb4Mysql80() {
@@ -84,7 +84,6 @@ public class ColumnCharsetTableReaderTest extends AbstractTest {
       assertThat(recordList.get(3).get("id"), is(4));
       assertThat(recordList.get(3).get("a"), is("千里之行始于足下"));
 
-      // varchar(8)是字符集下的宽度
       assertThat(recordList.get(4).get("id"), is(5));
       assertThat(recordList.get(4).get("a"), is("不积跬步无以至千里"));
     }

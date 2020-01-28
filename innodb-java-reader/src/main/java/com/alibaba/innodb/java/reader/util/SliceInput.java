@@ -5,7 +5,10 @@ import com.alibaba.innodb.java.reader.exception.ReaderException;
 import java.io.DataInput;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * SliceInput
@@ -13,6 +16,11 @@ import java.nio.ByteBuffer;
  * @author xu.zx
  */
 public final class SliceInput extends InputStream implements DataInput {
+
+  /**
+   * The max ulonglong - 0x ff ff ff ff ff ff ff ff
+   */
+  private static final BigInteger BIGINT_MAX_VALUE = new BigInteger("18446744073709551615");
 
   private final Slice slice;
 
@@ -66,15 +74,12 @@ public final class SliceInput extends InputStream implements DataInput {
 
   @Override
   public byte readByte() {
-    if (position == slice.length()) {
-      throw new IndexOutOfBoundsException();
-    }
     return slice.getByte(position++);
   }
 
   @Override
   public int readUnsignedByte() {
-    return (short) (readByte() & 0xFF);
+    return (short) (readByte() & 0xff);
   }
 
   @Override
@@ -106,15 +111,8 @@ public final class SliceInput extends InputStream implements DataInput {
     return v;
   }
 
-  /**
-   * Gets an unsigned 32-bit integer at the current {@code position}
-   * and increases the {@code position} by {@code 4} in this buffer.
-   *
-   * @return unsigned integer
-   * @throws IndexOutOfBoundsException if {@code this.available()} is less than {@code 4}
-   */
   public long readUnsignedInt() {
-    return readInt() & 0xFFFFFFFFL;
+    return readInt() & 0xffffffffL;
   }
 
   @Override
@@ -122,6 +120,12 @@ public final class SliceInput extends InputStream implements DataInput {
     long v = slice.getLong(position);
     position += 8;
     return v;
+  }
+
+  public BigInteger readUnsignedLong() {
+    long v = slice.getLong(position);
+    position += 8;
+    return (v >= 0) ? BigInteger.valueOf(v) : BIGINT_MAX_VALUE.add(BigInteger.valueOf(1 + v));
   }
 
   @Override
@@ -200,6 +204,38 @@ public final class SliceInput extends InputStream implements DataInput {
     int len = Math.min(length, available());
     position += len;
     return len;
+  }
+
+  /**
+   * static uint64 unpack_bigendian(const uchar* d, uint len)
+   * {
+   * assert(len <= 8);
+   * uint64 val = 0;
+   * int i = (int)len;
+   * int s = 0;
+   * while (i != 0)
+   * {
+   * i--;
+   * uint64 v = d[i];
+   * val += (v << s);
+   * s += 8;
+   * }
+   * return val;
+   * }
+   */
+  public long unpackBigendian(int len) {
+    byte[] bytes = readByteArray(len);
+    checkArgument(len <= 8);
+    long val = 0;
+    int i = len;
+    int s = 0;
+    while (i != 0) {
+      i--;
+      long v = (bytes[i] & 0xffL);
+      val += (v << s);
+      s += 8;
+    }
+    return val;
   }
 
   @Override
