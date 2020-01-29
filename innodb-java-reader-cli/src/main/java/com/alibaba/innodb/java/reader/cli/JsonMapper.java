@@ -15,14 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JsonMapper {
 
-  /**
-   * ObjectMapper
-   */
   private ObjectMapper mapper;
 
-  /**
-   * Creates a new instance of JsonMapper.
-   */
   public JsonMapper(Inclusion inclusion) {
     mapper = new ObjectMapper();
     mapper.setSerializationInclusion(inclusion);
@@ -31,9 +25,6 @@ public class JsonMapper {
     mapper.configure(DeserializationConfig.Feature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
   }
 
-  /**
-   * contains all fields.
-   */
   public static JsonMapper buildNormalMapper() {
     return new JsonMapper(Inclusion.ALWAYS);
   }

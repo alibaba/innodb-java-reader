@@ -7,8 +7,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 /**
- * Utility class which provides a method for attempting to directly unmap a {@link MappedByteBuffer} rather than
- * waiting for the JVM & OS eventually unmap.</p>
+ * Utility class which provides a method for attempting to directly unmap a MappedByteBuffer rather than
+ * waiting for the JVM and OS eventually unmap.
  */
 public class MMapUtil {
 
@@ -20,7 +20,7 @@ public class MMapUtil {
   }
 
   /**
-   * http://svn.apache.org/repos/asf/lucene/dev/trunk/lucene/src/java/org/apache/lucene/store/MMapDirectory.java
+   * <a href="http://svn.apache.org/repos/asf/lucene/dev/trunk/lucene/src/java/org/apache/lucene/store/MMapDirectory.java">MMapDirectory.java</a>
    * <code>true</code>, if this platform supports unmapping mmapped files.
    */
   public static final boolean UNMAP_SUPPORTED;
@@ -43,9 +43,10 @@ public class MMapUtil {
 
   /**
    * Try to unmap the given {@link MappedByteBuffer}. This method enables the workaround for unmapping the buffers from
-   * address space after closing {@link IndexInput}, that is mentioned in the bug report. This hack may fail on
+   * address space after closing IndexInput, that is mentioned in the bug report. This hack may fail on
    * non-Sun JVMs. It forcefully unmaps the buffer on close by using an undocumented internal cleanup functionality.
    *
+   * @param theBuffer buffer
    * @return <code>true</code> if unmap was successful, <code>false</code> if unmap is not supported by the JVM or if
    * there was an exception while trying to unmap.
    */

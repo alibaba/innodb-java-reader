@@ -206,23 +206,6 @@ public final class SliceInput extends InputStream implements DataInput {
     return len;
   }
 
-  /**
-   * static uint64 unpack_bigendian(const uchar* d, uint len)
-   * {
-   * assert(len <= 8);
-   * uint64 val = 0;
-   * int i = (int)len;
-   * int s = 0;
-   * while (i != 0)
-   * {
-   * i--;
-   * uint64 v = d[i];
-   * val += (v << s);
-   * s += 8;
-   * }
-   * return val;
-   * }
-   */
   public long unpackBigendian(int len) {
     byte[] bytes = readByteArray(len);
     checkArgument(len <= 8);

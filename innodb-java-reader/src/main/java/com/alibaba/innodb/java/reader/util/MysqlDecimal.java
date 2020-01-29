@@ -162,6 +162,9 @@ public class MysqlDecimal {
 
   /**
    * 解析小数部分
+   *
+   * @param buf byte array
+   * @param pos position
    */
   private void parseFracSection(byte[] buf, Position pos) {
     for (int i = 0; i < fracDecSize; i++) {
@@ -176,6 +179,9 @@ public class MysqlDecimal {
 
   /**
    * 解析整数部分
+   *
+   * @param buf byte array
+   * @param pos position
    */
   private void parseIntSection(byte[] buf, Position pos) {
     int startIndex = 0;
@@ -192,6 +198,8 @@ public class MysqlDecimal {
 
   /**
    * 转化成BigDecimal
+   *
+   * @return BigDecimal
    */
   public BigDecimal toDecimal() {
     SimpleStringBuilder sb = new SimpleStringBuilder(calDecimalStringLength());
@@ -205,6 +213,8 @@ public class MysqlDecimal {
 
   /**
    * 转化小数部分为字符数组
+   *
+   * @param sb SimpleStringBuilder
    */
   private void convertFracSection2CharArray(SimpleStringBuilder sb) {
     if (fracLength > 0) {
@@ -220,6 +230,8 @@ public class MysqlDecimal {
 
   /**
    * 转化整数部分为字符数组
+   *
+   * @param sb SimpleStringBuilder
    */
   private void convertIntSection2CharArray(SimpleStringBuilder sb) {
     int startIndex = 0;
@@ -238,6 +250,8 @@ public class MysqlDecimal {
 
   /**
    * 计算decimal转化成字符数组的长度
+   *
+   * @return length
    */
   private int calDecimalStringLength() {
     int len = intLength;
@@ -254,6 +268,10 @@ public class MysqlDecimal {
 
   /**
    * 把一个整数转化成指定长度的char数组，如果整数的总位数小于指定的长度，在高位用0补齐
+   *
+   * @param value    value
+   * @param digitLen digitLen
+   * @param sb       SimpleStringBuilder
    */
   private void convertInt2Char(int value, int digitLen, final SimpleStringBuilder sb) {
     for (int i = digitLen - 1; i >= 0; i--) {
@@ -269,6 +287,7 @@ public class MysqlDecimal {
    * 根据指定的字节数读取int值，
    *
    * @param buf      大尾端描述
+   * @param pos      position
    * @param byteSize 必须是 1、2、3、4中的一个
    */
   private int readInt(final byte[] buf, final Position pos, final int byteSize) {
@@ -288,6 +307,9 @@ public class MysqlDecimal {
 
   /**
    * 检查用于描述decimal的int[]中的每个数值是有效的
+   *
+   * @param value    value
+   * @param digitLen digitLen
    */
   private void checkIntValue(int value, int digitLen) {
     if (value >= POWERS10[digitLen]) {
