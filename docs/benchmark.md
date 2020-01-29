@@ -34,7 +34,7 @@ MySQL:
 Table DDL:
 
 ```
-CREATE TABLE `product002` (
+CREATE TABLE `t` (
   `id` bigint(20) NOT NULL,
   `c1` bigint(20) DEFAULT '0',
   `c2` int(11) DEFAULT '0',
@@ -78,7 +78,7 @@ deleted_state: 0
 
 mysql> show table status like 't'\G;
 *************************** 1. row ***************************
-           Name: product002
+           Name: t
          Engine: InnoDB
         Version: 10
      Row_format: Compact
@@ -101,8 +101,8 @@ Max_data_length: 0
 ## Test case
 
 - 1) Run innodb-java-reader-cli.jar
-- 2) mysql -N -uroot -P3306 -e "select * from test.product002" > mysql-select-result.out
-- 3) mysqldump -uroot test product002 > mysqldump-result.out
+- 2) mysql -N -uroot -P3306 -e "select * from test.t" > mysql-select-result.out
+- 3) mysqldump -uroot test t > mysqldump-result.out
 
 ## Test result and conclusion
 
@@ -123,8 +123,8 @@ Innodb-java-reader is as good as mysqldump or even better. Also, it enables you 
 start_time=$(date +%s)
 
 java -jar /Users/xu/IdeaProjects/innodb-java-reader-ali-github/innodb-java-reader-cli/target/innodb-java-reader-cli.jar \
- -ibd-file-path /usr/local/mysql/data/test/product002.ibd \
- -create-table-sql-file-path product002.sql \
+ -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+ -create-table-sql-file-path t.sql \
  -c query-all -o innodb-java-reader-result.out
 
 end_time=$(date +%s)
@@ -139,7 +139,7 @@ md5 innodb-java-reader-result.out
 
 start_time=$(date +%s)
 
-mysql -N -uroot -P3306 -e "select * from test.product002" > mysql-select-result.out
+mysql -N -uroot -P3306 -e "select * from test.t" > mysql-select-result.out
 
 end_time=$(date +%s)
 cost_time=$[ $end_time-$start_time ]
@@ -153,7 +153,7 @@ md5 mysql-select-result.out
 
 start_time=$(date +%s)
 
-mysqldump -uroot test product002 > mysqldump-result.out
+mysqldump -uroot test t > mysqldump-result.out
 
 end_time=$(date +%s)
 cost_time=$[ $end_time-$start_time ]
