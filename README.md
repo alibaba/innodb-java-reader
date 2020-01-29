@@ -201,7 +201,8 @@ For example,
 Schema schema = new Schema()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
-        .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false));
+        .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
+        .setCharset("utf8mb4");
 ```
 
 ### 5.2 Creating TableReader
