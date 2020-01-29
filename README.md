@@ -41,13 +41,13 @@ To better understand how InnoDB stores data, I introduce the project for prototy
 * Enable `innodb_file_per_table` , which will create standalone `*.ibd` file for each table.
 * InnoDB file page size is set to 16K.
 * Be aware that if pages are not flushed from Buffer pool to disk, the result is inconsistent.
-* For tables to read, make sure one and only one column primary key is defined. It will not work if MySQL uses the first non-NULL unique key as primary key or a 48-bit hidden Row ID field as primary key. Multiple columns for primary key and secondary index will be supported in the future.
+* For tables to read, make sure one and only one column primary key is defined. Multiple columns for primary key and secondary index will be supported in the future.
 
 ## 3. Features
 
 The row format of a table determines how rows are physically stored, which in turn can affect the performance of queries and DML operations. `innodb-java-reader` supports `COMPACT` or `DYNAMIC` page format and can work smartly to choose the right page format decoder to read pages.
 
-`innodb-java-reader` supports operations like examining pages' information, looking up record by primary key, range querying by primary key, querying records by page number and generating page heatmap & filling rate.
+`innodb-java-reader` supports operations like examining pages' information, looking up record by primary key, range querying by primary key, querying records by page number, dumping table and generating page heatmap & filling rate.
 
 Supported column types are listed below.
 
@@ -68,7 +68,7 @@ Supported column types are listed below.
 <dependency>
   <groupId>com.alibaba</groupId>
   <artifactId>innodb-java-reader</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
@@ -79,46 +79,33 @@ To use snapshot version, please refer to this [doc](docs/how_to_use_snapshot_ver
 Here's an example to look up record in a table by primary key.
 
 ```
-String createTableSql = "CREATE TABLE `tb11`\n" +
-        "(`id` int(11) NOT NULL ,\n" +
-        "`a` bigint(20) NOT NULL,\n" +
-        "`b` varchar(64) NOT NULL,\n" +
-        "PRIMARY KEY (`id`))\n" +
-        "ENGINE=InnoDB;";
+String createTableSql = "CREATE TABLE t (id int(11), a bigint(20)) ENGINE=InnoDB;";
 String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
 try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
   reader.open();
   GenericRecord record = reader.queryByPrimaryKey(4);
   Object[] values = record.getValues();
-  System.out.println(Arrays.asList(values));
+  System.out.println(Arrays.asList(values)); //output will be [4, 8]
 }
-```
-
-output:
-```
-[4, 8, dddddddd]
 ```
 
 More usage you can jump to [API usage](#5-api-usage) section. The best place to better explore is to look at the examples for some common use cases addressed here in [innodb-java-reader-demo](innodb-java-reader-demo/src/main/java/com/alibaba/innodb/java/reader).
 
 #### Command-line examples
 
-Here's an example to range query records in a table by primary key with command-line tool.
+Here's an example to dump all records with command-line tool.
 
 You can download latest version of `innodb-java-reader-cli.jar` from [release page](https://github.com/alibaba/innodb-java-reader/releases) or [build](#7-building) from source.
 
-`t.ibd` is the InnoDB ibd file path, `t.sql` is where the output of `SHOW CREATE TABLE <table_name>` saved as content. Arguments are the lower bound target key (inclusive) and the upper bound target key (exclusive), separated by comma.
+`t.ibd` is the InnoDB ibd file path, `t.sql` is where the output of `SHOW CREATE TABLE <table_name>` saved as content. 
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c range-query-by-pk -args "1,3" > output.dat
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-all -o output.dat
 ```
-Output shows as below, the result is the same by running `mysql -N -uuser_name -ppassword -e "select * from test.t where id >= and id < 3" > output && cat output | tr "\t" "," > output.dat`.
-```
-1,2,aaaaaaaa
-2,4,bbbbbbbb
-```
-
-You can also use `query-all` command to dump the whole table. 
+The result is the same by running `mysql -N -uroot -e "select * from test.t" > output`.
 
 But to be aware that if pages are not flushed from InnoDB Buffer pool to disk, then **the result maybe not consistent**. How long do dirty pages usually stay dirty in memory? That is a tough question, InnoDB leverages WAL in terms of performance, so there is no command available to flush all dirty pages. Only internal mechanism controls when there need pages to flush, like Page Cleaner thread, adaptive flushing, etc.
 
@@ -127,7 +114,10 @@ Here's another example to generate heatmap.
 Assume we have a table without secondary index, and the primary key is built by inserting rows in key order. Then run the following command.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c gen-lsn-heatmap -args ./out.html
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c gen-lsn-heatmap -args ./out.html
 ```
 
 The heatmap shows as below.
@@ -148,8 +138,7 @@ CREATE TABLE `t`
 (`id` int(11) NOT NULL,
 `a` bigint(20) NOT NULL,
 `b` varchar(64) NOT NULL,
-PRIMARY KEY (`id`))
-ENGINE=InnoDB;
+PRIMARY KEY (`id`)) ENGINE=InnoDB;
 
 delimiter ;;
 drop procedure if EXISTS idata;
@@ -432,8 +421,9 @@ You can download latest version of `innodb-java-reader-cli.jar` from [release pa
 Usage shows as below.
 
 ````
-usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>] [-h]
-       [-i <arg>] [-json] [-jsonpretty] [-s <arg>]
+usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
+       [-delimiter <arg>] [-h] [-i <arg>] [-iomode <arg>] [-json]
+       [-jsonpretty] [-o <arg>] [-s <arg>] [-showheader]
  -args <arg>                             arguments
  -c,--command <arg>                      mandatory. command to run, valid
                                          commands are:
@@ -442,18 +432,26 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>] [-h]
                                          ll,range-query-by-pk,gen-lsn-heat
                                          map,gen-filling-rate-heatmap,get-
                                          all-index-page-filling-rate
+ -delimiter,--delimiter <arg>            field delimiter, default is tab
  -h,--help                               usage
  -i,--ibd-file-path <arg>                mandatory. innodb file path with
                                          suffix of .ibd
+ -iomode,--output-io-mode <arg>          output io mode, valid mode are:
+                                         buffer,mmap,direct
  -json,--json-style                      set to true if you would like to
                                          show page info in json format
                                          style
  -jsonpretty,--json-pretty-style         set to true if you would like to
                                          show page info in json pretty
                                          format style
+ -o,--output <arg>                       save result to file instead of
+                                         console, the argument is the file
+                                         path
  -s,--create-table-sql-file-path <arg>   create table sql file path by
                                          running SHOW CREATE TABLE
                                          <table_name>
+ -showheader,--show-header               set to true if you want to show
+                                         table header when dumping table
 ````
 
 You can customize log4j configuration by adding `-Dlog4j.configuration=file:/path/log4j.properties` in command.
@@ -463,7 +461,10 @@ You can customize log4j configuration by adding `-Dlog4j.configuration=file:/pat
 #### Listing all pages
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c show-all-pages
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c show-all-pages
 ```
 
 Output:
@@ -483,7 +484,10 @@ Output:
 Arguments are page numbers, separated by comma.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c show-pages -args "3,4,5"
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c show-pages -args "3,4,5"
 ```
 
 `ToString` method will be invoked for every page examined and print on console. You can add `--json-style` or `--json-pretty-style` to print out information in more human readable way.
@@ -491,25 +495,25 @@ java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t
 #### Querying all records
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c query-all
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-all
 ```
 
-Output:
+The result is the same as `mysql -N -uroot -e "select * from test.t" > output.dat`
 
-```
-[1, 2, aaaaaaaa]
-[2, 4, bbbbbbbb]
-[3, 6, cccccccc]
-[4, 8, dddddddd]
-[5, 10, eeeeeeee]
-```
+Field is delimitered by `tab`, you can specify `-delimter ","` to use comma as delimiter.
 
 #### Querying by page number
 
 Argument is page number, only index page type is supported.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c query-by-page-number -args 3
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-by-page-number -args 3
 ```
 
  #### Querying by primary key
@@ -517,7 +521,10 @@ java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t
 Argument is the target key.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c query-by-pk -args 5
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-by-pk -args 5
 ```
 
 #### Range querying by primary key
@@ -525,7 +532,10 @@ java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t
 Arguments are the lower bound target key (inclusive) and the upper bound target key (exclusive), separated by comma.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c range-query-by-pk -args "1,3"
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c range-query-by-pk -args "1,3"
 ```
 
 #### Dump data
@@ -533,21 +543,29 @@ java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t
 You can use command-line tool to dump data, but dirty pages might not be flushed to disk, so the data consistency is what you must consider. You can dump records by `query-all` or `range-query-by-pk` like below.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c query-all > output.dat
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-all -o output.dat
 ```
 
-The `output.dat` file contains record per line with comma delimited for columns. The result is the same with the following command output.
+The `output.dat` file contains record per line with tab delimited for fields.
 
-```
-mysql -N -uuser_name -ppassword -e "select * from test.t" > output && cat output | tr "\t" "," > output.dat
-```
+The result is the same as `mysql -N -uroot -e "select * from test.t" > output.dat`
+
+#### Sepecify dump IO mode
+
+By default, dumping data will use `mmap` to write to file, you can specify `-iomode buffer` or `-iomode direct` as well. Note if no `-o` is used, system IO redirect is not efficient.
 
 #### Generating LSN heatmap
 
 Arguments are the output html file path, the heatmap width and height.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c gen-lsn-heatmap -args "./out.html 800 1000"
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c gen-lsn-heatmap -args "./out.html 800 1000"
 ```
 
 Here is an example if we have a table with random primary key insertion order. Then many pages will be revisited, as illustrated in the image below, most of the pages are "red" colored, which means those pages LSN are close to each other.
@@ -563,7 +581,10 @@ Another example will be a table with two indices, one is primary key built by in
 Arguments are the output html file path, the heatmap width and height.
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c gen-filling-rate-heatmap -args "./out.html 800 1000"
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c gen-filling-rate-heatmap -args "./out.html 800 1000"
 ```
 
 Filling rate, also known as page filling factor, means how efficient for InnoDB to make use of storage space. InnoDB store records in row-oriented layout, usually this is good for OLTP scenario. While in big data industry, columnar storage format is more preferred, because for performance, it can read required data, skip unnecessary deserialization, leverage specific encoding and better for compression, so the storage space is much more saved. Although, row-oriented format is not friendly in term of file size, we still want to know the space occupied by data, InnoDB file can be fragmented due to logical deletion or B+ tree splitting. Filling rate for every page is calculated by examining `used space / page size`, used space equals to `heap_top_position + page_directory_slots_bytes + FilTrailer - garbage_space`. This is different from `data_free` value when you examine a table through `information_schema.TABLES`, `data_free` means the space allocated on disk for, but not used.
@@ -583,7 +604,10 @@ After `OPTIMIZED TABLE <T>`, the table filling rate will go back to more than 90
 #### Get all index page filling rate
 
 ```
-java -jar innodb-java-reader-cli.jar -ibd-file-path /usr/local/mysql/data/test/t.ibd -create-table-sql-file-path t.sql -c get-all-index-page-filling-rate
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c get-all-index-page-filling-rate
 ```
 
 ## 7 Building
@@ -596,7 +620,11 @@ mvn clean install
 
 Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar` to run command.
 
-## 8 Future works
+## 8 Benchmark
+
+For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysqldump`, please [visit here](docs/benchmark).
+
+## 9 Future works
 
 * Support MySQL 8.0 newly introduced LOB page.
 * Support multiple columns primary key and default 6 bytes ROW ID if no primary key is defined by user.
