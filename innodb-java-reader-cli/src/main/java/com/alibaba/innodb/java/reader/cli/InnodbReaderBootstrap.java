@@ -288,7 +288,7 @@ public class InnodbReaderBootstrap {
     System.exit(exitCode);
   }
 
-  private static void genHeatmap(String ibdFilePath, String createTableSql, String args, CommandType commandType) {
+  private static void genHeatmap(String ibdFilePath, String createTableSql, String args, CommandType commandType) throws IOException, TemplateException {
     checkNotNull(args, "args should not be null");
     String destHtmlPath = args;
     Optional<Pair<String, String>> widthAndHeight = Optional.empty();
@@ -305,20 +305,14 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void genLsnHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath, Optional<Pair<String, String>> widthAndHeight) {
-    try {
-      GenLsnHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
-    } catch (IOException | TemplateException e) {
-      e.printStackTrace();
-    }
+  private static void genLsnHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath, Optional<Pair<String, String>> widthAndHeight)
+      throws IOException, TemplateException {
+    GenLsnHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
   }
 
-  private static void genFillingRateHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath, Optional<Pair<String, String>> widthAndHeight) {
-    try {
-      GenFillingRateHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
-    } catch (IOException | TemplateException e) {
-      e.printStackTrace();
-    }
+  private static void genFillingRateHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath, Optional<Pair<String, String>> widthAndHeight)
+      throws IOException, TemplateException {
+    GenFillingRateHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
   }
 
   private static void showAllPages(String ibdFilePath, Writer writer, String createTableSql) {
