@@ -29,10 +29,6 @@ MySQL:
 +-------------------------------------+----------------+
 ```
 
-- 1) Run innodb-java-reader-cli.jar
-- 2) mysql -N -uroot -P3306 -e "select * from test.product002" > mysql-select-result.out
-- 3) mysqldump -uroot test product002 > mysqldump-result.out
-
 ## Test data
 
 Table DDL:
