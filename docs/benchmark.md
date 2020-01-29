@@ -1,4 +1,124 @@
-#
+# Benchmark
+
+## Test environment
+
+System:
+
+```
+MacBook Pro (Retina, 15-inch, Mid 2015)
+CPU: 2.2 GHz Intel Core i7
+MEM: 16 GB 1600 MHz DDR3
+DISK: APPLE SSD SM0256G (Approximately sequential read 350MB/s)
+```
+
+MySQL:
+
+```
++-------------------------------------+----------------+
+| Variable_name                       | Value          |
++-------------------------------------+----------------+
+| innodb_buffer_pool_dump_at_shutdown | OFF            |
+| innodb_buffer_pool_dump_now         | OFF            |
+| innodb_buffer_pool_filename         | ib_buffer_pool |
+| innodb_buffer_pool_instances        | 8              |
+| innodb_buffer_pool_load_abort       | OFF            |
+| innodb_buffer_pool_load_at_startup  | OFF            |
+| innodb_buffer_pool_load_now         | OFF            |
+| innodb_buffer_pool_size             | 134217728      |
+| innodb_random_read_ahead            | OFF            |
++-------------------------------------+----------------+
+```
+
+- 1) Run innodb-java-reader-cli.jar
+- 2) mysql -N -uroot -P3306 -e "select * from test.product002" > mysql-select-result.out
+- 3) mysqldump -uroot test product002 > mysqldump-result.out
+
+## Test data
+
+Table DDL:
+
+```
+CREATE TABLE `product002` (
+  `id` bigint(20) NOT NULL,
+  `c1` bigint(20) DEFAULT '0',
+  `c2` int(11) DEFAULT '0',
+  `c3` varchar(1024) NOT NULL,
+  `c4` int(11) NOT NULL DEFAULT '0',
+  `c5` varchar(200) NOT NULL,
+  `c6` varchar(1024) NOT NULL,
+  `c7` text COMMENT,
+  `c8` bigint(20) NOT NULL,
+  `c9` bigint(20) NOT NULL,
+  `c10` bigint(20) NOT NULL DEFAULT '0',
+  `c11` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='t'
+```
+
+
+
+Total rows: **25,000,000**
+
+idb file size: **7,570,718,720 Bytes**
+
+Table is generated randomly, sample row and table status shows as below:
+
+```
+mysql> select * from t limit 1\G;
+*************************** 1. row ***************************
+           id: 0
+      user_id: 0
+      feed_id: 0
+     outer_id: fCUOadIlmig2Ij6ex1LRiVUPkEXpfxTwFHNZYVTLuTVgYwGG54
+  feed_url_id: 0
+         name: HLcSpVTUsTqgPhQwaiNd
+          loc: http://89TPISN3uCsv13NJDR2WgbXjpelScGbmVPbQy1ES4V5V0oU3JT3yk38PxE37FYtjmfay5XwVuzTXkNJ9KkT1y5OBBCtzsbqmL8Yp
+      content: IjlibvLub42D4NzIbk64
+ content_hash: 0
+      version: 0
+    name_hash: 967416179333214281
+deleted_state: 0
+
+
+mysql> show table status like 't'\G;
+*************************** 1. row ***************************
+           Name: product002
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 23163678
+ Avg_row_length: 303
+    Data_length: 7036993536
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 7340032
+ Auto_increment: NULL
+    Create_time: 2019-12-30 22:38:37
+    Update_time: NULL
+     Check_time: NULL
+      Collation: utf8_general_ci
+       Checksum: NULL
+ Create_options:
+        Comment: t
+```
+
+## Test case
+
+- 1) Run innodb-java-reader-cli.jar
+- 2) mysql -N -uroot -P3306 -e "select * from test.product002" > mysql-select-result.out
+- 3) mysqldump -uroot test product002 > mysqldump-result.out
+
+## Test result and conclusion
+
+- 1) 67s
+- 2) 331s
+- 3) 70s
+
+Innodb-java-reader is as good as mysqldump or even better. Also, it enables you to offload from mysql process.
+
+![](images/benchmark.png)
+
+## Test scripts
 
 
 ```
@@ -9,9 +129,7 @@ start_time=$(date +%s)
 java -jar /Users/xu/IdeaProjects/innodb-java-reader-ali-github/innodb-java-reader-cli/target/innodb-java-reader-cli.jar \
  -ibd-file-path /usr/local/mysql/data/test/product002.ibd \
  -create-table-sql-file-path product002.sql \
- -showheader \
- -c range-query-by-pk \
- -args 1000000,2000000 > innodb-java-reader-result.out
+ -c query-all -o innodb-java-reader-result.out
 
 end_time=$(date +%s)
 cost_time=$[ $end_time-$start_time ]
@@ -25,12 +143,25 @@ md5 innodb-java-reader-result.out
 
 start_time=$(date +%s)
 
-mysql -uroot -P3306 -e "select * from test.product002 where id >= 1000000 and id < 2000000" > mysql-result.out
+mysql -N -uroot -P3306 -e "select * from test.product002" > mysql-select-result.out
 
 end_time=$(date +%s)
 cost_time=$[ $end_time-$start_time ]
 echo "elapsed ${cost_time}s"
 
-cat mysql-result.out | tr "\t" "," > mysql-result2.out
-md5 mysql-result2.out
+md5 mysql-select-result.out
+```
+
+```
+#!/bin/bash
+
+start_time=$(date +%s)
+
+mysqldump -uroot test product002 > mysqldump-result.out
+
+end_time=$(date +%s)
+cost_time=$[ $end_time-$start_time ]
+echo "elapsed ${cost_time}s"
+
+md5 mysqldump-result.out
 ```

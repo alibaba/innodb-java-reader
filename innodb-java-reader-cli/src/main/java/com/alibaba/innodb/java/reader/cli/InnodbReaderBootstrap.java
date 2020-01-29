@@ -140,10 +140,6 @@ public class InnodbReaderBootstrap {
       if (line.hasOption("output")) {
         outputFilePath = line.getOptionValue("output");
         OutputIOMode outputIOMode = OutputIOMode.parse(line.getOptionValue("output-io-mode"));
-        if (outputIOMode == null) {
-          log.error("invalid output-io-mode");
-          showHelp(options, 1);
-        }
         writer = WriterFactory.build(outputIOMode, outputFilePath);
         writer.open();
       }

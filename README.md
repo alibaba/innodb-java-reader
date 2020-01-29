@@ -624,6 +624,8 @@ Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar
 
 For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysqldump`, please [visit here](docs/benchmark).
 
+![](docs/images/benchmark.png)
+
 ## 9 Future works
 
 * Support MySQL 8.0 newly introduced LOB page.

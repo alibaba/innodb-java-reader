@@ -24,7 +24,7 @@ public class WriterFactory {
     } else if (MMAP.equals(outputIOMode)) {
       return new MmapWriter(outputFilePath);
     } else {
-      throw new WriterException("should not happen");
+      return new MmapWriter(outputFilePath);
     }
   }
 
