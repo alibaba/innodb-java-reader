@@ -622,7 +622,7 @@ Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar
 
 ## 8 Benchmark
 
-For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysqldump`, please [visit here](docs/benchmark).
+For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysqldump`, please [visit here](docs/benchmark.md).
 
 ![](docs/images/benchmark.png)
 
