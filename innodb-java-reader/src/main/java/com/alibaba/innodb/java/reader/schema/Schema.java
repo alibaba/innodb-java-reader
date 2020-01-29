@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_JAVA_CHARSET;
@@ -28,6 +29,7 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
  *
  * @author xu.zx
  */
+@EqualsAndHashCode
 @Slf4j
 public class Schema {
 

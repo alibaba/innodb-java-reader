@@ -9,6 +9,7 @@ import com.alibaba.innodb.java.reader.util.Symbol;
 
 import org.apache.commons.lang3.StringUtils;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -24,6 +25,7 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * @author xu.zx
  */
+@EqualsAndHashCode
 @Getter
 public class Column {
 

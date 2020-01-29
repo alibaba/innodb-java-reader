@@ -20,7 +20,7 @@ public class UtilsTest {
     array[4] = 10000000L;
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < 10; i++) {
-      assertThat(Utils.arrayToString(array, b), is("1,abc,3.4,6.6,10000000"));
+      assertThat(Utils.arrayToString(array, b, ","), is("1,abc,3.4,6.6,10000000"));
     }
   }
 
@@ -29,7 +29,7 @@ public class UtilsTest {
     Object[] array = new Object[0];
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < 10; i++) {
-      assertThat(Utils.arrayToString(array, b), is(""));
+      assertThat(Utils.arrayToString(array, b, ","), is(""));
     }
   }
 
@@ -38,7 +38,7 @@ public class UtilsTest {
     Object[] array = null;
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < 10; i++) {
-      assertThat(Utils.arrayToString(array, b), is("null"));
+      assertThat(Utils.arrayToString(array, b, ","), is("null"));
     }
   }
 
@@ -48,7 +48,7 @@ public class UtilsTest {
     array[0] = 1;
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < 10; i++) {
-      assertThat(Utils.arrayToString(array, b), is("1"));
+      assertThat(Utils.arrayToString(array, b, ","), is("1"));
     }
   }
 
@@ -58,7 +58,7 @@ public class UtilsTest {
     array[0] = 1;
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < 10; i++) {
-      assertThat(Utils.arrayToString(array, b), is("1,null"));
+      assertThat(Utils.arrayToString(array, b, ","), is("1,null"));
     }
   }
 
@@ -70,7 +70,7 @@ public class UtilsTest {
     array[4] = 0.0D;
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < 10; i++) {
-      assertThat(Utils.arrayToString(array, b), is("1,null,abc,null,0.0"));
+      assertThat(Utils.arrayToString(array, b, ","), is("1,null,abc,null,0.0"));
     }
   }
 

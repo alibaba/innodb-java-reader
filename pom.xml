@@ -48,6 +48,11 @@
                 <version>3.8.1</version>
             </dependency>
             <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.13</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>23.0</version>
@@ -86,6 +91,11 @@
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
                 <version>1.9.11</version>
+            </dependency>
+            <dependency>
+                <groupId>net.smacke</groupId>
+                <artifactId>jaydio</artifactId>
+                <version>0.1</version>
             </dependency>
 
             <!-- test dependencies -->

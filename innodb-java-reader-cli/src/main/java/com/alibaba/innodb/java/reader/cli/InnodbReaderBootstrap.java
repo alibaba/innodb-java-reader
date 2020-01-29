@@ -7,6 +7,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.cli.writer.SysoutWriter;
+import com.alibaba.innodb.java.reader.cli.writer.Writer;
+import com.alibaba.innodb.java.reader.cli.writer.WriterFactory;
 import com.alibaba.innodb.java.reader.heatmap.GenFillingRateHeatmapUtil;
 import com.alibaba.innodb.java.reader.heatmap.GenLsnHeatmapUtil;
 import com.alibaba.innodb.java.reader.heatmap.Pair;
@@ -40,6 +43,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.alibaba.innodb.java.reader.cli.CommandType.GEN_FILLING_RATE_HEATMAP;
 import static com.alibaba.innodb.java.reader.cli.CommandType.GEN_LSN_HEATMAP;
 import static com.alibaba.innodb.java.reader.page.PageType.EXTENT_DESCRIPTOR;
@@ -55,15 +60,20 @@ import static java.util.stream.Collectors.toList;
  *
  * @author xu.zx
  */
+@Slf4j
 public class InnodbReaderBootstrap {
 
-  public static final String JAR_NAME = "innodb-java-reader-cli.jar";
+  private static final String JAR_NAME = "innodb-java-reader-cli.jar";
 
   private static String ALL_COMMANDS = Arrays.stream(CommandType.values()).map(CommandType::getType).collect(Collectors.joining(","));
 
-  public static final JsonMapper JSON_MAPPER = JsonMapper.buildNormalMapper();
+  private static String ALL_OUTPUT_IO_MODE = Arrays.stream(OutputIOMode.values()).map(OutputIOMode::getMode).collect(Collectors.joining(","));
+
+  private static final JsonMapper JSON_MAPPER = JsonMapper.buildNormalMapper();
 
   private static boolean SHOW_HEADER = false;
+
+  private static String FIELD_DELIMITER = "\t";
 
   public static void main(String[] arguments) {
     CommandLineParser parser = new DefaultParser();
@@ -75,16 +85,22 @@ public class InnodbReaderBootstrap {
     options.addOption("s", "create-table-sql-file-path", true, "create table sql file path by running SHOW CREATE TABLE <table_name>");
     options.addOption("json", "json-style", false, "set to true if you would like to show page info in json format style");
     options.addOption("jsonpretty", "json-pretty-style", false, "set to true if you would like to show page info in json pretty format style");
-    options.addOption("showheader", "show-header", false, "set to true if you want to show table header");
+    options.addOption("showheader", "show-header", false, "set to true if you want to show table header when dumping table");
+    options.addOption("o", "output", true, "save result to file instead of console, the argument is the file path");
+    options.addOption("iomode", "output-io-mode", true, "output io mode, valid mode are: " + ALL_OUTPUT_IO_MODE);
+    options.addOption("delimiter", "delimiter", true, "field delimiter, default is tab");
     options.addOption("args", true, "arguments");
 
     String command = null;
     String ibdFilePath = null;
     String createTableSql = null;
+    String outputFilePath;
     String args = null;
     // show all pages or show one page
     boolean jsonStyle = false;
     boolean jsonPrettyStyle = false;
+    Writer writer = new SysoutWriter();
+    writer.open();
 
     try {
       CommandLine line = parser.parse(options, arguments);
@@ -97,7 +113,7 @@ public class InnodbReaderBootstrap {
         ibdFilePath = line.getOptionValue("ibd-file-path");
         Preconditions.checkArgument(StringUtils.isNotEmpty(ibdFilePath), "ibd-file-path is empty");
       } else {
-        System.err.println("please input ibd-file-path");
+        log.error("please input ibd-file-path");
         showHelp(options, 1);
       }
 
@@ -107,19 +123,34 @@ public class InnodbReaderBootstrap {
         List<String> lines = Files.readLines(new File(createTableSqlFilePath), Charset.defaultCharset());
         createTableSql = String.join(" ", lines);
       } else {
-        System.err.println("please input create-table-sql");
+        log.error("please input create-table-sql");
         showHelp(options, 1);
       }
 
       if (line.hasOption("command")) {
         command = line.getOptionValue("command");
       } else {
-        System.err.println("please input command to run, cmd=" + ALL_COMMANDS);
+        log.error("please input command to run, cmd=" + ALL_COMMANDS);
         showHelp(options, 1);
       }
 
       if (line.hasOption("args")) {
         args = line.getOptionValue("args");
+      }
+      if (line.hasOption("output")) {
+        outputFilePath = line.getOptionValue("output");
+        OutputIOMode outputIOMode = OutputIOMode.parse(line.getOptionValue("output-io-mode"));
+        if (outputIOMode == null) {
+          log.error("invalid output-io-mode");
+          showHelp(options, 1);
+        }
+        writer = WriterFactory.build(outputIOMode, outputFilePath);
+        writer.open();
+      }
+      if (line.hasOption("delimiter")) {
+        FIELD_DELIMITER = line.getOptionValue("delimiter");
+      } else {
+        FIELD_DELIMITER = "\t";
       }
 
       if (line.hasOption("json-style")) {
@@ -130,36 +161,38 @@ public class InnodbReaderBootstrap {
       }
       if (line.hasOption("show-header")) {
         SHOW_HEADER = true;
+      } else {
+        SHOW_HEADER = false;
       }
 
       CommandType commandType = EnumUtils.getEnum(CommandType.class, command.replace("-", "_").toUpperCase());
 
       if (commandType == null) {
-        System.err.println("invalid command type, should be " + ALL_COMMANDS);
+        log.error("invalid command type, should be " + ALL_COMMANDS);
         showHelp(options, 1);
       }
 
       checkNotNull(commandType);
       switch (commandType) {
         case SHOW_ALL_PAGES:
-          showAllPages(ibdFilePath, createTableSql);
+          showAllPages(ibdFilePath, writer, createTableSql);
           break;
         case SHOW_PAGES:
           checkNotNull(args, "args should not be null");
           List<Long> pageNumbers = Stream.of(args.split(",")).map(Long::parseLong).collect(toList());
-          showPages(ibdFilePath, createTableSql, pageNumbers, jsonStyle, jsonPrettyStyle);
+          showPages(ibdFilePath, writer, createTableSql, pageNumbers, jsonStyle, jsonPrettyStyle);
           break;
         case QUERY_ALL:
-          queryAll(ibdFilePath, createTableSql);
+          queryAll(ibdFilePath, writer, createTableSql);
           break;
         case QUERY_BY_PAGE_NUMBER:
           checkNotNull(args, "args should not be null");
           long pageNumber = Long.parseLong(args);
-          queryByPageNumber(ibdFilePath, createTableSql, pageNumber);
+          queryByPageNumber(ibdFilePath, writer, createTableSql, pageNumber);
           break;
         case QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
-          queryByPrimaryKey(ibdFilePath, createTableSql, args);
+          queryByPrimaryKey(ibdFilePath, writer, createTableSql, args);
           break;
         case RANGE_QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
@@ -167,7 +200,7 @@ public class InnodbReaderBootstrap {
           checkState(range != null && range.size() == 2, "argument number should not exactly two");
           Object lowerInclusiveKey = "null".equalsIgnoreCase(range.get(0)) ? null : range.get(0);
           Object upperExclusiveKey = "null".equalsIgnoreCase(range.get(1)) ? null : range.get(1);
-          rangeQueryByPrimaryKey(ibdFilePath, createTableSql, lowerInclusiveKey, upperExclusiveKey);
+          rangeQueryByPrimaryKey(ibdFilePath, writer, createTableSql, lowerInclusiveKey, upperExclusiveKey);
           break;
         case GEN_LSN_HEATMAP:
           genHeatmap(ibdFilePath, createTableSql, args, commandType);
@@ -176,67 +209,75 @@ public class InnodbReaderBootstrap {
           genHeatmap(ibdFilePath, createTableSql, args, commandType);
           break;
         case GET_ALL_INDEX_PAGE_FILLING_RATE:
-          getAllIndexPageFillingRate(ibdFilePath, createTableSql);
+          getAllIndexPageFillingRate(ibdFilePath, writer, createTableSql);
           break;
         default:
-          System.err.println("invalid command type, cmd=" + ALL_COMMANDS);
+          log.error("invalid command type, cmd=" + ALL_COMMANDS);
           showHelp(options, 1);
       }
     } catch (ParseException e) {
-      System.err.println("Unexpected exception:" + e.getMessage());
+      log.error("Parse error occurred: " + e.getMessage(), e);
     } catch (IOException e) {
-      System.err.println("Unexpected IO exception:" + e.getMessage());
+      log.error("IO error occurred: " + e.getMessage(), e);
+    } catch (Exception e) {
+      log.error("Error occurred: " + e.getMessage(), e);
+    } finally {
+      try {
+        Utils.close(writer);
+      } catch (IOException e) {
+        log.error("Close writer failed: " + e.getMessage(), e);
+      }
     }
   }
 
-  private static void queryAll(String ibdFilePath, String createTableSql) {
+  private static void queryAll(String ibdFilePath, Writer writer, String createTableSql) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
-      showHeaderIfSet(reader);
+      showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
-        System.out.println(Utils.arrayToString(record.getValues(), b));
+        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
       }
     }
   }
 
-  private static void queryByPageNumber(String ibdFilePath, String createTableSql, long pageNumber) {
+  private static void queryByPageNumber(String ibdFilePath, Writer writer, String createTableSql, long pageNumber) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
-      showHeaderIfSet(reader);
+      showHeaderIfSet(reader, writer);
       List<GenericRecord> recordList = reader.queryByPageNumber(pageNumber);
       StringBuilder b = new StringBuilder();
       if (CollectionUtils.isNotEmpty(recordList)) {
         for (GenericRecord record : recordList) {
-          System.out.println(Utils.arrayToString(record.getValues(), b));
+          writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
         }
       }
     }
   }
 
-  private static void queryByPrimaryKey(String ibdFilePath, String createTableSql, String primaryKey) {
+  private static void queryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql, String primaryKey) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
-      showHeaderIfSet(reader);
+      showHeaderIfSet(reader, writer);
       GenericRecord record = reader.queryByPrimaryKey(primaryKey);
       StringBuilder b = new StringBuilder();
       if (record != null) {
-        System.out.println(Utils.arrayToString(record.getValues(), b));
+        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
       }
     }
   }
 
-  private static void rangeQueryByPrimaryKey(String ibdFilePath, String createTableSql, Object lowerInclusiveKey, Object upperExclusiveKey) {
+  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql, Object lowerInclusiveKey, Object upperExclusiveKey) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
-      showHeaderIfSet(reader);
+      showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
-        System.out.println(Utils.arrayToString(record.getValues(), b));
+        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
       }
     }
   }
@@ -280,11 +321,11 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void showAllPages(String ibdFilePath, String createTableSql) {
+  private static void showAllPages(String ibdFilePath, Writer writer, String createTableSql) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
       Iterator<AbstractPage> iterator = reader.getPageIterator();
-      System.out.println(StringUtils.repeat("=", 5) + "page number, page type, other info" + StringUtils.repeat("=", 5));
+      writer.write(StringUtils.repeat("=", 5) + "page number, page type, other info" + StringUtils.repeat("=", 5));
       while (iterator.hasNext()) {
         AbstractPage page = iterator.next();
         StringBuilder sb = new StringBuilder();
@@ -322,39 +363,42 @@ public class InnodbReaderBootstrap {
         // else {
         //continue;
         // }
-        System.out.println(sb.toString());
+        writer.write(sb.toString());
       }
     }
   }
 
-  private static void showPages(String ibdFilePath, String createTableSql, List<Long> pageNumberList, boolean jsonStyle, boolean jsonPrettyStyle) {
+  private static void showPages(String ibdFilePath, Writer writer, String createTableSql, List<Long> pageNumberList, boolean jsonStyle, boolean jsonPrettyStyle) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
       for (Long pageNumber : pageNumberList) {
         AbstractPage page = reader.readPage(pageNumber);
         if (jsonStyle) {
-          System.out.println(JSON_MAPPER.toJson(page));
+          writer.write(JSON_MAPPER.toJson(page));
         } else if (jsonPrettyStyle) {
-          System.out.println(JSON_MAPPER.toPrettyJson(page));
+          writer.write(JSON_MAPPER.toPrettyJson(page));
         } else {
-          System.out.println(page);
+          writer.write(page.toString());
         }
       }
     }
   }
 
-  private static void getAllIndexPageFillingRate(String ibdFilePath, String createTableSql) {
+  private static void getAllIndexPageFillingRate(String ibdFilePath, Writer writer, String createTableSql) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
-      System.out.println("Number of pages is " + reader.getNumOfPages());
-      System.out.println("Index page filling rate is " + reader.getAllIndexPageFillingRate());
+      writer.write("Number of pages is " + reader.getNumOfPages());
+      writer.write("Index page filling rate is " + reader.getAllIndexPageFillingRate());
     }
   }
 
-  private static void showHeaderIfSet(TableReader reader) {
+  private static void showHeaderIfSet(TableReader reader, Writer writer) {
     if (SHOW_HEADER) {
       Schema schema = reader.getSchema();
-      System.out.println(schema.getColumnNames().stream().collect(Collectors.joining(",")));
+      writer.write(schema.getColumnNames().stream().collect(Collectors.joining(FIELD_DELIMITER)));
+      if (writer.ifNewLineAfterWrite()) {
+        writer.write("\n");
+      }
     }
   }
 

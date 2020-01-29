@@ -132,11 +132,27 @@ public class Utils {
    * <p>
    * Sometimes by reusing StringBuilder, we can avoid creating many StringBuilder and good to garbage collection.
    *
-   * @param a array
-   * @param b reusable StringBuilder
+   * @param a         array
+   * @param b         reusable StringBuilder
+   * @param delimiter delimiter
    * @return array string
    */
-  public static String arrayToString(Object[] a, StringBuilder b) {
+  public static String arrayToString(Object[] a, StringBuilder b, String delimiter) {
+    return arrayToString(a, b, delimiter, false);
+  }
+
+  /**
+   * Use {@link StringBuilder} to build string out of an array.
+   * <p>
+   * Sometimes by reusing StringBuilder, we can avoid creating many StringBuilder and good to garbage collection.
+   *
+   * @param a         array
+   * @param b         reusable StringBuilder
+   * @param delimiter delimiter
+   * @param newLine   if this is a new line, if true, write slash n at the end
+   * @return array string
+   */
+  public static String arrayToString(Object[] a, StringBuilder b, String delimiter, boolean newLine) {
     if (a == null) {
       return "null";
     }
@@ -144,10 +160,13 @@ public class Utils {
     b.delete(0, b.length());
     for (int i = 0; i < a.length; i++) {
       b.append(String.valueOf(a[i]));
-      b.append(",");
+      b.append(delimiter);
     }
     if (b.length() > 0) {
       b.deleteCharAt(b.length() - 1);
+    }
+    if (newLine) {
+      b.append("\n");
     }
     return b.toString();
   }

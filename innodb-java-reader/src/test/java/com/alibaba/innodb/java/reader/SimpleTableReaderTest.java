@@ -437,6 +437,18 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   //==========================================================================
+  // test getSchema
+  //==========================================================================
+
+  @Test
+  public void testGetSchema() {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
+      System.out.println(reader.getSchema());
+      assertThat(reader.getSchema().equals(getSchema()), is(true));
+    }
+  }
+
+  //==========================================================================
   // table cannot be opened more than once
   //==========================================================================
 
