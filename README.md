@@ -23,7 +23,9 @@ innodb-java-reader is a java implementation to access MySQL InnoDB storage engin
 
 [7. Building](#7-building)
 
-[8. Future works](#8-future-works)
+[8. Benchmark](#8-benchmark)
+
+[9. Future works](#9-future-works)
 
 ## 1. Background
 
