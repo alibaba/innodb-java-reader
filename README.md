@@ -70,7 +70,7 @@ Supported column types are listed below.
 <dependency>
   <groupId>com.alibaba</groupId>
   <artifactId>innodb-java-reader</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
