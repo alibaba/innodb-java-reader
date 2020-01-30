@@ -14,6 +14,8 @@ DISK: APPLE SSD SM0256G (Approximately sequential read 350MB/s)
 MySQL:
 
 ```
+version: 5.6.39
+
 +-------------------------------------+----------------+
 | Variable_name                       | Value          |
 +-------------------------------------+----------------+
