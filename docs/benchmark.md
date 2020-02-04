@@ -65,17 +65,17 @@ Table is generated randomly, sample row and table status shows as below:
 mysql> select * from t limit 1\G;
 *************************** 1. row ***************************
            id: 0
-      user_id: 0
-      feed_id: 0
-     outer_id: fCUOadIlmig2Ij6ex1LRiVUPkEXpfxTwFHNZYVTLuTVgYwGG54
-  feed_url_id: 0
-         name: HLcSpVTUsTqgPhQwaiNd
-          loc: http://89TPISN3uCsv13NJDR2WgbXjpelScGbmVPbQy1ES4V5V0oU3JT3yk38PxE37FYtjmfay5XwVuzTXkNJ9KkT1y5OBBCtzsbqmL8Yp
-      content: IjlibvLub42D4NzIbk64
- content_hash: 0
-      version: 0
-    name_hash: 967416179333214281
-deleted_state: 0
+           c1: 0
+           c2: 0
+           c3: fCUOadIlmig2Ij6ex1LRiVUPkEXpfxTwFHNZYVTLuTVgYwGG54
+           c4: 0
+           c5: HLcSpVTUsTqgPhQwaiNd
+           c6: http://89TPISN3uCsv13NJDR2WgbXjpelScGbmVPbQy1ES4V5V0oU3JT3yk38PxE37FYtjmfay5XwVuzTXkNJ9KkT1y5OBBCtzsbqmL8Yp
+           c7: IjlibvLub42D4NzIbk64
+           c8: 0
+           c9: 0
+          c10: 967416179333214281
+          c11: 0
 
 
 mysql> show table status like 't'\G;
