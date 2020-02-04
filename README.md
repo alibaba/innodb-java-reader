@@ -281,8 +281,8 @@ This will walk through the B+ tree index in ascending order, you can take it as 
 
 ```
 try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
-reader.open();
-List<GenericRecord> recordList = reader.queryAll();
+  reader.open();
+  List<GenericRecord> recordList = reader.queryAll();
   for (GenericRecord record : recordList) {
     Object[] values = record.getValues();
     System.out.println(Arrays.asList(values));
