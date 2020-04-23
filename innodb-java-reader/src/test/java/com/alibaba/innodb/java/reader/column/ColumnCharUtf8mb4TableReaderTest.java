@@ -9,7 +9,6 @@ import com.alibaba.innodb.java.reader.schema.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.core.Is.is;
@@ -73,16 +72,20 @@ public class ColumnCharUtf8mb4TableReaderTest extends AbstractTest {
           assertThat(record.get("c"), is(((char) (97 + i)) + StringUtils.repeat('南', 254)));
           assertThat(record.get("d"), is(((char) (97 + i)) + StringUtils.repeat('北', 255)));
           assertThat(record.get("e"), is(((char) (97 + i)) + StringUtils.repeat('中', 511)));
-          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('左', 31) + StringUtils.repeat(' ', 32 - 31 - 1)));
-          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('右', 254) + StringUtils.repeat(' ', 255 - 254 - 1)));
+          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('左', 31)
+              + StringUtils.repeat(' ', 32 - 31 - 1)));
+          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('右', 254)
+              + StringUtils.repeat(' ', 255 - 254 - 1)));
         } else {
           assertThat(record.get("a"), is(((char) (97 + i)) + StringUtils.repeat('东', 8)));
           assertThat(record.get("b"), is(((char) (97 + i)) + StringUtils.repeat('西', 10)));
           assertThat(record.get("c"), is(((char) (97 + i)) + StringUtils.repeat('南', 100)));
           assertThat(record.get("d"), is(((char) (97 + i)) + StringUtils.repeat('北', 126)));
           assertThat(record.get("e"), is(((char) (97 + i)) + StringUtils.repeat('中', 400)));
-          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('左', 8) + StringUtils.repeat(' ', (32 - 8 * 3 - 1))));
-          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('右', 10) + StringUtils.repeat(' ', 255 - 10 * 3 - 1)));
+          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('左', 8)
+              + StringUtils.repeat(' ', (32 - 8 * 3 - 1))));
+          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('右', 10)
+              + StringUtils.repeat(' ', 255 - 10 * 3 - 1)));
         }
       }
     }

@@ -10,7 +10,7 @@ import lombok.Data;
 import static com.alibaba.innodb.java.reader.util.Utils.maybeUndefined;
 
 /**
- * ListBaseNode
+ * ListBaseNode.
  *
  * @author xu.zx
  */

@@ -9,32 +9,32 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import lombok.Data;
 
 /**
- * InnoDB allocates FSP_HDR and XDES pages at fixed locations within the space
+ * InnoDB allocates FSP_HDR and XDES pages at fixed locations within the space.
  *
  * @author xu.zx
  */
 @Data
 public class FspHeader {
 
-  /** 该文件对应的space id */
+  /** 该文件对应的space id. */
   private long space;
 
   /**
-   * Highest page number in file (size)
+   * Highest page number in file (size).
    * <p>
-   * 当前表空间总的PAGE个数，扩展文件时需要更新该值fsp_try_extend_data_file_with_pages
+   * 当前表空间总的PAGE个数，扩展文件时需要更新该值fsp_try_extend_data_file_with_pages.
    */
   private long size;
 
   /**
-   * Highest page number initialized (free limit)
+   * Highest page number initialized (free limit).
    * <p>
    * 当前尚未初始化的最小Page No。从该Page往后的都尚未加入到表空间的FREE LIST上。
    */
   private long freeLimit;
 
   /**
-   * 当前表空间的FLAG信息
+   * 当前表空间的FLAG信息.
    * <pre>
    * Macro Desc
    * FSP_FLAGS_POS_ZIP_SSIZE 压缩页的block size，如果为0表示非压缩表
@@ -49,31 +49,34 @@ public class FspHeader {
    */
   private long flags;
 
-  /** FSP_FREE_FRAG链表上已被使用的Page数，用于快速计算该链表上可用空闲Page数 */
+  /** FSP_FREE_FRAG链表上已被使用的Page数，用于快速计算该链表上可用空闲Page数. */
   private long numberOfPagesUsed;
 
-  /** 当一个Extent中所有page都未被使用时，放到该链表上，可以用于随后的分配 */
+  /** 当一个Extent中所有page都未被使用时，放到该链表上，可以用于随后的分配. */
   private ListBaseNode free;
 
-  /** FREE_FRAG链表的Base Node，通常这样的Extent中的Page可能归属于不同的segment，用于segment frag array page的分配 */
+  /**
+   * FREE_FRAG链表的Base Node，通常这样的Extent中的Page可能归属于不同的segment，
+   * 用于segment frag array page的分配.
+   */
   private ListBaseNode freeFrag;
 
-  /** Extent中所有的page都被使用掉时，会放到该链表上，当有Page从该Extent释放时，则移回FREE_FRAG链表 */
+  /** Extent中所有的page都被使用掉时，会放到该链表上，当有Page从该Extent释放时，则移回FREE_FRAG链表. */
   private ListBaseNode fullFrag;
 
-  /** 当前文件中最大Segment ID + 1，用于段分配时的seg id计数器 */
+  /** 当前文件中最大Segment ID + 1，用于段分配时的seg id计数器. */
   private long nextUsedSegmentId;
 
-  /** 已被完全用满的Inode Page链表 */
+  /** 已被完全用满的Inode Page链表. */
   private ListBaseNode fullInodes;
 
-  /** 至少存在一个空闲Inode Entry的Inode Page被放到该链表上 */
+  /** 至少存在一个空闲Inode Entry的Inode Page被放到该链表上. */
   private ListBaseNode freeInodes;
 
   public static FspHeader fromSlice(SliceInput input) {
     FspHeader fspHeader = new FspHeader();
     fspHeader.setSpace(input.readUnsignedInt());
-    // FSP_NOT_USED 4 保留字节
+    // FSP_NOT_USED 4 bytes reversed
     input.skipBytes(4);
     fspHeader.setSize(input.readUnsignedInt());
     fspHeader.setFreeLimit(input.readUnsignedInt());

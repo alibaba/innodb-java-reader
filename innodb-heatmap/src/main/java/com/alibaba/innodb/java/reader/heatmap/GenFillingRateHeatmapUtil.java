@@ -41,19 +41,21 @@ import static com.alibaba.innodb.java.reader.page.PageType.INDEX;
 public class GenFillingRateHeatmapUtil {
 
   /**
-   * dump page filling rate heatmap
+   * Dump page filling rate heatmap.
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
    * @param createTableSql    create table sql
    * @param pageWrapNum       number of pages per line in heatmap
    */
-  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql, int pageWrapNum) throws IOException, TemplateException {
-    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql), pageWrapNum, Optional.empty());
+  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql,
+                          int pageWrapNum) throws IOException, TemplateException {
+    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql),
+        pageWrapNum, Optional.empty());
   }
 
   /**
-   * dump page filling rate heatmap
+   * Dump page filling rate heatmap.
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
@@ -63,11 +65,12 @@ public class GenFillingRateHeatmapUtil {
    */
   public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql, int pageWrapNum,
                           Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
-    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql), pageWrapNum, widthAndHeight);
+    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql),
+        pageWrapNum, widthAndHeight);
   }
 
   /**
-   * dump page filling rate heatmap
+   * Dump page filling rate heatmap.
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
@@ -75,7 +78,8 @@ public class GenFillingRateHeatmapUtil {
    * @param pageWrapNum       number of pages per line in heatmap
    * @param widthAndHeight    optional width and height in heatmap
    */
-  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, Schema schema, int pageWrapNum, Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
+  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, Schema schema, int pageWrapNum,
+                          Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
     Pair<String, String> defaultWidthAndHeight = new Pair<>("1000", "1000");
 
     Configuration configuration = new Configuration(Configuration.getVersion());
@@ -116,7 +120,8 @@ public class GenFillingRateHeatmapUtil {
     try (Writer out = new FileWriter(new File(destHtmlFilePath))) {
       template.process(dataModel, out);
     }
-    log.info("Successfully dump filling rate heatmap to {} using {}ms", destHtmlFilePath, (System.currentTimeMillis() - start));
+    log.info("Successfully dump filling rate heatmap to {} using {}ms",
+        destHtmlFilePath, (System.currentTimeMillis() - start));
   }
 
 }

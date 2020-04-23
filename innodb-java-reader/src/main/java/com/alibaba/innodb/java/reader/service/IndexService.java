@@ -11,14 +11,14 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * Index service
+ * Index service.
  *
  * @author xu.zx
  */
 public interface IndexService {
 
   /**
-   * query all records by single page
+   * Query all records by single page.
    *
    * @param pageNumber page number (int type), can be leaf or non-leaf page
    * @return list of records
@@ -26,7 +26,7 @@ public interface IndexService {
   List<GenericRecord> queryByPageNumber(int pageNumber);
 
   /**
-   * query all records by single page
+   * Query all records by single page.
    *
    * @param pageNumber page number (long type), can be leaf or non-leaf page
    * @return list of records
@@ -34,7 +34,7 @@ public interface IndexService {
   List<GenericRecord> queryByPageNumber(long pageNumber);
 
   /**
-   * query record by primary key in a tablespace
+   * Query record by primary key in a tablespace.
    *
    * @param key primary key
    * @return record
@@ -42,40 +42,43 @@ public interface IndexService {
   GenericRecord queryByPrimaryKey(Object key);
 
   /**
-   * query all records of a tablespace
+   * Query all records in a tablespace.
    * <p>
-   * Note this will cause out-of-memory if the table is too big
+   * Note this will cause out-of-memory if the table size is too big.
    *
-   * @param recordPredicate optional. evaluating record, if true then it will be added to result set, else skip it
+   * @param recordPredicate optional. evaluating record, if true then it will be
+   *                        added to result set, else skip it
    * @return all records
    */
   List<GenericRecord> queryAll(Optional<Predicate<GenericRecord>> recordPredicate);
 
   /**
-   * range query records by primary key in a tablespace
+   * Range query records by primary key in a tablespace.
    * <p>
-   * Note this will cause out-of-memory if there are too many records within the range
+   * Note this will cause out-of-memory if there are too many records within the range.
    *
    * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
    * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
-   * @param recordPredicate   optional. evaluating record, if true then it will be added to result set, else skip it
+   * @param recordPredicate   optional. evaluating record, if true then it will be added to
+   *                          result set, else skip it
    * @return list of records
    */
-  List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey, Optional<Predicate<GenericRecord>> recordPredicate);
+  List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey,
+                                             Optional<Predicate<GenericRecord>> recordPredicate);
 
   /**
-   * Return an iterator to query all records of a tablespace
+   * Return an iterator to query all records of a tablespace.
    * <p>
-   * This is friendly to memory since only one page is loaded per batch
+   * This is friendly to memory since only one page is loaded per batch.
    *
    * @return record iterator
    */
   Iterator<GenericRecord> getQueryAllIterator();
 
   /**
-   * Return an iterator to do range query records by primary key in a tablespace
+   * Return an iterator to do range query records by primary key in a tablespace.
    * <p>
-   * This is friendly to memory since only one page is loaded per batch
+   * This is friendly to memory since only one page is loaded per batch.
    *
    * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
    * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper

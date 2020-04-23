@@ -7,14 +7,15 @@ import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 
 /**
- * Column parser
+ * Parser for decoding from a {@link SliceInput} which contains byte array
+ * to a specific data type. For example, parse 4 bytes to an Integer.
  *
  * @author xu.zx
  */
 public interface ColumnParser<V> {
 
   /**
-   * Read value from byte array input with length
+   * Read value from byte array input with length.
    *
    * @param input slice input
    * @param len   length
@@ -23,7 +24,7 @@ public interface ColumnParser<V> {
   V readFrom(SliceInput input, int len);
 
   /**
-   * Read value from byte array input with length and charset
+   * Read value from byte array input with length and charset.
    *
    * @param input   slice input
    * @param len     length
@@ -33,7 +34,7 @@ public interface ColumnParser<V> {
   V readFrom(SliceInput input, int len, String charset);
 
   /**
-   * Read value from byte array input
+   * Read value from byte array input.
    *
    * @param input  slice input
    * @param column column
@@ -42,7 +43,7 @@ public interface ColumnParser<V> {
   V readFrom(SliceInput input, Column column);
 
   /**
-   * Returned value class
+   * Returned value class.
    *
    * @return class
    */

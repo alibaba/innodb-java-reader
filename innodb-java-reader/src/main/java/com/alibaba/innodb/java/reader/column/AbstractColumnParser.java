@@ -7,7 +7,7 @@ import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 
 /**
- * AbstractColumnParser
+ * Abstract column parser.
  *
  * @author xu.zx
  */

@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader.page;
 
 /**
- * Unused page
+ * Allocated empty page which is unused.
  *
  * @author xu.zx
  */

@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader.exception;
 
 /**
- * ParseException
+ * Column parsing exception.
  *
  * @author xu.zx
  */

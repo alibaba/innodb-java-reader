@@ -6,7 +6,7 @@ package com.alibaba.innodb.java.reader.util;
 import java.nio.ByteBuffer;
 
 /**
- * Slices
+ * Slices.
  *
  * @author xu.zx
  */

@@ -71,16 +71,20 @@ public class ColumnCharTableReaderTest extends AbstractTest {
           assertThat(record.get("c"), is(((char) (97 + i)) + StringUtils.repeat('c', 254)));
           assertThat(record.get("d"), is(((char) (97 + i)) + StringUtils.repeat('d', 255)));
           assertThat(record.get("e"), is(((char) (97 + i)) + StringUtils.repeat('e', 511)));
-          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('f', 31) + StringUtils.repeat(' ', 32 - 31 - 1)));
-          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('g', 254) + StringUtils.repeat(' ', 255 - 254 - 1)));
+          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('f', 31)
+              + StringUtils.repeat(' ', 32 - 31 - 1)));
+          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('g', 254)
+              + StringUtils.repeat(' ', 255 - 254 - 1)));
         } else {
           assertThat(record.get("a"), is(((char) (97 + i)) + StringUtils.repeat('a', 8)));
           assertThat(record.get("b"), is(((char) (97 + i)) + StringUtils.repeat('b', 10)));
           assertThat(record.get("c"), is(((char) (97 + i)) + StringUtils.repeat('c', 100)));
           assertThat(record.get("d"), is(((char) (97 + i)) + StringUtils.repeat('d', 126)));
           assertThat(record.get("e"), is(((char) (97 + i)) + StringUtils.repeat('e', 400)));
-          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('f', 8) + StringUtils.repeat(' ', 32 - 8 - 1)));
-          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('g', 10) + StringUtils.repeat(' ', 255 - 10 - 1)));
+          assertThat(record.get("f"), is(((char) (97 + i)) + StringUtils.repeat('f', 8)
+              + StringUtils.repeat(' ', 32 - 8 - 1)));
+          assertThat(record.get("g"), is(((char) (97 + i)) + StringUtils.repeat('g', 10)
+              + StringUtils.repeat(' ', 255 - 10 - 1)));
         }
       }
     }

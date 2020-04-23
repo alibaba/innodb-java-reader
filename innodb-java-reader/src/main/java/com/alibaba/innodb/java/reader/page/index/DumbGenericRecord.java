@@ -6,7 +6,7 @@ package com.alibaba.innodb.java.reader.page.index;
 import com.alibaba.innodb.java.reader.schema.Schema;
 
 /**
- * 用于range query查询起始和结束位置的特殊record
+ * For range query, this is the starting and ending pivot record.
  *
  * @author xu.zx
  */

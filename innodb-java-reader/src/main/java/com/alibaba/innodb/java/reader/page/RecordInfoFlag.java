@@ -10,7 +10,7 @@ import com.alibaba.innodb.java.reader.util.IdAble;
 import java.util.Map;
 
 /**
- * Record header flag
+ * Record header flag.
  *
  * @author xu.zx
  */

@@ -8,7 +8,7 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import lombok.Data;
 
 /**
- * 8 bytes page trailer
+ * 8 bytes page trailer.
  *
  * @author xu.zx
  */

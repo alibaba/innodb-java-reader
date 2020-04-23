@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 
 /**
- * Schema description, like <code>SHOW CREATE TABLE LIKE 'TTT'</code>
+ * Schema description, like <code>SHOW CREATE TABLE LIKE 'TTT'</code>.
  *
  * @author xu.zx
  */
@@ -52,7 +52,7 @@ public class Schema {
   private int pos = 0;
 
   /**
-   * for decoding string in Java
+   * For decoding string in Java.
    */
   private String charset = DEFAULT_JAVA_CHARSET;
 

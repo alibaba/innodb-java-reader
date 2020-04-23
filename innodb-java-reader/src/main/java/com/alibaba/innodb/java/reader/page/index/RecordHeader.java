@@ -9,7 +9,7 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import lombok.Data;
 
 /**
- * RecordHeader
+ * Record header.
  *
  * @author xu.zx
  */
@@ -18,21 +18,23 @@ public class RecordHeader {
 
   /**
    * fo Flags: A 4-bit bitmap to store boolean flags about this record.
-   * Currently only two flags are defined: min_rec (1) meaning this record is the minimum record in a non-leaf level of the B+Tree,
-   * and deleted (2) meaning the record is delete-marked (and will be actually deleted by a purge operation in the future).
+   * Currently only two flags are defined: min_rec (1) meaning this record is the minimum
+   * record in a non-leaf level of the B+Tree, and deleted (2) meaning the record is
+   * delete-marked (and will be actually deleted by a purge operation in the future).
    */
   private RecordInfoFlag infoFlag;
 
   /**
-   * Number of Records Owned: The number of records “owned” by the current record in the page directory.
-   * This field will be further discussed in a future post about the page directory.
+   * Number of Records Owned: The number of records “owned” by the current record in
+   * the page directory. This field will be further discussed in a future post about
+   * the page directory.
    */
   private int numOfRecOwned;
 
   /**
-   * Order: The order in which this record was inserted into the heap. Heap records (which include infimum and supremum)
-   * are numbered from 0. Infimum is always order 0, supremum is always order 1.
-   * User records inserted will be numbered from 2.
+   * Order: The order in which this record was inserted into the heap. Heap records
+   * (which include infimum and supremum) are numbered from 0. Infimum is always order 0,
+   * supremum is always order 1. User records inserted will be numbered from 2.
    */
   private short order;
 
@@ -43,10 +45,10 @@ public class RecordHeader {
   private RecordType recordType;
 
   /**
-   * Next Record Offset: A relative offset from the current record to the origin of the next record
-   * within the page in ascending order by key.
+   * Next Record Offset: A relative offset from the current record to the origin of the
+   * next record within the page in ascending order by key.
    * <p>
-   * 直接定位到下一个record的数据部分，而不是header
+   * 直接定位到下一个record的数据部分，而不是header.
    */
   private int nextRecOffset;
 

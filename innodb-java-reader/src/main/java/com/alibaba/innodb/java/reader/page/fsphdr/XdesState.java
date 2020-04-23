@@ -6,20 +6,27 @@ package com.alibaba.innodb.java.reader.page.fsphdr;
 import com.alibaba.innodb.java.reader.util.IdAble;
 
 /**
- * Extent state
+ * Extent state.
  *
  * @author xu.zx
  */
 public enum XdesState implements IdAble<Integer> {
 
   /** free extent */
-  FREE(1, "The extent is completely empty and unused, and should be present on the filespace's FREE list"),
+  FREE(1,
+      "The extent is completely empty and unused, and should be "
+      + "present on the filespace's FREE list"),
   /** free fragment extent */
-  FREE_FRAG(2, "Some pages of the extent are used individually, and the extent should be present on the filespace's FREE_FRAG list"),
+  FREE_FRAG(2,
+      "Some pages of the extent are used individually, "
+      + "and the extent should be present on the filespace's FREE_FRAG list"),
   /** full extent */
-  FULL_FRAG(3, "All pages of the extent are used individually, and the extent should be present on the filespace's FULL_FRAG list"),
+  FULL_FRAG(3,
+      "All pages of the extent are used individually, and "
+      + "the extent should be present on the filespace's FULL_FRAG list"),
   /** extent that belongs to one segment */
-  FSEG(4, "The extent is wholly allocated to a file segment."
+  FSEG(4,
+      "The extent is wholly allocated to a file segment."
       + " Additional information about the state of this extent"
       + " can be derived from the its presence on particular"
       + " file segment lists (FULL, NOT_FULL, or FREE)");

@@ -10,7 +10,7 @@ import com.alibaba.innodb.java.reader.util.IdAble;
 import java.util.Map;
 
 /**
- * PageType
+ * Page type.
  * <p>
  * Please refer to i_ss.cc or fil0fil.h
  *

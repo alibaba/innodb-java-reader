@@ -11,14 +11,14 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Service for reading tablespace page
+ * Service for reading tablespace page.
  *
  * @author xu.zx
  */
 public interface StorageService extends Closeable {
 
   /**
-   * open file
+   * Open tablespace file.
    *
    * @param ibdFilePath file path
    * @throws IOException throws IOException when open file fails
@@ -26,7 +26,7 @@ public interface StorageService extends Closeable {
   void open(String ibdFilePath) throws IOException;
 
   /**
-   * load page
+   * Load page.
    *
    * @param pageNumber page number
    * @return InnerPage
@@ -35,7 +35,7 @@ public interface StorageService extends Closeable {
   InnerPage loadPage(long pageNumber) throws ReaderException;
 
   /**
-   * only load page header
+   * Load page header only.
    *
    * @param pageNumber page number
    * @return FilHeader
@@ -44,7 +44,7 @@ public interface StorageService extends Closeable {
   FilHeader loadPageHeader(long pageNumber) throws ReaderException;
 
   /**
-   * Number of pages in the tablespace
+   * Number of pages in the tablespace.
    *
    * @return Number of pages
    */

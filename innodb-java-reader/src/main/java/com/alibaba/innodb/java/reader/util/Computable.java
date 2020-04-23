@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.util;
 import java.util.concurrent.Callable;
 
 /**
- * Computable
+ * Computable.
  *
  * @author xu.zx
  */

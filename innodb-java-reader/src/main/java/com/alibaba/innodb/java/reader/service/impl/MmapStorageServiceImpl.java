@@ -13,7 +13,7 @@ import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * MmapStorageServiceImpl
+ * Storage service leveraging mmap.
  *
  * @author xu.zx
  */

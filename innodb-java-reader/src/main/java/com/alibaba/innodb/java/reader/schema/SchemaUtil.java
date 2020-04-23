@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * SchemaUtil
+ * Schema utility.
  *
  * @author xu.zx
  */
@@ -90,9 +90,11 @@ public class SchemaUtil {
       List<String> argList = col.getColDataType().getArgumentsStringList();
       if (CollectionUtils.isNotEmpty(argList)) {
         if (argList.size() > 2) {
-          throw new SqlParseException("column " + col.getColumnName() + " contains more than two argument, " + argList);
+          throw new SqlParseException("column " + col.getColumnName()
+              + " contains more than two argument, " + argList);
         }
-        column.setType(col.getColDataType().getDataType() + "(" + argList.stream().collect(Collectors.joining(",")) + ")");
+        column.setType(col.getColDataType().getDataType()
+            + "(" + argList.stream().collect(Collectors.joining(",")) + ")");
       } else {
         column.setType(col.getColDataType().getDataType());
       }
@@ -101,7 +103,8 @@ public class SchemaUtil {
       }
       column.setNullable(true);
       if (col.getColumnSpecStrings() != null) {
-        List<String> specList = col.getColumnSpecStrings().stream().map(String::toUpperCase).collect(Collectors.toList());
+        List<String> specList = col.getColumnSpecStrings().stream()
+            .map(String::toUpperCase).collect(Collectors.toList());
         if (specList.contains("UNSIGNED")) {
           column.setType(column.getType() + " UNSIGNED");
         }

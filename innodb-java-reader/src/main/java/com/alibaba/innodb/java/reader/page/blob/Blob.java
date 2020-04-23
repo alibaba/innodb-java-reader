@@ -11,7 +11,7 @@ import lombok.Data;
 import static com.alibaba.innodb.java.reader.util.Utils.maybeUndefined;
 
 /**
- * Overflow page and BLOB,TEXT page
+ * Overflow page and BLOB,TEXT page.
  *
  * @author xu.zx
  */

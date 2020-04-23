@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader;
 
 /**
- * SizeOf
+ * SizeOf.
  *
  * @author xu.zx
  */

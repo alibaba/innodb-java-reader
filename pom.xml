@@ -276,7 +276,6 @@
                         </execution>
                     </executions>
                     <configuration>
-                        <configLocation>checkstyle.xml</configLocation>
                         <suppressionsLocation>/tools/maven/checkstyle-suppressions.xml</suppressionsLocation>
                         <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
@@ -300,7 +299,7 @@
                             <ruleset>rulesets/java/ali-naming.xml</ruleset>
                             <ruleset>rulesets/java/ali-oop.xml</ruleset>
                             <ruleset>rulesets/java/ali-orm.xml</ruleset>
-                            <ruleset>rulesets/java/ali-other.xml</ruleset>
+                            <!-- <ruleset>rulesets/java/ali-other.xml</ruleset> -->
                             <ruleset>rulesets/java/ali-set.xml</ruleset>
                         </rulesets>
                         <printFailingErrors>true</printFailingErrors>
@@ -318,7 +317,7 @@
                         <dependency>
                             <groupId>com.alibaba.p3c</groupId>
                             <artifactId>p3c-pmd</artifactId>
-                            <version>1.3.0</version>
+                            <version>1.3.6</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -408,5 +407,15 @@
             </build>
         </profile>
     </profiles>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>2.3</version>
+            </plugin>
+        </plugins>
+    </reporting>
 
 </project>

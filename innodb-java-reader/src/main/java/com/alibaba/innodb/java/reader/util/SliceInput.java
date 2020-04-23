@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * SliceInput
+ * SliceInput.
  *
  * @author xu.zx
  */

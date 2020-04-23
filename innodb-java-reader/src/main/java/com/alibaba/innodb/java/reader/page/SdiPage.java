@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader.page;
 
 /**
- * Since MySQL8.0, there is SDI, a.k.a Serialized Dictionary Information(SDI)
+ * Since MySQL8.0, there is SDI, a.k.a Serialized Dictionary Information(SDI).
  *
  * @author xu.zx
  */

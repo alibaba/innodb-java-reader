@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.util;
 import java.nio.ByteBuffer;
 
 /**
- * Slice of a byte array or buffer
+ * Slice of a byte array or buffer.
  *
  * @author xu.zx
  */

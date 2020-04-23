@@ -14,7 +14,7 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_FIL_TRAILER;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_PAGE;
 
 /**
- * page = FIL HEADER (38) + body + FIL TRAILER(8)
+ * page = FIL HEADER (38) + body + FIL TRAILER(8).
  *
  * @author xu.zx
  */
@@ -33,7 +33,7 @@ public class InnerPage {
   protected long pageNumber;
 
   /**
-   * 16k page byte buffer with fil header and fil trailer
+   * 16k page byte buffer with fil header and fil trailer.
    */
   @Getter
   protected SliceInput sliceInput;

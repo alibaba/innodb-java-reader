@@ -7,7 +7,7 @@ import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.InnerPage;
 
 /**
- * IBUF BITMAP PAGE
+ * IBUF BITMAP PAGE.
  *
  * @author xu.zx
  */

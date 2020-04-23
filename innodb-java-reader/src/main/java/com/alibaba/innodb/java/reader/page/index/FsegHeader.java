@@ -8,12 +8,11 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import lombok.Data;
 
 /**
- * As described in Page management in InnoDB space files,
- * the index root page’s FSEG header contains pointers to the file segments
- * used by this index.
+ * As described in Page management in InnoDB space files, the index root page’s
+ * FSEG header contains pointers to the file segments used by this index.
  * All other index pages’ FSEG headers are unused and zero-filled.
  * <p>
- * 20 bytes header
+ * 20 bytes header.
  *
  * @author xu.zx
  */

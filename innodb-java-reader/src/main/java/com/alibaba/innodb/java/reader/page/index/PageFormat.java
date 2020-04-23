@@ -10,7 +10,7 @@ import com.alibaba.innodb.java.reader.util.IdAble;
 import java.util.Map;
 
 /**
- * PageFormat
+ * Page format.
  *
  * @author xu.zx
  */

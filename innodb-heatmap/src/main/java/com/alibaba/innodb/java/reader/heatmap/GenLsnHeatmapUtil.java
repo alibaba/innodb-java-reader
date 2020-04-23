@@ -40,19 +40,21 @@ import static java.util.stream.Collectors.toList;
 public class GenLsnHeatmapUtil {
 
   /**
-   * dump page lsn heatmap
+   * Dump page lsn heatmap.
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
    * @param createTableSql    create table sql
    * @param pageWrapNum       number of pages per line in heatmap
    */
-  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql, int pageWrapNum) throws IOException, TemplateException {
-    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql), pageWrapNum, Optional.empty());
+  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql,
+                          int pageWrapNum) throws IOException, TemplateException {
+    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql),
+        pageWrapNum, Optional.empty());
   }
 
   /**
-   * dump page lsn heatmap
+   * Dump page lsn heatmap.
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
@@ -62,11 +64,12 @@ public class GenLsnHeatmapUtil {
    */
   public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql, int pageWrapNum,
                           Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
-    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql), pageWrapNum, widthAndHeight);
+    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql),
+        pageWrapNum, widthAndHeight);
   }
 
   /**
-   * dump page lsn heatmap
+   * Dump page lsn heatmap.
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
@@ -74,7 +77,8 @@ public class GenLsnHeatmapUtil {
    * @param pageWrapNum       number of pages per line in heatmap
    * @param widthAndHeight    optional width and height in heatmap
    */
-  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, Schema schema, int pageWrapNum, Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
+  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, Schema schema, int pageWrapNum,
+                          Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
     Pair<String, String> defaultWidthAndHeight = new Pair<>("1000", "1000");
 
     Configuration configuration = new Configuration(Configuration.getVersion());
@@ -89,13 +93,17 @@ public class GenLsnHeatmapUtil {
     try (TableReader reader = new TableReader(sourceIbdFilePath, schema)) {
       reader.open();
       List<FilHeader> pageHeaders = reader.readAllPageHeaders();
-      List<FilHeader> printablePageHeaders = pageHeaders.stream().filter(p -> p.getPageType() != PageType.ALLOCATED && p.getPageType() != PageType.INDEX).collect(toList());
+      List<FilHeader> printablePageHeaders = pageHeaders.stream()
+          .filter(p -> p.getPageType() != PageType.ALLOCATED && p.getPageType() != PageType.INDEX).collect(toList());
       for (FilHeader printablePageHeader : printablePageHeaders) {
         System.out.println(printablePageHeader);
       }
-      List<FilHeader> validPageHeaders = pageHeaders.stream().filter(p -> p.getPageType() != PageType.ALLOCATED).collect(toList());
-      FilHeader minLsnPageHeader = validPageHeaders.stream().min(Comparator.comparingLong(FilHeader::getLastModifiedLsn)).get();
-      FilHeader maxLsnPageHeader = validPageHeaders.stream().max(Comparator.comparingLong(FilHeader::getLastModifiedLsn)).get();
+      List<FilHeader> validPageHeaders = pageHeaders.stream()
+          .filter(p -> p.getPageType() != PageType.ALLOCATED).collect(toList());
+      FilHeader minLsnPageHeader = validPageHeaders.stream()
+          .min(Comparator.comparingLong(FilHeader::getLastModifiedLsn)).get();
+      FilHeader maxLsnPageHeader = validPageHeaders.stream()
+          .max(Comparator.comparingLong(FilHeader::getLastModifiedLsn)).get();
       long minLsn = minLsnPageHeader.getLastModifiedLsn();
       long maxLsn = maxLsnPageHeader.getLastModifiedLsn();
       long range = maxLsn - minLsn;

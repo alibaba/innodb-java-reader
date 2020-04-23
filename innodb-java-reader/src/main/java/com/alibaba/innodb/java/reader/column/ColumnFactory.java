@@ -23,16 +23,21 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_MEDIUMINT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
 
 /**
- * Column parser factory. Please refer to <code>DataTypeHandler.cc</code>
+ * Column parser factory.
+ * Some of the code are referred from Mysql source code in
+ * <code>DataTypeHandler.cc</code>.
  *
  * @author xu.zx
  */
 public class ColumnFactory {
 
+  /**
+   * This map should be immutable and initialized when program starts.
+   */
   private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP;
 
   /**
-   * Prevent instantiation
+   * Prevent instantiation.
    */
   private ColumnFactory() {
   }
@@ -46,7 +51,9 @@ public class ColumnFactory {
   }
 
   /**
-   * This works the same as <code>RowSetMetaDataImpl#getColumnClassName(int columnIndex)</code> in MySQL JDBC driver
+   * This works the same as
+   * <code>RowSetMetaDataImpl#getColumnClassName(int columnIndex)</code>
+   * in MySQL JDBC driver.
    *
    * @param columnType column type
    * @return column java class
@@ -145,7 +152,8 @@ public class ColumnFactory {
   };
 
   /**
-   * Decoding method works the same way as inline function <code>sint3korr</code> from <code>my_byteorder.h</code>
+   * Decoding method works the same way as inline function
+   * <code>sint3korr</code> from <code>my_byteorder.h</code>
    * <pre>
    * static inline int32 sint3korr(const uchar *A)
    * {
@@ -237,12 +245,15 @@ public class ColumnFactory {
   /**
    * https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html
    * <p>
-   * a CHAR(255) column can exceed 768 bytes if the maximum byte length of the character set is greater than 3, as it is with utf8mb4.
+   * a CHAR(255) column can exceed 768 bytes if the maximum byte length of the character
+   * set is greater than 3, as it is with utf8mb4.
    * <p>
-   * 在单字节字符集下，如果存储的是非 NULL 值时，会占满指定的空间。比如 CHAR(10)，存储除 NULL 之外的其它值时，一定会占 10 bytes 空间，不足用 \x20 填充。
-   * 在多字节字符集下（测试用的是 utf8mb4），如果存储的是非 NULL 值时
-   * 至少占用与指定值相等的字节空间，比如 CHAR(10)，至少会占用 10 bytes 空间，如果存储的内容超过了 10 bytes （对于 ubf8mb4 编码来说，CHAR(10) 最多能存储 40 bytes 内容），那么只占用实际占用的字节数。
-   *
+   * 在单字节字符集下，如果存储的是非 NULL 值时，会占满指定的空间。比如 CHAR(10)，存储除 NULL
+   * 之外的其它值时，一定会占 10 bytes 空间，不足用 \x20 填充。在多字节字符集下（测试用的是 utf8mb4）
+   * 如果存储的是非 NULL 值时, 至少占用与指定值相等的字节空间，比如 CHAR(10)，至少会占用 10 bytes
+   * 空间，如果存储的内容超过了 10 bytes （对于 ubf8mb4 编码来说，CHAR(10) 最多能存储 40 bytes 内容），
+   * 那么只占用实际占用的字节数。
+   * <p>
    * 总结一下就是，对于 CHAR(n)，如果占用的空间字节数少于 n，会用 \x20 填充，大于等于 n 的话，不需再填充。
    * 会用额外字节来记录 CHAR 类型字段实际占用的字节数，这与 VARCHAR 类似。
    */
@@ -329,8 +340,9 @@ public class ColumnFactory {
 
   /**
    * As of MySQL 5.6.4 the TIME, TIMESTAMP, and DATETIME types can have a fractional seconds part.
-   * Storage for these types is big endian (for memcmp() compatibility purposes), with the nonfractional
-   * part followed by the fractional part. (Storage and encoding for the YEAR and DATE types remains unchanged.)
+   * Storage for these types is big endian (for memcmp() compatibility purposes), with the
+   * nonfractional part followed by the fractional part. (Storage and encoding for the YEAR and
+   * DATE types remains unchanged.)
    * <p>
    * https://dev.mysql.com/doc/internals/en/date-and-time-data-type-representation.html
    * <pre>

@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.util;
 import java.lang.reflect.Method;
 
 /**
- * EnumUtil
+ * Enum utility.
  * <p>
  * This util class is useful to find enum from an identifier. For example,
  * <code>EnumUtil.find(PageType.class, 3)</code>.

@@ -13,7 +13,7 @@ import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * DirectIoStorageServiceImpl
+ * Storage service leveraging direct io.
  *
  * @author xu.zx
  */

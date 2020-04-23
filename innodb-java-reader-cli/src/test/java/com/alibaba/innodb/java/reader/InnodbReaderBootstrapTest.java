@@ -27,7 +27,8 @@ import static org.junit.Assert.assertThat;
  */
 public class InnodbReaderBootstrapTest {
 
-  private String sourceIbdFilePath = "../innodb-java-reader/src/test/resources/testsuite/mysql57/multiple/level/tb10.ibd";
+  private String sourceIbdFilePath =
+      "../innodb-java-reader/src/test/resources/testsuite/mysql57/multiple/level/tb10.ibd";
 
   private String createTableSqlPath = "src/test/resources/tb10.sql";
 
@@ -49,10 +50,12 @@ public class InnodbReaderBootstrapTest {
   /**
    * By running the following command:
    * <pre>
-   *   mysql  -N -uroot -Dtest -e "select * from test.tb10" > tb10.dat2 && cat tb10.dat2 | tr "\t" "," > tb10-comma-delimiter.dat
+   *   mysql  -N -uroot -Dtest -e "select * from test.tb10" >
+   *   tb10.dat2 && cat tb10.dat2 | tr "\t" "," > tb10-comma-delimiter.dat
    * </pre>
    */
-  private static String TB10_DATA_FILE_WITH_COMMA_DELIMITER = "src/test/resources/tb10-comma-delimiter.dat";
+  private static String TB10_DATA_FILE_WITH_COMMA_DELIMITER =
+      "src/test/resources/tb10-comma-delimiter.dat";
 
   /**
    * By running the following command:
@@ -83,7 +86,8 @@ public class InnodbReaderBootstrapTest {
 
   @Test
   public void testShowAllPages() {
-    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+    String[] args = {"-ibd-file-path", sourceIbdFilePath,
+        "-create-table-sql-file-path", createTableSqlPath,
         "-c", "show-all-pages"};
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
@@ -91,7 +95,8 @@ public class InnodbReaderBootstrapTest {
     assertThat(output.get(1), is("0,FILE_SPACE_HEADER,space=50,numPagesUsed=36,size=576,xdes.size=2"));
     assertThat(output.get(2), is("1,IBUF_BITMAP"));
     assertThat(output.get(3), is("2,INODE,inode.size=2"));
-    assertThat(output.get(4), is("3,INDEX,root.page=true,index.id=66,level=1,numOfRecs=39,num.dir.slot=10,garbage.space=0"));
+    assertThat(output.get(4),
+        is("3,INDEX,root.page=true,index.id=66,level=1,numOfRecs=39,num.dir.slot=10,garbage.space=0"));
     assertThat(output.get(5), is("4,INDEX,index.id=66,level=0,numOfRecs=13,num.dir.slot=5,garbage.space=7501"));
     assertThat(output.get(37), is("36,ALLOCATED"));
   }
@@ -103,7 +108,8 @@ public class InnodbReaderBootstrapTest {
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(3));
-    assertThat(output.get(0).startsWith("Index(indexHeader=IndexHeader(numOfDirSlots=10, heapTopPosition=627, numOfHeapRecords=41, format=COMPACT"),
+    assertThat(output.get(0).startsWith("Index(indexHeader=IndexHeader(numOfDirSlots=10, "
+            + "heapTopPosition=627, numOfHeapRecords=41, format=COMPACT"),
         is(true));
   }
 
@@ -172,19 +178,22 @@ public class InnodbReaderBootstrapTest {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "gen-filling-rate-heatmap", "-args", "/tmp/lsn-filling-rate-output.html 800 1000"};
     InnodbReaderBootstrap.main(args);
-    List<String> fileContent = Files.readLines(new File("/tmp/lsn-filling-rate-output.html"), Charset.defaultCharset());
+    List<String> fileContent = Files.readLines(new File("/tmp/lsn-filling-rate-output.html"),
+        Charset.defaultCharset());
     assertThat(fileContent.get(0), is("<head>"));
     assertThat(fileContent.get(1067).trim(), is("0.466"));
   }
 
   @Test
   public void testQueryAllBufferIO() throws IOException {
-    testIOTemplate("/tmp/query-all-buffer-io.out", "buffer", EXPECTED_TB10_DATE_FILE_MD5, false);
+    testIOTemplate("/tmp/query-all-buffer-io.out", "buffer",
+        EXPECTED_TB10_DATE_FILE_MD5, false);
   }
 
   @Test
   public void testQueryAllMmapIO() throws IOException {
-    testIOTemplate("/tmp/query-all-mmap-io.out", "mmap", EXPECTED_TB10_DATE_FILE_MD5, false);
+    testIOTemplate("/tmp/query-all-mmap-io.out", "mmap",
+        EXPECTED_TB10_DATE_FILE_MD5, false);
   }
 
   /**
@@ -193,7 +202,8 @@ public class InnodbReaderBootstrapTest {
   @Test
   public void testQueryAllDirectIO() throws IOException {
     if (System.getenv("support_dio") != null) {
-      testIOTemplate("/tmp/query-all-direct-io.out", "direct", EXPECTED_TB10_DATE_FILE_MD5, false);
+      testIOTemplate("/tmp/query-all-direct-io.out", "direct",
+          EXPECTED_TB10_DATE_FILE_MD5, false);
     } else {
       System.out.println("system does not support dio, so skip test");
     }
@@ -201,12 +211,14 @@ public class InnodbReaderBootstrapTest {
 
   @Test
   public void testQueryAllShowHeader() throws IOException {
-    testIOTemplate("/tmp/query-all-mmap-io.out", "mmap", EXPECTED_TB10_DATE_FILE_WITH_HEADER_MD5, true);
+    testIOTemplate("/tmp/query-all-mmap-io.out", "mmap",
+        EXPECTED_TB10_DATE_FILE_WITH_HEADER_MD5, true);
   }
 
   @Test
   public void testQueryAllCommaDelimiter() throws IOException {
-    testIOTemplate("/tmp/query-all-mmap-io.out", "mmap", EXPECTED_TB10_DATE_FILE_WITH_COMMA_DELIMITER_MD5, false, ",");
+    testIOTemplate("/tmp/query-all-mmap-io.out", "mmap",
+        EXPECTED_TB10_DATE_FILE_WITH_COMMA_DELIMITER_MD5, false, ",");
   }
 
   @Test
@@ -219,11 +231,13 @@ public class InnodbReaderBootstrapTest {
     assertThat(output.get(1).startsWith("Index page filling rate is 0.8898"), is(true));
   }
 
-  private void testIOTemplate(String outputFilePath, String ioMode, String expectedFileMd5, boolean showHeader) throws IOException {
+  private void testIOTemplate(String outputFilePath, String ioMode,
+                              String expectedFileMd5, boolean showHeader) throws IOException {
     testIOTemplate(outputFilePath, ioMode, expectedFileMd5, showHeader, "\t");
   }
 
-  private void testIOTemplate(String outputFilePath, String ioMode, String expectedFileMd5, boolean showHeader, String delimiter) throws IOException {
+  private void testIOTemplate(String outputFilePath, String ioMode,
+                              String expectedFileMd5, boolean showHeader, String delimiter) throws IOException {
     String[] args;
     if (showHeader) {
       args = new String[]{"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,

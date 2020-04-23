@@ -13,7 +13,7 @@ import lombok.ToString;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Generic record representing one row
+ * Generic record representing one row.
  *
  * @author xu.zx
  */
@@ -25,25 +25,26 @@ public class GenericRecord {
   private final RecordHeader header;
 
   /**
-   * 记录在物理文件格式中转为{@link com.alibaba.innodb.java.reader.util.SliceInput}，这个值表示primary key存储位置，
-   * 不包含header，因为每个record header中的next record offset是一个相对位置，等于上一个record的primary key的位置加上这个offset
-   * 就是下一个record的primary key位置。对于infimumu和supremum来说就是literal字符串的起始位置。
+   * 记录在物理文件格式中转为{@link com.alibaba.innodb.java.reader.util.SliceInput}，
+   * 这个值表示primary key存储位置，不包含header，因为每个record header中的next record offset
+   * 是一个相对位置，等于上一个record的primary key的位置加上这个offset 就是下一个record的primary
+   * key位置。对于infimum和supremum来说就是literal字符串的起始位置。
    */
   private int primaryKeyPosition;
 
   /**
-   * Table schema
+   * Table schema.
    */
   @ToString.Exclude
   private Schema schema;
 
   /**
-   * Column values
+   * Column values.
    */
   private Object[] values;
 
   /**
-   * If the record is in non-leaf page, then this represents the child page number
+   * If the record is in non-leaf page, then this represents the child page number.
    */
   private long childPageNumber;
 

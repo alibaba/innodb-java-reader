@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader;
 
 /**
- * Constants
+ * Constants.
  *
  * @author xu.zx
  */

@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Column description
+ * Column description.
  *
  * @author xu.zx
  */
@@ -32,7 +32,7 @@ public class Column {
   private String name;
 
   /**
-   * Type is in upper case
+   * Type is in upper case.
    *
    * @see com.alibaba.innodb.java.reader.column.ColumnType
    */
@@ -43,35 +43,39 @@ public class Column {
   private boolean isPrimaryKey;
 
   /**
-   * This represents display size for integer type, max variable length for varchar type or fixed length for char type.
-   * This can only be set internally.
+   * This represents display size for integer type, max variable length for varchar
+   * type or fixed length for char type. This can only be set internally.
    */
   private int length;
 
   /**
-   * For DECIMAL(M, D), D is the number of digits to the right of the decimal point (the scale).
-   * It has a range of 0 to 30 and must be no larger than M.
+   * For DECIMAL(M, D), D is the number of digits to the right of the decimal point
+   * (the scale). It has a range of 0 to 30 and must be no larger than M.
    */
   private int scale;
 
   /**
-   * For DECIMAL(M, D), M is the maximum number of digits (the precision). It has a range of 1 to 65.
-   * It has a range of 0 to 30 and must be no larger than M.
+   * For DECIMAL(M, D), M is the maximum number of digits (the precision). It has a range
+   * of 1 to 65. It has a range of 0 to 30 and must be no larger than M.
    * <p>
-   * Since MySQL 5.6, there has fractional seconds support for TIME, DATETIME, and TIMESTAMP values, with up to microseconds (6 digits) precision:
+   * Since MySQL 5.6, there has fractional seconds support for TIME, DATETIME, and TIMESTAMP
+   * values, with up to microseconds (6 digits) precision:
    * <p>
-   * To define a column that includes a fractional seconds part, use the syntax type_name(fsp), where type_name is TIME, DATETIME, or TIMESTAMP, and
-   * fsp is the fractional seconds precision. For example:
+   * To define a column that includes a fractional seconds part, use the syntax type_name(fsp),
+   * where type_name is TIME, DATETIME, or TIMESTAMP, and fsp is the fractional seconds
+   * precision. For example:
    * <p>
    * CREATE TABLE t1 (t TIME(3), dt DATETIME(6));
-   * The fsp value, if given, must be in the range 0 to 6. A value of 0 signifies that there is no fractional part. If omitted, the default precision is 0.
-   * (This differs from the standard SQL default of 6, for compatibility with previous MySQL versions.)
+   * The fsp value, if given, must be in the range 0 to 6. A value of 0 signifies that there
+   * is no fractional part. If omitted, the default precision is 0. (This differs from the
+   * standard SQL default of 6, for compatibility with previous MySQL versions.)
    */
   private int precision;
 
   /**
-   * Character data types (CHAR, VARCHAR, the TEXT types, ENUM, SET, and any synonyms) can include CHARACTER SET to specify the character set for the column.
-   * CHARSET is a synonym for CHARACTER SET.
+   * Character data types (CHAR, VARCHAR, the TEXT types, ENUM, SET, and any synonyms) can
+   * include CHARACTER SET to specify the character set for the column. CHARSET is a synonym
+   * for CHARACTER SET.
    */
   private String charset;
 
@@ -143,7 +147,8 @@ public class Column {
           handlePrecision(wrappedString);
           break;
         default:
-          this.length = Integer.parseInt(StringUtils.substringBetween(type, Symbol.LEFT_PARENTHESES, Symbol.RIGHT_PARENTHESES));
+          this.length = Integer.parseInt(StringUtils.substringBetween(type,
+              Symbol.LEFT_PARENTHESES, Symbol.RIGHT_PARENTHESES));
       }
     } else {
       setTypeToUppercase(type);

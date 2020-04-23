@@ -12,7 +12,7 @@ import lombok.Data;
 import static com.alibaba.innodb.java.reader.util.Utils.maybeUndefined;
 
 /**
- * 38 bytes page header
+ * 38 bytes page header.
  *
  * @author xu.zx
  */
@@ -25,8 +25,8 @@ public class FilHeader {
 
   /**
    * Pointers to the logical previous and next page for this page type are stored in the header.
-   * This allows doubly-linked lists of pages to be built, and this is used for INDEX pages to link all pages at
-   * the same level, which allows for e.g. full index scans to be efficient.
+   * This allows doubly-linked lists of pages to be built, and this is used for INDEX pages to
+   * link all pages at the same level, which allows for e.g. full index scans to be efficient.
    * Many page types do not use these fields.
    */
   @Nullable

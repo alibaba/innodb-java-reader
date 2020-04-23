@@ -12,8 +12,10 @@ import java.util.Optional;
 public class GenLsnHeatmapMainTest {
 
   public static void main(String[] args) throws IOException, TemplateException {
-    //String ibdFilePath = "/Users/xu/IdeaProjects/innodb-java-reader/innodb-java-reader/src/test/resources/testsuite/mysql56/simple/tb01.ibd";
-    String sourceIbdFilePath = "/Users/xu/IdeaProjects/innodb-java-reader/innodb-java-reader/src/test/resources/testsuite/mysql56/multiple/level/tb10.ibd";
+    //String ibdFilePath = "/Users/xu/IdeaProjects/innodb-java-reader/innodb-java-reader/
+    // src/test/resources/testsuite/mysql56/simple/tb01.ibd";
+    String sourceIbdFilePath = "/Users/xu/IdeaProjects/innodb-java-reader/innodb-java-reader"
+        + "/src/test/resources/testsuite/mysql56/multiple/level/tb10.ibd";
     //String ibdFilePath = "/usr/local/mysql/data/test/tb_pk_only.ibd";
     //String ibdFilePath = "/usr/local/mysql/data/test/tb_secondary_index.ibd";
     String createTableSql = "CREATE TABLE `tb11`\n"
@@ -26,7 +28,8 @@ public class GenLsnHeatmapMainTest {
     String destHtmlFilePath = "/tmp/lsn-heatmap.html";
     int pageWrapNum = 64;
 
-    GenLsnHeatmapUtil.dump(sourceIbdFilePath, destHtmlFilePath, createTableSql, pageWrapNum, Optional.of(new Pair<>("800", "500")));
+    GenLsnHeatmapUtil.dump(sourceIbdFilePath, destHtmlFilePath, createTableSql,
+        pageWrapNum, Optional.of(new Pair<>("800", "500")));
   }
 
 }

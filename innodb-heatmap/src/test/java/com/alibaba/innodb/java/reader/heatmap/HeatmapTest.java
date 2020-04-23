@@ -20,7 +20,8 @@ import static org.junit.Assert.assertThat;
  */
 public class HeatmapTest {
 
-  private String sourceIbdFilePath = "../innodb-java-reader/src/test/resources/testsuite/mysql57/multiple/level/tb10.ibd";
+  private String sourceIbdFilePath = "../innodb-java-reader/src/test/resources/testsuite"
+      + "/mysql57/multiple/level/tb10.ibd";
 
   private String createTableSql = "CREATE TABLE `tb10`\n"
       + "(`id` int(11) NOT NULL ,\n"
@@ -34,7 +35,8 @@ public class HeatmapTest {
   public void testGenLsnHeatmap() throws IOException, TemplateException {
     String destHtmlFilePath = "/tmp/lsn-heatmap.html";
     int pageWrapNum = 64;
-    GenLsnHeatmapUtil.dump(sourceIbdFilePath, destHtmlFilePath, createTableSql, pageWrapNum, Optional.of(new Pair<>("800", "500")));
+    GenLsnHeatmapUtil.dump(sourceIbdFilePath, destHtmlFilePath, createTableSql,
+        pageWrapNum, Optional.of(new Pair<>("800", "500")));
     List<String> fileContent = Files.readLines(new File(destHtmlFilePath), Charset.defaultCharset());
     assertThat(fileContent.get(0), is("<head>"));
     assertThat(fileContent.get(1054).trim(), is("97"));
@@ -44,7 +46,8 @@ public class HeatmapTest {
   public void testGenFillingRateHeatmap() throws IOException, TemplateException {
     String destHtmlFilePath = "/tmp/filling-rate-heatmap.html";
     int pageWrapNum = 64;
-    GenFillingRateHeatmapUtil.dump(sourceIbdFilePath, destHtmlFilePath, createTableSql, pageWrapNum, Optional.of(new Pair<>("800", "500")));
+    GenFillingRateHeatmapUtil.dump(sourceIbdFilePath, destHtmlFilePath, createTableSql,
+        pageWrapNum, Optional.of(new Pair<>("800", "500")));
     List<String> fileContent = Files.readLines(new File(destHtmlFilePath), Charset.defaultCharset());
     assertThat(fileContent.get(0), is("<head>"));
     assertThat(fileContent.get(1067).trim(), is("0.466"));

@@ -7,7 +7,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 /**
- * ConcurrentCache
+ * ConcurrentCache.
  *
  * @author xu.zx
  */

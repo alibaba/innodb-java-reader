@@ -16,7 +16,7 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_PAGE_DIR_SLOT;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Index page
+ * Index page.
  *
  * @author xu.zx
  */
@@ -38,7 +38,8 @@ public class Index extends AbstractPage {
 
     // 36 bytes index header
     this.indexHeader = IndexHeader.fromSlice(sliceInput);
-    checkState(this.indexHeader.getFormat() == PageFormat.COMPACT, "only compact page supported");
+    checkState(this.indexHeader.getFormat() == PageFormat.COMPACT,
+        "only compact page supported");
 
     // 20 bytes fseg header
     this.fsegHeader = FsegHeader.fromSlice(sliceInput);
@@ -78,7 +79,8 @@ public class Index extends AbstractPage {
   }
 
   public boolean isRootPage() {
-    return innerPage.getFilHeader().getPrevPage() == null && innerPage.getFilHeader().getNextPage() == null;
+    return innerPage.getFilHeader().getPrevPage() == null
+        && innerPage.getFilHeader().getNextPage() == null;
   }
 
   /**

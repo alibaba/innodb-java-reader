@@ -5,9 +5,9 @@
 
 <module name="Checker">
 
-    <!-- 文件长度不超过2000行 -->
+    <!-- 文件长度不超过4000行 -->
     <module name="FileLength">
-        <property name="max" value="2000"/>
+        <property name="max" value="4000"/>
     </module>
 
     <module name="FileTabCharacter"/>
@@ -20,27 +20,27 @@
         <!-- 检查是否导入了多余的包 -->
         <module name="RedundantImport"/>
         <!-- 没用的import检查，比如：1.没有被用到2.重复的3.import java.lang的4.import 与该类在同一个package的 -->
-        <!--<module name="UnusedImports" />-->
+        <module name="UnusedImports" />
 
         <!-- 注释检查 -->
-        <!--<module name="JavadocMethod">-->
-        <!--<property name="scope" value="package"/>-->
-        <!--<property name="allowMissingParamTags" value="true"/>-->
-        <!--<property name="allowMissingThrowsTags" value="true"/>-->
-        <!--<property name="allowMissingReturnTag" value="true"/>-->
-        <!--<property name="allowThrowsTagsForSubclasses" value="true"/>-->
-        <!--<property name="allowUndeclaredRTE" value="true"/>-->
-        <!--<property name="allowMissingPropertyJavadoc" value="true"/>-->
-        <!--</module>-->
-        <!--<module name="JavadocType">-->
-        <!--<property name="scope" value="package"/>-->
-        <!--</module>-->
-        <!--<module name="JavadocVariable">-->
-        <!--<property name="scope" value="package"/>-->
-        <!--</module>-->
-        <!--<module name="JavadocStyle">-->
-        <!--<property name="checkEmptyJavadoc" value="true"/>-->
-        <!--</module>-->
+<!--        <module name="JavadocMethod">-->
+<!--            <property name="scope" value="package"/>-->
+<!--            <property name="allowMissingParamTags" value="true"/>-->
+<!--            <property name="allowMissingThrowsTags" value="true"/>-->
+<!--            <property name="allowMissingReturnTag" value="true"/>-->
+<!--            <property name="allowThrowsTagsForSubclasses" value="true"/>-->
+<!--            <property name="allowUndeclaredRTE" value="true"/>-->
+<!--            <property name="allowMissingPropertyJavadoc" value="true"/>-->
+<!--        </module>-->
+<!--        <module name="JavadocType">-->
+<!--            <property name="scope" value="package"/>-->
+<!--        </module>-->
+<!--        <module name="JavadocVariable">-->
+<!--            <property name="scope" value="package"/>-->
+<!--        </module>-->
+<!--        <module name="JavadocStyle">-->
+<!--            <property name="checkEmptyJavadoc" value="true"/>-->
+<!--        </module>-->
 
         <!-- 命名检查 -->
         <!-- 局部的final变量，包括catch中的参数的检查 -->
@@ -77,14 +77,14 @@
         <module name="UpperEll"/>
 
         <!-- 长度检查 -->
-        <!-- 每行不超过200个字符 -->
+        <!-- 每行不超过120个字符 -->
         <module name="LineLength">
-            <property name="max" value="200"/>
+            <property name="max" value="120"/>
         </module>
-        <!-- 方法不超过300行 -->
+        <!-- 方法不超过1000行 -->
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
-            <property name="max" value="300"/>
+            <property name="max" value="1000"/>
         </module>
         <!-- 方法的参数个数不超过10个。 并且不对构造方法进行检查-->
         <module name="ParameterNumber">
@@ -165,9 +165,9 @@
         <!-- 语法 -->
         <!-- String的比较不能用!= 和 == -->
         <module name="StringLiteralEquality"/>
-        <!-- 限制for循环最多嵌套2层 -->
+        <!-- 限制for循环最多嵌套3层 -->
         <module name="NestedForDepth">
-            <property name="max" value="2"/>
+            <property name="max" value="3"/>
         </module>
         <!-- if最多嵌套6层 -->
         <module name="NestedIfDepth">
@@ -186,9 +186,9 @@
         <module name="ReturnCount">
             <property name="max" value="8"/>
         </module>
-        <!--try catch 异常处理数量 3-->
+        <!--try catch 异常处理数量 4-->
         <module name="NestedTryDepth ">
-            <property name="max" value="3"/>
+            <property name="max" value="4"/>
         </module>
         <!-- clone方法必须调用了super.clone() -->
         <module name="SuperClone"/>

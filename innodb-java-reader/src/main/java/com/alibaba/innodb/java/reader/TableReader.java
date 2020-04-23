@@ -38,7 +38,8 @@ import static com.alibaba.innodb.java.reader.page.PageType.INDEX;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Table space reader to manipulate *.ibd file. Note that operations are thread-safe.
+ * Reader to query upon an Innodb file with suffix of <tt>*.ibd</tt>.
+ * All operations are thread-safe.
  *
  * @author xu.zx
  */
@@ -78,7 +79,8 @@ public class TableReader implements Closeable {
   }
 
   /**
-   * Get number of pages. If page size is 16KiB, then the value will be <code>file size / 16384</code>.
+   * Get number of pages.
+   * If page size is 16KiB, then the value will be <code>file size / 16384</code>.
    *
    * @return number of pages
    */
@@ -232,7 +234,8 @@ public class TableReader implements Closeable {
     return indexService.rangeQueryByPrimaryKey(lowerInclusiveKey, upperExclusiveKey, Optional.empty());
   }
 
-  public List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey, Predicate<GenericRecord> recordPredicate) {
+  public List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey,
+                                                    Predicate<GenericRecord> recordPredicate) {
     return indexService.rangeQueryByPrimaryKey(lowerInclusiveKey, upperExclusiveKey, Optional.of(recordPredicate));
   }
 

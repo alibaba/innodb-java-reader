@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader.util;
 
 /**
- * For enum types
+ * For enum types.
  *
  * @author xu.zx
  */

@@ -73,7 +73,8 @@ public class ColumnBinaryTableReaderTest extends AbstractTest {
         assertThat(((byte[]) record.get("c")).length, is(401));
         assertThat(record.get("c"), is(getContent((byte) (97 + i), (byte) 0x0c, 400)));
 
-        // a BINARY(255) column can exceed 768 bytes if the maximum byte length of the character set is greater than 3, as it is with utf8mb4.
+        // a BINARY(255) column can exceed 768 bytes if the maximum byte length of the character set
+        // is greater than 3, as it is with utf8mb4.
         assertThat(record.get("d"), is(getContent((byte) (97 + i), (byte) 0x0a, 8, 32)));
         if ((i % 2) == 0) {
           assertThat(((byte[]) record.get("e")).length, is(255));

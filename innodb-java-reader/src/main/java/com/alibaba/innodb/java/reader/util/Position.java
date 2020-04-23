@@ -6,6 +6,8 @@
 package com.alibaba.innodb.java.reader.util;
 
 /**
+ * Position.
+ *
  * @author hexiufeng
  */
 public final class Position {

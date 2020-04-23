@@ -13,7 +13,7 @@ import lombok.Data;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Page base class
+ * Page base class.
  *
  * @author xu.zx
  */
@@ -26,7 +26,7 @@ public abstract class AbstractPage {
   protected InnerPage innerPage;
 
   /**
-   * page byte array
+   * page byte array.
    */
   protected SliceInput sliceInput;
 

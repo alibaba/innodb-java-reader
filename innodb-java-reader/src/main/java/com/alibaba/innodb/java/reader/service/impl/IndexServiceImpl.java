@@ -56,7 +56,7 @@ import static com.google.common.base.Preconditions.checkPositionIndex;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Index service implementation
+ * Index service implementation.
  * <p>
  * Only work for clustered index currently.
  *
@@ -97,7 +97,8 @@ public class IndexServiceImpl implements IndexService, Constants {
    * @param maxExclusive if rangeQuery is true, then this is the upper bound
    * @return list of records
    */
-  private List<GenericRecord> queryByIndexPage(Index index, boolean rangeQuery, Object minInclusive, Object maxExclusive) {
+  private List<GenericRecord> queryByIndexPage(Index index, boolean rangeQuery,
+                                               Object minInclusive, Object maxExclusive) {
     // num of heap records - system records
     List<GenericRecord> result = new ArrayList<>(index.getIndexHeader().getNumOfRecs());
     SliceInput sliceInput = index.getSliceInput();
@@ -187,7 +188,8 @@ public class IndexServiceImpl implements IndexService, Constants {
       }
       if (castCompare(lower, upper) == 0) {
         GenericRecord record = queryByPrimaryKey(lower);
-        return record == null ? new RecordIterator(Collections.emptyList()) : new RecordIterator(Lists.newArrayList(record));
+        return record == null ? new RecordIterator(Collections.emptyList())
+            : new RecordIterator(Lists.newArrayList(record));
       }
     }
     if (lower == null) {
@@ -240,7 +242,8 @@ public class IndexServiceImpl implements IndexService, Constants {
   }
 
   @Override
-  public List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey, Optional<Predicate<GenericRecord>> recordPredicate) {
+  public List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey,
+                                                    Optional<Predicate<GenericRecord>> recordPredicate) {
     // quick way to query all
     if (lowerInclusiveKey == null && upperExclusiveKey == null) {
       return queryAll(recordPredicate);
@@ -271,9 +274,11 @@ public class IndexServiceImpl implements IndexService, Constants {
    *
    * @param pageNumber      page number
    * @param recordList      where record will be add to
-   * @param recordPredicate evaluating record, if true then it will be added to result set, else skip it
+   * @param recordPredicate evaluating record, if true then it will be added to result set,
+   *                        else skip it
    */
-  public void traverseBPlusTree(long pageNumber, List<GenericRecord> recordList, Optional<Predicate<GenericRecord>> recordPredicate) {
+  public void traverseBPlusTree(long pageNumber, List<GenericRecord> recordList,
+                                Optional<Predicate<GenericRecord>> recordPredicate) {
     Index index = loadIndexPage(pageNumber);
     SliceInput sliceInput = index.getSliceInput();
 
@@ -321,11 +326,13 @@ public class IndexServiceImpl implements IndexService, Constants {
   /**
    * linear search from a record in one page.
    * <p>
-   * Algorithm looks like <code>page_cur_search_with_match</code> function in <code>page0page.cc</code>.
+   * Algorithm looks like <code>page_cur_search_with_match</code> function
+   * in <code>page0page.cc</code>.
    *
    * @param pageNumber page number
    * @param index      page index
-   * @param position   record starting position, usually it is the primary key position
+   * @param position   record starting position, usually it is the primary
+   *                   key position
    * @param targetKey  search target key
    * @return GenericRecord if found, or else DumbGenericRecord representing a closest record
    */
@@ -346,7 +353,8 @@ public class IndexServiceImpl implements IndexService, Constants {
           return new DumbGenericRecord(record);
         } else {
           // corner case,对于比smallest还小的需要判断infimum
-          long childPageNumber = Utils.cast(preRecord.equals(index.getInfimum()) ? record.getChildPageNumber() : preRecord.getChildPageNumber());
+          long childPageNumber = Utils.cast(preRecord.equals(index.getInfimum())
+              ? record.getChildPageNumber() : preRecord.getChildPageNumber());
           return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey);
         }
       } else if (compare == 0) {
@@ -372,14 +380,16 @@ public class IndexServiceImpl implements IndexService, Constants {
   }
 
   /**
-   * Search from directory slots in binary search way, and then call {@link #linearSearch(long, Index, int, Object)}
+   * Search from directory slots in binary search way, and then call
+   * {@link #linearSearch(long, Index, int, Object)}
    * to search the specific record.
    *
    * @param pageNumber page number
    * @param index      index page
    * @param targetKey  search target key
    * @return GenericRecord
-   * @see <a href="https://leetcode-cn.com/problems/search-insert-position">search-insert-position on leetcode</a>
+   * @see <a href="https://leetcode-cn.com/problems/search-insert-position">search-insert-position
+   * on leetcode</a>
    */
   private GenericRecord binarySearchByDirectory(long pageNumber, Index index, Object targetKey) {
     checkNotNull(index);
@@ -400,8 +410,10 @@ public class IndexServiceImpl implements IndexService, Constants {
       record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
       checkNotNull(record, "record should not be null");
       if (log.isDebugEnabled()) {
-        log.debug("searchByDir: page={}, level={}, recordKey={}, targetKey={}, dirSlotSize={}, start={}, end={}, mid={}",
-            pageNumber, index.getIndexHeader().getPageLevel(), record.getPrimaryKey(), targetKey, dirSlots.length, start, end, mid);
+        log.debug("searchByDir: page={}, level={}, recordKey={}, targetKey={}, dirSlotSize={}, "
+                + "start={}, end={}, mid={}",
+            pageNumber, index.getIndexHeader().getPageLevel(), record.getPrimaryKey(), targetKey,
+            dirSlots.length, start, end, mid);
       }
 
       Object midVal = record.getPrimaryKey();
@@ -421,13 +433,17 @@ public class IndexServiceImpl implements IndexService, Constants {
   private Index loadIndexPage(long pageNumber) {
     InnerPage page = storageService.loadPage(pageNumber);
     int sdiPageNum = 0;
-    while (sdiPageNum++ < ROOT_PAGE_NUMBER + 1 && page.pageType() != null && PageType.SDI.equals(page.pageType())) {
+    while (sdiPageNum++ < ROOT_PAGE_NUMBER + 1
+        && page.pageType() != null
+        && PageType.SDI.equals(page.pageType())) {
       log.debug("Skip SDI page " + page.getPageNumber() + " since this is mysql8");
       page = storageService.loadPage(++pageNumber);
     }
-    checkState(page.getFilHeader().getPageType() == PageType.INDEX, "page " + pageNumber + " is not index page but " + page.getFilHeader().getPageType());
+    checkState(page.getFilHeader().getPageType() == PageType.INDEX,
+        "page " + pageNumber + " is not index page but " + page.getFilHeader().getPageType());
     Index index = new Index(page, schema);
-    log.debug("load {} page {}, {} records", index.isLeafPage() ? "leaf" : "non-leaf", pageNumber, index.getIndexHeader().getNumOfRecs());
+    log.debug("load {} page {}, {} records", index.isLeafPage()
+        ? "leaf" : "non-leaf", pageNumber, index.getIndexHeader().getNumOfRecs());
     return index;
   }
 
@@ -436,7 +452,8 @@ public class IndexServiceImpl implements IndexService, Constants {
     if (page.pageType() != null && PageType.LOB_FIRST.equals(page.pageType())) {
       throw new IllegalStateException("New format of LOB page type not supported currently");
     }
-    checkState(page.getFilHeader().getPageType() == PageType.BLOB, "page " + pageNumber + " is not blob page but " + page.getFilHeader().getPageType());
+    checkState(page.getFilHeader().getPageType() == PageType.BLOB,
+        "page " + pageNumber + " is not blob page but " + page.getFilHeader().getPageType());
     Blob blob = new Blob(page, offset);
     log.debug("load page {}, {}", pageNumber, blob);
     return blob;
@@ -465,7 +482,8 @@ public class IndexServiceImpl implements IndexService, Constants {
       nullColumnNames = Utils.getFromBitArray(schema.getNullableColumnList(), nullBitmap, Column::getName);
     }
 
-    // For each non-NULL variable-length field, the record header contains the length in one or two bytes.
+    // For each non-NULL variable-length field, the record header contains the length
+    // in one or two bytes.
     int[] varLenArray = null;
     boolean[] overflowPageArray = null;
     if (isLeafPage && schema.containsVariableLengthColumn()) {
@@ -498,7 +516,8 @@ public class IndexServiceImpl implements IndexService, Constants {
     bodyInput.setPosition(primaryKeyPos);
     GenericRecord record = new GenericRecord(header, schema, pageNumber);
     String primaryKeyColumnType = schema.getPrimaryKeyColumn().getType();
-    Object primaryKey = ColumnFactory.getColumnParser(primaryKeyColumnType).readFrom(bodyInput, schema.getPrimaryKeyColumn());
+    Object primaryKey = ColumnFactory.getColumnParser(primaryKeyColumnType)
+        .readFrom(bodyInput, schema.getPrimaryKeyColumn());
     if (log.isDebugEnabled()) {
       log.debug("read record, pkPos={}, key={}, recordHeader={}, nullColumnNames={}, varLenArray={}",
           primaryKeyPos, primaryKey, header, nullColumnNames, Arrays.toString(varLenArray));
@@ -527,22 +546,24 @@ public class IndexServiceImpl implements IndexService, Constants {
           if (column.isVariableLength()) {
             checkState(varLenArray != null);
             // https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html
-            // Tables that use the COMPACT row format store the first 768 bytes of variable-length column values
-            // (VARCHAR, VARBINARY, and BLOB and TEXT types) in the index record within the B-tree node, with the
-            // remainder stored on overflow pages.
-            // When a table is created with ROW_FORMAT=DYNAMIC, InnoDB can store long variable-length column values
-            // (for VARCHAR, VARBINARY, and BLOB and TEXT types) fully off-page, with the clustered index record containing
-            // only a 20-byte pointer to the overflow page.
+            // Tables that use the COMPACT row format store the first 768 bytes of variable-length
+            // column values (VARCHAR, VARBINARY, and BLOB and TEXT types) in the index record
+            // within the B-tree node, with the remainder stored on overflow pages.
+            // When a table is created with ROW_FORMAT=DYNAMIC, InnoDB can store long variable-length
+            // column values (for VARCHAR, VARBINARY, and BLOB and TEXT types) fully off-page, with
+            // the clustered index record containing only a 20-byte pointer to the overflow page.
             // if (varLenArray[varLenIdx] <= 768) {
             if (!overflowPageArray[varLenIdx]) {
-              Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, varLenArray[varLenIdx], getColumnCharset(column));
+              Object val = ColumnFactory.getColumnParser(column.getType())
+                  .readFrom(bodyInput, varLenArray[varLenIdx], getColumnCharset(column));
               record.put(column.getName(), val);
             } else {
               handleOverflowPage(bodyInput, record, column, varLenArray[varLenIdx]);
             }
             varLenIdx++;
           } else if (column.isFixedLength()) {
-            Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, column.getLength(), getColumnCharset(column));
+            Object val = ColumnFactory.getColumnParser(column.getType())
+                .readFrom(bodyInput, column.getLength(), getColumnCharset(column));
             record.put(column.getName(), val);
           } else {
             Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, column);
@@ -557,7 +578,8 @@ public class IndexServiceImpl implements IndexService, Constants {
     }
 
     // set to next record position
-    checkPositionIndex(record.nextRecordPosition(), SIZE_OF_BODY, "next record position out of bound");
+    checkPositionIndex(record.nextRecordPosition(), SIZE_OF_BODY,
+        "next record position out of bound");
     bodyInput.setPosition(record.nextRecordPosition());
 
     return record;
@@ -574,14 +596,16 @@ public class IndexServiceImpl implements IndexService, Constants {
    * <p>
    * https://docs.oracle.com/cd/E17952_01/mysql-8.0-en/innodb-row-format.html
    * <p>
-   * For each non-NULL variable-length field, the record header contains the length of the column in one or
-   * two bytes. Two bytes are only needed if part of the column is stored externally in overflow pages
-   * or the maximum length exceeds 255 bytes and the actual length exceeds 127 bytes.
-   * For an externally stored column, the 2-byte length indicates the length of the internally stored
-   * part plus the 20-byte pointer to the externally stored part. The internal part is 768 bytes, so the length
-   * is 768+20. The 20-byte pointer stores the true length of the column.
+   * For each non-NULL variable-length field, the record header contains the length of
+   * the column in one or two bytes. Two bytes are only needed if part of the column is
+   * stored externally in overflow pages or the maximum length exceeds 255 bytes and the
+   * actual length exceeds 127 bytes. For an externally stored column, the 2-byte length
+   * indicates the length of the internally stored part plus the 20-byte pointer to the
+   * externally stored part. The internal part is 768 bytes, so the length is 768+20.
+   * The 20-byte pointer stores the true length of the column.
    * <p>
-   * Add by me. Note that charset will be considered when calculating max length of var-len field.
+   * Add by author. Note that charset will be considered when calculating max length of
+   * var-len field.
    *
    * @param varColumn column
    * @param len       first bytes read converted to unsigned int
@@ -597,20 +621,25 @@ public class IndexServiceImpl implements IndexService, Constants {
   }
 
   private void handleOverflowPage(SliceInput bodyInput, GenericRecord record, Column column, int varLen) {
-    if (BLOB_TYPES.contains(column.getType()) || VARBINARY.equals(column.getType())) {
+    if (BLOB_TYPES.contains(column.getType())
+        || VARBINARY.equals(column.getType())) {
       handleBlobOverflowPage(bodyInput, record, column, varLen);
-    } else if (TEXT_TYPES.contains(column.getType()) || VARCHAR.equals(column.getType()) || CHAR.equals(column.getType())) {
+    } else if (TEXT_TYPES.contains(column.getType())
+        || VARCHAR.equals(column.getType())
+        || CHAR.equals(column.getType())) {
       handleCharacterOverflowPage(bodyInput, record, column, varLen);
     } else {
       throw new UnsupportedOperationException("handle overflow page unsupported for type " + column.getType());
     }
   }
 
-  private void handleCharacterOverflowPage(SliceInput bodyInput, GenericRecord record, Column column, int varLen) {
+  private void handleCharacterOverflowPage(SliceInput bodyInput, GenericRecord record,
+                                           Column column, int varLen) {
     int varLenWithoutOffPagePointer = varLen - 20;
     Object val = null;
     if (varLenWithoutOffPagePointer > 0) {
-      val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, varLenWithoutOffPagePointer, getColumnCharset(column));
+      val = ColumnFactory.getColumnParser(column.getType())
+          .readFrom(bodyInput, varLenWithoutOffPagePointer, getColumnCharset(column));
     }
     OverflowPagePointer overflowPagePointer = OverflowPagePointer.fromSlice(bodyInput);
     StringBuilder sb = new StringBuilder(varLenWithoutOffPagePointer + (int) overflowPagePointer.getLength());
@@ -630,7 +659,8 @@ public class IndexServiceImpl implements IndexService, Constants {
       if (blob.hasNext()) {
         nextPageNumber = blob.getNextPageNumber();
       }
-      log.debug("read overflow page {}, content length={}, is end? = {}", overflowPagePointer, content.length, !blob.hasNext());
+      log.debug("read overflow page {}, content length={}, is end? = {}",
+          overflowPagePointer, content.length, !blob.hasNext());
     } while (blob.hasNext());
     record.put(column.getName(), sb.toString());
   }
@@ -655,7 +685,8 @@ public class IndexServiceImpl implements IndexService, Constants {
       if (blob.hasNext()) {
         nextPageNumber = blob.getNextPageNumber();
       }
-      log.debug("read overflow page {}, content length={}, is end? = {}", overflowPagePointer, content.length, !blob.hasNext());
+      log.debug("read overflow page {}, content length={}, is end? = {}",
+          overflowPagePointer, content.length, !blob.hasNext());
     } while (blob.hasNext());
     record.put(column.getName(), buffer.array());
   }

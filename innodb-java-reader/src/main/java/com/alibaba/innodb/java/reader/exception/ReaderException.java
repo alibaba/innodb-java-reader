@@ -4,7 +4,8 @@
 package com.alibaba.innodb.java.reader.exception;
 
 /**
- * ReaderException
+ * Framework root exception.
+ * More specific exceptions can extend this class.
  *
  * @author xu.zx
  */

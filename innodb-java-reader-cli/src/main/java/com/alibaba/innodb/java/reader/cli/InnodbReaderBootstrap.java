@@ -65,9 +65,11 @@ public class InnodbReaderBootstrap {
 
   private static final String JAR_NAME = "innodb-java-reader-cli.jar";
 
-  private static String ALL_COMMANDS = Arrays.stream(CommandType.values()).map(CommandType::getType).collect(Collectors.joining(","));
+  private static String ALL_COMMANDS = Arrays.stream(CommandType.values())
+      .map(CommandType::getType).collect(Collectors.joining(","));
 
-  private static String ALL_OUTPUT_IO_MODE = Arrays.stream(OutputIOMode.values()).map(OutputIOMode::getMode).collect(Collectors.joining(","));
+  private static String ALL_OUTPUT_IO_MODE = Arrays.stream(OutputIOMode.values())
+      .map(OutputIOMode::getMode).collect(Collectors.joining(","));
 
   private static final JsonMapper JSON_MAPPER = JsonMapper.buildNormalMapper();
 
@@ -80,15 +82,34 @@ public class InnodbReaderBootstrap {
 
     Options options = new Options();
     options.addOption("h", "help", false, "usage");
-    options.addOption("i", "ibd-file-path", true, "mandatory. innodb file path with suffix of .ibd");
-    options.addOption("c", "command", true, "mandatory. command to run, valid commands are: " + ALL_COMMANDS);
-    options.addOption("s", "create-table-sql-file-path", true, "create table sql file path by running SHOW CREATE TABLE <table_name>");
-    options.addOption("json", "json-style", false, "set to true if you would like to show page info in json format style");
-    options.addOption("jsonpretty", "json-pretty-style", false, "set to true if you would like to show page info in json pretty format style");
-    options.addOption("showheader", "show-header", false, "set to true if you want to show table header when dumping table");
-    options.addOption("o", "output", true, "save result to file instead of console, the argument is the file path");
-    options.addOption("iomode", "output-io-mode", true, "output io mode, valid mode are: " + ALL_OUTPUT_IO_MODE);
-    options.addOption("delimiter", "delimiter", true, "field delimiter, default is tab");
+
+    options.addOption("i", "ibd-file-path", true,
+        "mandatory. innodb file path with suffix of .ibd");
+
+    options.addOption("c", "command", true,
+        "mandatory. command to run, valid commands are: " + ALL_COMMANDS);
+
+    options.addOption("s", "create-table-sql-file-path", true,
+        "create table sql file path by running SHOW CREATE TABLE <table_name>");
+
+    options.addOption("json", "json-style", false,
+        "set to true if you would like to show page info in json format style");
+
+    options.addOption("jsonpretty", "json-pretty-style", false,
+        "set to true if you would like to show page info in json pretty format style");
+
+    options.addOption("showheader", "show-header", false,
+        "set to true if you want to show table header when dumping table");
+
+    options.addOption("o", "output", true,
+        "save result to file instead of console, the argument is the file path");
+
+    options.addOption("iomode", "output-io-mode", true,
+        "output io mode, valid mode are: " + ALL_OUTPUT_IO_MODE);
+
+    options.addOption("delimiter", "delimiter", true,
+        "field delimiter, default is tab");
+
     options.addOption("args", true, "arguments");
 
     String command = null;
@@ -111,7 +132,8 @@ public class InnodbReaderBootstrap {
 
       if (line.hasOption("ibd-file-path")) {
         ibdFilePath = line.getOptionValue("ibd-file-path");
-        Preconditions.checkArgument(StringUtils.isNotEmpty(ibdFilePath), "ibd-file-path is empty");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(ibdFilePath),
+            "ibd-file-path is empty");
       } else {
         log.error("please input ibd-file-path");
         showHelp(options, 1);
@@ -119,7 +141,8 @@ public class InnodbReaderBootstrap {
 
       if (line.hasOption("create-table-sql-file-path")) {
         String createTableSqlFilePath = line.getOptionValue("create-table-sql-file-path");
-        Preconditions.checkArgument(StringUtils.isNotEmpty(createTableSqlFilePath), "create-table-sql-file-path is empty");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(createTableSqlFilePath),
+            "create-table-sql-file-path is empty");
         List<String> lines = Files.readLines(new File(createTableSqlFilePath), Charset.defaultCharset());
         createTableSql = String.join(" ", lines);
       } else {
@@ -265,7 +288,8 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql, Object lowerInclusiveKey, Object upperExclusiveKey) {
+  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql,
+                                             Object lowerInclusiveKey, Object upperExclusiveKey) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
@@ -284,12 +308,14 @@ public class InnodbReaderBootstrap {
     System.exit(exitCode);
   }
 
-  private static void genHeatmap(String ibdFilePath, String createTableSql, String args, CommandType commandType) throws IOException, TemplateException {
+  private static void genHeatmap(String ibdFilePath, String createTableSql, String args,
+                                 CommandType commandType) throws IOException, TemplateException {
     checkNotNull(args, "args should not be null");
     String destHtmlPath = args;
     Optional<Pair<String, String>> widthAndHeight = Optional.empty();
     if (args.contains(" ")) {
-      checkState(args.split(" ").length == 3, "argument number should not three when you want to specify width and height");
+      checkState(args.split(" ").length == 3,
+          "argument number should not three when you want to specify width and height");
       destHtmlPath = args.split(" ")[0];
       List<String> wh = Stream.of(args.split(" ")).skip(1).collect(toList());
       widthAndHeight = Optional.of(new Pair<>(wh.get(0), wh.get(1)));
@@ -301,12 +327,14 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void genLsnHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath, Optional<Pair<String, String>> widthAndHeight)
+  private static void genLsnHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath,
+                                    Optional<Pair<String, String>> widthAndHeight)
       throws IOException, TemplateException {
     GenLsnHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
   }
 
-  private static void genFillingRateHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath, Optional<Pair<String, String>> widthAndHeight)
+  private static void genFillingRateHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath,
+                                            Optional<Pair<String, String>> widthAndHeight)
       throws IOException, TemplateException {
     GenFillingRateHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
   }
@@ -315,7 +343,8 @@ public class InnodbReaderBootstrap {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
       Iterator<AbstractPage> iterator = reader.getPageIterator();
-      writer.write(StringUtils.repeat("=", 5) + "page number, page type, other info" + StringUtils.repeat("=", 5));
+      writer.write(StringUtils.repeat("=", 5) + "page number, page type, other info"
+          + StringUtils.repeat("=", 5));
       while (iterator.hasNext()) {
         AbstractPage page = iterator.next();
         StringBuilder sb = new StringBuilder();
@@ -358,7 +387,8 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void showPages(String ibdFilePath, Writer writer, String createTableSql, List<Long> pageNumberList, boolean jsonStyle, boolean jsonPrettyStyle) {
+  private static void showPages(String ibdFilePath, Writer writer, String createTableSql,
+                                List<Long> pageNumberList, boolean jsonStyle, boolean jsonPrettyStyle) {
     try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
       reader.open();
       for (Long pageNumber : pageNumberList) {

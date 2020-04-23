@@ -15,7 +15,7 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.JAVA_INTEGER_TYPE
 import static com.alibaba.innodb.java.reader.column.ColumnType.JAVA_LONG_TYPES;
 
 /**
- * Utils
+ * Utils.
  *
  * @author xu.zx
  */

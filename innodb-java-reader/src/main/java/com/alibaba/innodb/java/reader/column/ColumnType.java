@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Column type
+ * Column type.
  *
  * @author xu.zx
  */
