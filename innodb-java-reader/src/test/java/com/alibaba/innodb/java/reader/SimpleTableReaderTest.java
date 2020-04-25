@@ -22,9 +22,11 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static com.alibaba.innodb.java.reader.page.index.PageFormat.COMPACT;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -272,6 +274,8 @@ public class SimpleTableReaderTest extends AbstractTest {
         assertThat(record.getSchema() == null, is(false));
         assertThat(recordHeader.getRecordType(), is(RecordType.CONVENTIONAL));
         assertThat(recordHeader.getInfoFlag(), nullValue());
+        assertThat(recordHeader.getNextRecOffset() != 0, is(true));
+        assertThat(recordHeader.getNumOfRecOwned(), greaterThanOrEqualTo(0));
       }
     }
   }
@@ -282,31 +286,31 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableQueryByPageNumberMysql56() {
-    testSimpleTableQueryByPageNumber(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", false);
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkRootPageIs(queryByPageNumberExpected());
   }
 
   @Test
   public void testSimpleTableQueryByPageNumberMysql57() {
-    testSimpleTableQueryByPageNumber(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd", false);
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkRootPageIs(queryByPageNumberExpected());
   }
 
   @Test
   public void testSimpleTableQueryByPageNumberMysql80() {
-    testSimpleTableQueryByPageNumber(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd", true);
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkRootPageIs(queryByPageNumberExpected());
   }
 
-  // will print Skip SDI page
-  @Test
-  public void testSimpleTableQueryByPageNumberMysql80FromPage3() {
-    testSimpleTableQueryByPageNumber(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd", false);
-  }
+  public Consumer<List<GenericRecord>> queryByPageNumberExpected() {
+    return recordList -> {
 
-  public void testSimpleTableQueryByPageNumber(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(isMysql8 ? 4 : 3);
       int index = 0;
       for (int i = 1; i <= 10; i++) {
         GenericRecord record = recordList.get(index++);
@@ -330,7 +334,7 @@ public class SimpleTableReaderTest extends AbstractTest {
         assertThat(record.get(3), is(StringUtils.repeat('C', 8) + (char) (97 + i)));
         assertThat(record.get("c"), is(StringUtils.repeat('C', 8) + (char) (97 + i)));
       }
-    }
+    };
   }
 
   @Test(expected = IllegalStateException.class)

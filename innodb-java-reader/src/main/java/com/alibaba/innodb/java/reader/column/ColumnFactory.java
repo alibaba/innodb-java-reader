@@ -3,7 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.column;
 
-import com.alibaba.innodb.java.reader.exception.ParseException;
+import com.alibaba.innodb.java.reader.exception.ColumnParseException;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.MysqlDecimal;
 import com.alibaba.innodb.java.reader.util.SliceInput;
@@ -45,7 +45,7 @@ public class ColumnFactory {
   public static ColumnParser<?> getColumnParser(String columnType) {
     ColumnParser<?> result = TYPE_TO_COLUMN_PARSER_MAP.get(columnType);
     if (result == null) {
-      throw new ParseException("Column parser not supported for type " + columnType);
+      throw new ColumnParseException("Column parser not supported for type " + columnType);
     }
     return result;
   }
@@ -61,7 +61,7 @@ public class ColumnFactory {
   public static Class<?> getColumnJavaType(String columnType) {
     ColumnParser<?> result = TYPE_TO_COLUMN_PARSER_MAP.get(columnType);
     if (result == null) {
-      throw new ParseException("Column parser not supported for type " + columnType);
+      throw new ColumnParseException("Column parser not supported for type " + columnType);
     }
     return result.typeClass();
   }

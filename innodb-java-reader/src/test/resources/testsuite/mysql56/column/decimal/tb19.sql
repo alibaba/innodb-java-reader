@@ -8,4 +8,6 @@ CREATE TABLE `tb19`
 PRIMARY KEY (`id`))
 ENGINE=InnoDB;
 
+insert into tb19 values(null, 0.0, 0.0, 0, 0.0);
 insert into tb19 values(null, 123456.123456789, 12345.67890, 12345678901, 12345.678);
+insert into tb19 values(null, -123456.123456789, -12345.67890, -12345678901, -12345.678);

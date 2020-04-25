@@ -1,17 +1,15 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -19,38 +17,41 @@ import static org.junit.Assert.assertThat;
 /**
  * @author xu.zx
  */
-@Ignore
 public class ColumnVarcharOverflowPageTableReaderTest extends AbstractTest {
 
   public Schema getSchema() {
-    return new Schema()
+    return new Schema().setCharset("utf8mb4") // table charset is utf8mb4
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
-        .addColumn(new Column().setName("b").setType("varchar(1024)").setNullable(false));
+        .addColumn(new Column().setName("b").setType("varchar(16380)").setNullable(false));
   }
 
   @Test
   public void testVarcharOverflowPageColumnMysql56() {
-    testVarcharOverflowPageColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/char/tb06.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testVarcharOverflowPageColumnMysql57() {
-    testVarcharOverflowPageColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/char/tb06.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  //FIXME New format of LOB page type not supported currently
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testVarcharOverflowPageColumnMysql80() {
-    testVarcharOverflowPageColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/char/tb06.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testVarcharOverflowPageColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryAll();
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       assertThat(recordList.size(), is(50));
 
@@ -58,11 +59,15 @@ public class ColumnVarcharOverflowPageTableReaderTest extends AbstractTest {
       for (int i = 1; i <= 50; i++) {
         GenericRecord record = recordList.get(index++);
         Object[] values = record.getValues();
-        System.out.println(Arrays.asList(values));
-
-        assertThat(((String) record.get("b")).length(), is(8100));
-        assertThat(record.get("b"), is(StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 8100)));
+        // System.out.println(Arrays.asList(values)); // too long
+        // TODO mysql8.0 lob is not supported
+        if (!isMysql8Flag.get()) {
+          assertThat(((String) record.get("b")).length(), is(8100));
+          assertThat(record.get("b"), is(StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 8100)));
+        } else {
+          assertThat(((String) record.get("b")), is(StringUtils.repeat((char) 0x00, 8100)));
+        }
       }
-    }
+    };
   }
 }

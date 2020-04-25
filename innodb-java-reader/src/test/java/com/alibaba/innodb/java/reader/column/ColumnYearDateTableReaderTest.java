@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -10,6 +9,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -35,25 +35,30 @@ public class ColumnYearDateTableReaderTest extends AbstractTest {
 
   @Test
   public void testYearDateColumnMysql56() {
-    testYearDateColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/time/tb16.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testYearDateColumnMysql57() {
-    testYearDateColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/time/tb16.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testYearDateColumnMysql80() {
-    testYearDateColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/time/tb16.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testYearDateColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(3);
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       assertThat(recordList.size(), is(4));
 
@@ -84,6 +89,6 @@ public class ColumnYearDateTableReaderTest extends AbstractTest {
       assertThat(r4.getPrimaryKey(), is(4));
       assertThat(r4.get("a"), is((short) 2020));
       assertThat(r4.get("b"), is("2020-01-29"));
-    }
+    };
   }
 }

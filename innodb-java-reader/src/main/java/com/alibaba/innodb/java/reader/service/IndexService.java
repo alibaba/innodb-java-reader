@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * Index service.
+ * Innodb index page service, providing read-only query operations.
  *
  * @author xu.zx
  */

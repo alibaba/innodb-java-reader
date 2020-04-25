@@ -1,13 +1,13 @@
 package com.alibaba.innodb.java.reader.nullcolumn;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -43,14 +43,30 @@ public class MoreThan8NullColumnsTableReaderTest extends AbstractTest {
 
   @Test
   public void testMoreThan8NullColumnsMysql56() {
-    testMoreThan8NullColumns(IBD_FILE_BASE_PATH_MYSQL56 + "nullcolumn/tb14.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSql(sql)
+        .checkAllRecordsIs(expected());
   }
 
-  public void testMoreThan8NullColumns(String path) {
-    try (TableReader reader = new TableReader(path, sql)) {
-      reader.open();
+  @Test
+  public void testMoreThan8NullColumnsMysql57() {
+    assertTestOf(this)
+        .withMysql57()
+        .withSql(sql)
+        .checkAllRecordsIs(expected());
+  }
 
-      List<GenericRecord> recordList = reader.queryAll();
+  @Test
+  public void testMoreThan8NullColumnsMysql80() {
+    assertTestOf(this)
+        .withMysql80()
+        .withSql(sql)
+        .checkAllRecordsIs(expected());
+  }
+
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       GenericRecord r1 = recordList.get(0);
       System.out.println(Arrays.asList(r1.getValues()));
@@ -59,7 +75,7 @@ public class MoreThan8NullColumnsTableReaderTest extends AbstractTest {
       assertThat(r1.get("a2"), nullValue());
       assertThat(r1.get("a3"), is("a3"));
       assertThat(r1.get("a4"), nullValue());
-    }
+    };
   }
 
 }

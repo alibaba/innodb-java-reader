@@ -19,10 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_JAVA_CHARSET;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_CHARSET;
+import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 
 /**
  * Schema description, like <code>SHOW CREATE TABLE LIKE 'TTT'</code>.
@@ -49,24 +49,24 @@ public class Schema {
 
   private List<Column> variableLengthColumnList;
 
-  private int pos = 0;
+  private int ordinal = 0;
 
   /**
    * For decoding string in Java.
    */
-  private String charset = DEFAULT_JAVA_CHARSET;
+  private String javaCharset = DEFAULT_JAVA_CHARSET;
 
   /**
    * Table DDL charset, for example can be latin, utf8, utf8mb4.
    */
-  private String tableCharset = DEFAULT_MYSQL_CHARSET;
+  private String charset = DEFAULT_MYSQL_CHARSET;
 
   /**
    * //TODO make sure this is the right way to implement
    * For example, if table charset set to utf8, then it will consume up to 3 bytes for one character.
    * if it is utf8mb4, then it must be set to 4.
    */
-  private int maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
+  private int maxBytesPerChar = 1;
 
   public Schema() {
     this.columnList = new ArrayList<>();
@@ -77,10 +77,7 @@ public class Schema {
   }
 
   public void validate() {
-    checkState(CollectionUtils.isNotEmpty(columnList), "no column is specified");
-    if (primaryKeyColumn == null) {
-      log.warn("primary key is not specified, and default rowid will be used by MySQL for each row");
-    }
+    checkState(CollectionUtils.isNotEmpty(columnList), "No column is specified");
   }
 
   public boolean containsVariableLengthColumn() {
@@ -112,12 +109,12 @@ public class Schema {
   }
 
   public Schema addColumn(Column column) {
-    checkNotNull(column, "column should not be null");
-    checkArgument(StringUtils.isNotEmpty(column.getName()), "column name is empty");
-    checkArgument(StringUtils.isNotEmpty(column.getType()), "column type is empty");
-    checkArgument(!nameToFieldMap.containsKey(column.getName()), "duplicate column name");
+    checkNotNull(column, "Column should not be null");
+    checkArgument(StringUtils.isNotEmpty(column.getName()), "Column name is empty");
+    checkArgument(StringUtils.isNotEmpty(column.getType()), "Column type is empty");
+    checkArgument(!nameToFieldMap.containsKey(column.getName()), "Duplicate column name");
     if (column.isPrimaryKey()) {
-      checkState(primaryKeyColumn == null, "primary key is already defined");
+      checkState(primaryKeyColumn == null, "Primary key is already defined");
       primaryKeyColumn = column;
     }
     if (column.isNullable()) {
@@ -133,9 +130,10 @@ public class Schema {
       variableLengthColumnList.add(column);
       variableLengthColumnNum++;
     }
+    column.setSchema(this);
     columnList.add(column);
     columnNames.add(column.getName());
-    nameToFieldMap.put(column.getName(), new Field(pos++, column.getName(), column));
+    nameToFieldMap.put(column.getName(), new Field(ordinal++, column.getName(), column));
     return this;
   }
 
@@ -159,23 +157,19 @@ public class Schema {
     return nullableColumnList;
   }
 
+  public String getJavaCharset() {
+    return javaCharset;
+  }
+
   public String getCharset() {
     return charset;
   }
 
   public Schema setCharset(String charset) {
+    checkArgument(CollectionUtils.isEmpty(columnList), "Charset should be set before adding columns");
     this.charset = charset;
-    return this;
-  }
-
-  public String getTableCharset() {
-    return tableCharset;
-  }
-
-  public Schema setTableCharset(String tableCharset) {
-    this.tableCharset = tableCharset;
-    this.charset = CharsetMapping.getJavaEncodingForMysqlCharset(tableCharset);
-    this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(tableCharset);
+    this.javaCharset =  CharsetMapping.getJavaCharsetForMysqlCharset(charset);
+    this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(charset);
     return this;
   }
 
@@ -183,19 +177,14 @@ public class Schema {
     return maxBytesPerChar;
   }
 
-  public Schema setMaxBytesPerChar(int maxBytesPerChar) {
-    this.maxBytesPerChar = maxBytesPerChar;
-    return this;
-  }
-
   @Data
   public class Field {
-    private int pos;
+    private int ordinal;
     private String name;
     private Column column;
 
-    public Field(int pos, String name, Column column) {
-      this.pos = pos;
+    public Field(int ordinal, String name, Column column) {
+      this.ordinal = ordinal;
       this.name = name;
       this.column = column;
     }
@@ -203,14 +192,14 @@ public class Schema {
 
   @Override
   public String toString() {
-    return toString(true);
+    return toString(false);
   }
 
   public String toString(boolean multiLine) {
     StringBuilder sb = new StringBuilder();
-    sb.append("Table schema");
+    sb.append("Table columns");
     sb.append(" (tableCharset=");
-    sb.append(tableCharset);
+    sb.append(charset);
     sb.append("):");
     for (Column column : columnList) {
       sb.append(multiLine ? "\n" : ",");

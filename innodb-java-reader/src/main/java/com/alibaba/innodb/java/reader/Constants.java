@@ -3,6 +3,10 @@
  */
 package com.alibaba.innodb.java.reader;
 
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
+
 /**
  * Constants.
  *
@@ -22,9 +26,7 @@ public interface Constants {
    */
   int ROOT_PAGE_NUMBER = 3;
 
-  String CONST_UNSIGNED_UPPER = "UNSIGNED";
-
-  String CONST_UNSIGNED_LOWER = "unsigned";
+  List<String> CONST_UNSIGNED = ImmutableList.of("UNSIGNED", "unsigned");
 
   int PRECISION_LIMIT = 5;
 

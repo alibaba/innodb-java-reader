@@ -3,7 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.schema;
 
-import com.alibaba.innodb.java.reader.Constants;
+import com.alibaba.innodb.java.reader.CharsetMapping;
 import com.alibaba.innodb.java.reader.column.ColumnType;
 import com.alibaba.innodb.java.reader.util.Symbol;
 
@@ -13,6 +13,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import static com.alibaba.innodb.java.reader.Constants.CONST_UNSIGNED;
+import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DATETIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DECIMAL;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIME;
@@ -25,9 +27,13 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * @author xu.zx
  */
+@ToString
 @EqualsAndHashCode
 @Getter
 public class Column {
+
+  @EqualsAndHashCode.Exclude
+  private Schema schema;
 
   private String name;
 
@@ -79,16 +85,32 @@ public class Column {
    */
   private String charset;
 
+  private String javaCharset;
+
+  private String collation;
+
+  /**
+   * //TODO make sure this is the right way to implement
+   * For example, if table charset set to utf8, then it will consume up to 3 bytes for one character.
+   * if it is utf8mb4, then it must be set to 4.
+   */
+  @ToString.Exclude
+  private int maxBytesPerChar = 1;
+
   /**
    * //TODO
-   * for charset like utf8mb4, char will be treated as varchar.
+   * For charset like utf8mb4, CHAR will be treated as VARCHAR.
    * Note this can only be set internally.
    */
   @ToString.Exclude
   private boolean isVarLenChar;
 
+  public void setSchema(Schema schema) {
+    this.schema = schema;
+  }
+
   public Column setType(final String type) {
-    checkArgument(StringUtils.isNotEmpty(type), "type should not be empty");
+    checkArgument(StringUtils.isNotEmpty(type), "Column type should not be empty");
     String t = type.trim();
     String[] part = t.split(Symbol.SPACE);
     handleRawType(part[0]);
@@ -99,8 +121,10 @@ public class Column {
   }
 
   public Column setName(String name) {
-    checkArgument(StringUtils.isNotEmpty(name), "name should not be empty");
-    this.name = name.replace(Symbol.BACKTICK, Symbol.EMPTY);
+    checkArgument(StringUtils.isNotEmpty(name), "Column name should not be empty");
+    this.name = name
+        .replace(Symbol.BACKTICK, Symbol.EMPTY)
+        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
     return this;
   }
 
@@ -115,7 +139,46 @@ public class Column {
   }
 
   public Column setCharset(String charset) {
+    checkArgument(StringUtils.isNotEmpty(type), "Type should be set before charset");
     this.charset = charset;
+    this.javaCharset = CharsetMapping.getJavaCharsetForMysqlCharset(charset);
+    this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(charset);
+    if (CHAR.equals(type) && maxBytesPerChar > 1) {
+      isVarLenChar = true;
+    }
+    return this;
+  }
+
+  /**
+   * Get java encoding charset for column.
+   * If charset is defined in column, use it, or else use table java charset.
+   */
+  public String getJavaCharset() {
+    if (javaCharset != null) {
+      return javaCharset;
+    }
+    if (schema != null) {
+      return schema.getJavaCharset();
+    }
+    return null;
+  }
+
+  /**
+   * Get charset for column.
+   * If charset is defined in column, use it, or else use table charset.
+   */
+  public String getCharset() {
+    if (charset != null) {
+      return charset;
+    }
+    if (schema != null) {
+      return schema.getCharset();
+    }
+    return null;
+  }
+
+  public Column setCollation(String collation) {
+    this.collation = collation;
     return this;
   }
 
@@ -129,6 +192,9 @@ public class Column {
   }
 
   public boolean isFixedLength() {
+    if (isVarLenChar) {
+      return false;
+    }
     return ColumnType.CHAR.equals(type) || ColumnType.BINARY.equals(type);
   }
 
@@ -178,7 +244,7 @@ public class Column {
   }
 
   private void handleUnsignedIfPresent(String sign) {
-    if (Constants.CONST_UNSIGNED_LOWER.contains(sign) || Constants.CONST_UNSIGNED_UPPER.contains(sign)) {
+    if (CONST_UNSIGNED.contains(sign)) {
       checkState(StringUtils.isNotEmpty(type) && StringUtils.isAllUpperCase(type));
       this.type = type + " UNSIGNED";
     }

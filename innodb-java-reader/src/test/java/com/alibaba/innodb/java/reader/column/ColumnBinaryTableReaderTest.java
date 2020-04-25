@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -10,6 +9,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -31,25 +31,30 @@ public class ColumnBinaryTableReaderTest extends AbstractTest {
 
   @Test
   public void testBinaryColumnMysql56() {
-    testBinaryColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/binary/tb07.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testBinaryColumnMysql57() {
-    testBinaryColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/binary/tb07.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testBinaryColumnMysql80() {
-    testBinaryColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/binary/tb07.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testBinaryColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(3);
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       assertThat(recordList.size(), is(10));
 
@@ -84,7 +89,7 @@ public class ColumnBinaryTableReaderTest extends AbstractTest {
           assertThat(record.get("e"), is(getContent((byte) (97 + i), (byte) 0x0b, 10, 255)));
         }
       }
-    }
+    };
   }
 
 }

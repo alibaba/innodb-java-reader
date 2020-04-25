@@ -8,7 +8,7 @@ package com.alibaba.innodb.java.reader.exception;
  *
  * @author xu.zx
  */
-public class SqlParseException extends RuntimeException {
+public class SqlParseException extends ReaderException {
 
   public SqlParseException() {
     super();

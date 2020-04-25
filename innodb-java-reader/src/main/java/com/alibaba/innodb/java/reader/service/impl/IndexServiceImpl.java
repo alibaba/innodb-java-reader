@@ -24,8 +24,6 @@ import com.alibaba.innodb.java.reader.service.StorageService;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Utils;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -47,6 +45,7 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR_TYPES;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TEXT_TYPES;
 import static com.alibaba.innodb.java.reader.column.ColumnType.VARBINARY;
 import static com.alibaba.innodb.java.reader.column.ColumnType.VARCHAR;
+import static com.alibaba.innodb.java.reader.config.ReaderSystemProperty.ENABLE_THROW_EXCEPTION_FOR_UNSUPPORTED_MYSQL80_LOB;
 import static com.alibaba.innodb.java.reader.util.Utils.MAX;
 import static com.alibaba.innodb.java.reader.util.Utils.MIN;
 import static com.alibaba.innodb.java.reader.util.Utils.castCompare;
@@ -56,9 +55,7 @@ import static com.google.common.base.Preconditions.checkPositionIndex;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Index service implementation.
- * <p>
- * Only work for clustered index currently.
+ * Innodb index page service, providing read-only query operations.
  *
  * @author xu.zx
  */
@@ -139,7 +136,7 @@ public class IndexServiceImpl implements IndexService, Constants {
 
     // double-check
     if (recCounter != index.getIndexHeader().getNumOfRecs()) {
-      log.error("records read and numOfRecs in index header not match!");
+      log.error("Records read and numOfRecs in index header not match!");
     }
 
     return result;
@@ -149,7 +146,7 @@ public class IndexServiceImpl implements IndexService, Constants {
   public GenericRecord queryByPrimaryKey(Object key) {
     key = tryCastString(key, schema.getPrimaryKeyColumn().getType());
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
-    checkState(index.isRootPage(), "root page is wrong which should not happen");
+    checkState(index.isRootPage(), "Root page is wrong which should not happen");
     GenericRecord record = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, key);
     if (record == null || DumbGenericRecord.class.equals(record.getClass())) {
       return null;
@@ -184,7 +181,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     Object upper = tryCastString(upperExclusiveKey, schema.getPrimaryKeyColumn().getType());
     if (lower != null && upper != null) {
       if (castCompare(lower, upper) > 0) {
-        throw new IllegalArgumentException("lower is greater than upper");
+        throw new IllegalArgumentException("Lower is greater than upper");
       }
       if (castCompare(lower, upper) == 0) {
         GenericRecord record = queryByPrimaryKey(lower);
@@ -204,14 +201,14 @@ public class IndexServiceImpl implements IndexService, Constants {
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
     GenericRecord startRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, lower);
     GenericRecord endRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, upper);
-    log.debug("rangeQuery, start record(inc) is {}, end record(exc) is {}", startRecord, endRecord);
+    log.debug("RangeQuery, start record(inc) is {}, end record(exc) is {}", startRecord, endRecord);
     long pageNumber = startRecord.getPageNumber();
     long endPageNumber = endRecord.getPageNumber();
 
     // read from start page
     Index startIndexPage = loadIndexPage(pageNumber);
     List<GenericRecord> startPageResult = queryByIndexPage(startIndexPage, true, lower, upper);
-    log.debug("rangeQuery, start page {} records, {}", startPageResult.size(), startIndexPage.getIndexHeader());
+    log.debug("RangeQuery, start page {} records, {}", startPageResult.size(), startIndexPage.getIndexHeader());
 
     return new RecordIterator(startIndexPage, endPageNumber, startPageResult) {
 
@@ -222,7 +219,7 @@ public class IndexServiceImpl implements IndexService, Constants {
             currPageNumber = indexPage.getInnerPage().getFilHeader().getNextPage();
             Index nextIndexPage = loadIndexPage(currPageNumber);
             if (log.isDebugEnabled()) {
-              log.debug("rangeQuery, load page {} records, {}", nextIndexPage.getIndexHeader());
+              log.debug("RangeQuery, load page {} records, {}", nextIndexPage.getIndexHeader());
             }
             this.indexPage = nextIndexPage;
             if (currPageNumber != endPageNumber) {
@@ -282,7 +279,9 @@ public class IndexServiceImpl implements IndexService, Constants {
     Index index = loadIndexPage(pageNumber);
     SliceInput sliceInput = index.getSliceInput();
 
-    log.debug("{}", index.getIndexHeader());
+    if (log.isTraceEnabled()) {
+      log.trace("{}", index.getIndexHeader());
+    }
     GenericRecord infimum = index.getInfimum();
     GenericRecord supremum = index.getSupremum();
     int nextRecPos = infimum.nextRecordPosition();
@@ -319,7 +318,7 @@ public class IndexServiceImpl implements IndexService, Constants {
 
     // double-check
     if (recCounter != index.getIndexHeader().getNumOfRecs()) {
-      log.error("records read and numOfRecs in index header not match!");
+      log.error("Records read and numOfRecs in index header not match!");
     }
   }
 
@@ -340,8 +339,8 @@ public class IndexServiceImpl implements IndexService, Constants {
     SliceInput sliceInput = index.getSliceInput();
     sliceInput.setPosition(position);
     GenericRecord record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
-    checkNotNull(record, "record should not be null");
-    log.debug("linearSearch: page={}, level={}, key={}, header={}",
+    checkNotNull(record, "Record should not be null");
+    log.debug("LinearSearch: page={}, level={}, key={}, header={}",
         pageNumber, index.getIndexHeader().getPageLevel(), record.getPrimaryKey(), record.getHeader());
     GenericRecord preRecord = record;
     boolean isLeafPage = index.isLeafPage();
@@ -396,8 +395,8 @@ public class IndexServiceImpl implements IndexService, Constants {
     checkNotNull(targetKey);
     int[] dirSlots = index.getDirSlots();
     SliceInput sliceInput = index.getSliceInput();
-    if (log.isDebugEnabled()) {
-      log.debug("dirSlots is {}", Arrays.toString(dirSlots));
+    if (log.isTraceEnabled()) {
+      log.trace("DirSlots is {}", Arrays.toString(dirSlots));
     }
 
     int start = 0;
@@ -409,8 +408,8 @@ public class IndexServiceImpl implements IndexService, Constants {
       sliceInput.setPosition(recPos);
       record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
       checkNotNull(record, "record should not be null");
-      if (log.isDebugEnabled()) {
-        log.debug("searchByDir: page={}, level={}, recordKey={}, targetKey={}, dirSlotSize={}, "
+      if (log.isTraceEnabled()) {
+        log.trace("SearchByDir: page={}, level={}, recordKey={}, targetKey={}, dirSlotSize={}, "
                 + "start={}, end={}, mid={}",
             pageNumber, index.getIndexHeader().getPageLevel(), record.getPrimaryKey(), targetKey,
             dirSlots.length, start, end, mid);
@@ -426,7 +425,7 @@ public class IndexServiceImpl implements IndexService, Constants {
         return linearSearch(pageNumber, index, recPos, targetKey);
       }
     }
-    log.debug("searchByDir, start={}", start);
+    log.debug("SearchByDir, start={}", start);
     return linearSearch(pageNumber, index, dirSlots[start - 1], targetKey);
   }
 
@@ -436,26 +435,36 @@ public class IndexServiceImpl implements IndexService, Constants {
     while (sdiPageNum++ < ROOT_PAGE_NUMBER + 1
         && page.pageType() != null
         && PageType.SDI.equals(page.pageType())) {
-      log.debug("Skip SDI page " + page.getPageNumber() + " since this is mysql8");
+      log.debug("Skip SDI (Serialized Dictionary Information) page "
+          + page.getPageNumber() + " since version is >= Mysql8");
       page = storageService.loadPage(++pageNumber);
     }
     checkState(page.getFilHeader().getPageType() == PageType.INDEX,
-        "page " + pageNumber + " is not index page but " + page.getFilHeader().getPageType());
+        "Page " + pageNumber + " is not index page, actual page type is " + page.getFilHeader().getPageType());
     Index index = new Index(page, schema);
-    log.debug("load {} page {}, {} records", index.isLeafPage()
-        ? "leaf" : "non-leaf", pageNumber, index.getIndexHeader().getNumOfRecs());
+    if (log.isDebugEnabled()) {
+      log.debug("Load {} page {}, {} records", index.isLeafPage()
+          ? "leaf" : "non-leaf", pageNumber, index.getIndexHeader().getNumOfRecs());
+    }
     return index;
   }
 
   private Blob loadBlobPage(final long pageNumber, long offset) {
     InnerPage page = storageService.loadPage(pageNumber);
     if (page.pageType() != null && PageType.LOB_FIRST.equals(page.pageType())) {
-      throw new IllegalStateException("New format of LOB page type not supported currently");
+      // TODO support mysql8.0 lob page
+      if (ENABLE_THROW_EXCEPTION_FOR_UNSUPPORTED_MYSQL80_LOB.value()) {
+        throw new IllegalStateException("New format of LOB page type not supported currently");
+      } else {
+        return null;
+      }
     }
     checkState(page.getFilHeader().getPageType() == PageType.BLOB,
-        "page " + pageNumber + " is not blob page but " + page.getFilHeader().getPageType());
+        "Page " + pageNumber + " is not blob page, actual page type is " + page.getFilHeader().getPageType());
     Blob blob = new Blob(page, offset);
-    log.debug("load page {}, {}", pageNumber, blob);
+    if (log.isDebugEnabled()) {
+      log.debug("Load page {}, {}", pageNumber, blob);
+    }
     return blob;
   }
 
@@ -469,7 +478,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     if (header.getRecordType() == RecordType.INFIMUM || header.getRecordType() == RecordType.SUPREMUM) {
       GenericRecord mum = new GenericRecord(header, schema, pageNumber);
       mum.setPrimaryKeyPosition(primaryKeyPos);
-      log.debug("read system record recordHeader={}", header);
+      log.debug("Read system record recordHeader={}", header);
       return mum;
     }
 
@@ -518,8 +527,8 @@ public class IndexServiceImpl implements IndexService, Constants {
     String primaryKeyColumnType = schema.getPrimaryKeyColumn().getType();
     Object primaryKey = ColumnFactory.getColumnParser(primaryKeyColumnType)
         .readFrom(bodyInput, schema.getPrimaryKeyColumn());
-    if (log.isDebugEnabled()) {
-      log.debug("read record, pkPos={}, key={}, recordHeader={}, nullColumnNames={}, varLenArray={}",
+    if (log.isTraceEnabled()) {
+      log.trace("Read record, pkPos={}, key={}, recordHeader={}, nullColumnNames={}, varLenArray={}",
           primaryKeyPos, primaryKey, header, nullColumnNames, Arrays.toString(varLenArray));
     }
     record.put(schema.getPrimaryKeyColumn().getName(), primaryKey);
@@ -555,7 +564,7 @@ public class IndexServiceImpl implements IndexService, Constants {
             // if (varLenArray[varLenIdx] <= 768) {
             if (!overflowPageArray[varLenIdx]) {
               Object val = ColumnFactory.getColumnParser(column.getType())
-                  .readFrom(bodyInput, varLenArray[varLenIdx], getColumnCharset(column));
+                  .readFrom(bodyInput, varLenArray[varLenIdx], column.getJavaCharset());
               record.put(column.getName(), val);
             } else {
               handleOverflowPage(bodyInput, record, column, varLenArray[varLenIdx]);
@@ -563,7 +572,7 @@ public class IndexServiceImpl implements IndexService, Constants {
             varLenIdx++;
           } else if (column.isFixedLength()) {
             Object val = ColumnFactory.getColumnParser(column.getType())
-                .readFrom(bodyInput, column.getLength(), getColumnCharset(column));
+                .readFrom(bodyInput, column.getLength(), column.getJavaCharset());
             record.put(column.getName(), val);
           } else {
             Object val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, column);
@@ -573,13 +582,13 @@ public class IndexServiceImpl implements IndexService, Constants {
       }
     } else {
       long childPageNumber = bodyInput.readUnsignedInt();
-      log.debug("read record, pkPos={}, key={}, childPage={}", primaryKeyPos, primaryKey, childPageNumber);
+      log.trace("Read record, pkPos={}, key={}, childPage={}", primaryKeyPos, primaryKey, childPageNumber);
       record.setChildPageNumber(childPageNumber);
     }
 
     // set to next record position
     checkPositionIndex(record.nextRecordPosition(), SIZE_OF_BODY,
-        "next record position out of bound");
+        "Next record position is out of bound");
     bodyInput.setPosition(record.nextRecordPosition());
 
     return record;
@@ -629,47 +638,30 @@ public class IndexServiceImpl implements IndexService, Constants {
         || CHAR.equals(column.getType())) {
       handleCharacterOverflowPage(bodyInput, record, column, varLen);
     } else {
-      throw new UnsupportedOperationException("handle overflow page unsupported for type " + column.getType());
+      throw new UnsupportedOperationException("Handle overflow page unsupported for type " + column.getType());
     }
   }
 
   private void handleCharacterOverflowPage(SliceInput bodyInput, GenericRecord record,
                                            Column column, int varLen) {
-    int varLenWithoutOffPagePointer = varLen - 20;
-    Object val = null;
-    if (varLenWithoutOffPagePointer > 0) {
-      val = ColumnFactory.getColumnParser(column.getType())
-          .readFrom(bodyInput, varLenWithoutOffPagePointer, getColumnCharset(column));
+    ByteBuffer buffer = readOverflowPageByteBuffer(bodyInput, record, column, varLen);
+    try {
+      record.put(column.getName(), new String(buffer.array(), column.getJavaCharset()));
+    } catch (UnsupportedEncodingException e) {
+      throw new ReaderException(e);
     }
-    OverflowPagePointer overflowPagePointer = OverflowPagePointer.fromSlice(bodyInput);
-    StringBuilder sb = new StringBuilder(varLenWithoutOffPagePointer + (int) overflowPagePointer.getLength());
-    if (val != null) {
-      sb.append((String) val);
-    }
-    Blob blob;
-    long nextPageNumber = overflowPagePointer.getPageNumber();
-    do {
-      blob = loadBlobPage(nextPageNumber, overflowPagePointer.getPageOffset());
-      byte[] content = blob.read();
-      try {
-        sb.append(new String(content, schema.getCharset()));
-      } catch (UnsupportedEncodingException e) {
-        throw new ReaderException("read blob page content failed");
-      }
-      if (blob.hasNext()) {
-        nextPageNumber = blob.getNextPageNumber();
-      }
-      log.debug("read overflow page {}, content length={}, is end? = {}",
-          overflowPagePointer, content.length, !blob.hasNext());
-    } while (blob.hasNext());
-    record.put(column.getName(), sb.toString());
   }
 
   private void handleBlobOverflowPage(SliceInput bodyInput, GenericRecord record, Column column, int varLen) {
+    ByteBuffer buffer = readOverflowPageByteBuffer(bodyInput, record, column, varLen);
+    record.put(column.getName(), buffer.array());
+  }
+
+  private ByteBuffer readOverflowPageByteBuffer(SliceInput bodyInput, GenericRecord record, Column column, int varLen) {
     int varLenWithoutOffPagePointer = varLen - 20;
     Object val = null;
     if (varLenWithoutOffPagePointer > 0) {
-      val = ColumnFactory.getColumnParser(column.getType()).readFrom(bodyInput, 768, getColumnCharset(column));
+      val = bodyInput.readByteArray(768);
     }
     OverflowPagePointer overflowPagePointer = OverflowPagePointer.fromSlice(bodyInput);
     ByteBuffer buffer = ByteBuffer.allocate(varLenWithoutOffPagePointer + (int) overflowPagePointer.getLength());
@@ -680,28 +672,19 @@ public class IndexServiceImpl implements IndexService, Constants {
     long nextPageNumber = overflowPagePointer.getPageNumber();
     do {
       blob = loadBlobPage(nextPageNumber, overflowPagePointer.getPageOffset());
+      // When blob cannot be handled quite
+      if (blob == null) {
+        break;
+      }
       byte[] content = blob.read();
       buffer.put(content);
       if (blob.hasNext()) {
         nextPageNumber = blob.getNextPageNumber();
       }
-      log.debug("read overflow page {}, content length={}, is end? = {}",
+      log.trace("Read overflow page {}, content length={}, is end? = {}",
           overflowPagePointer, content.length, !blob.hasNext());
     } while (blob.hasNext());
-    record.put(column.getName(), buffer.array());
-  }
-
-  /**
-   * Get java encoding charset for column. If charset is defined in column, use it, or else use table java charset.
-   *
-   * @param column column
-   * @return charset
-   */
-  private String getColumnCharset(Column column) {
-    if (StringUtils.isNotEmpty(column.getCharset())) {
-      return column.getCharset();
-    }
-    return schema.getCharset();
+    return buffer;
   }
 
 }

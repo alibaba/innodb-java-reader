@@ -3,6 +3,6 @@
  */
 
 /**
- * Innodb page core classes.
+ * Innodb page related core classes.
  */
 package com.alibaba.innodb.java.reader.page;

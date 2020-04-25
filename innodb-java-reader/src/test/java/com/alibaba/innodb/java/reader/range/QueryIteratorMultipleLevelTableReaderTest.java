@@ -3,6 +3,7 @@ package com.alibaba.innodb.java.reader.range;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
+import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
 
@@ -10,6 +11,7 @@ import org.junit.Test;
 
 import java.util.Iterator;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -27,8 +29,39 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   @Test
-  public void testQueryAllIterator() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testTableLevelMysql56() {
+    testTableLevel(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testTableLevelMysql57() {
+    testTableLevel(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testTableLevel(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
+      reader.open();
+
+      long numOfPages = reader.getNumOfPages();
+      assertThat(numOfPages, greaterThan(500L));
+
+      Index index = (Index) reader.readPage(3);
+      assertThat(index.getIndexHeader().getPageLevel(), is(2));
+    }
+  }
+
+  @Test
+  public void testQueryAllIteratorMysql56() {
+    testQueryAllIterator(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testQueryAllIteratorMysql57() {
+    testQueryAllIterator(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testQueryAllIterator(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
 
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
@@ -43,8 +76,17 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   @Test
-  public void testRangeQueryIterator() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testRangeQueryIteratorMysql56() {
+    testRangeQueryIterator(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testRangeQueryIteratorMysql57() {
+    testRangeQueryIterator(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testRangeQueryIterator(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
 
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(10000, 40000);

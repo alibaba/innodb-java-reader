@@ -73,7 +73,7 @@ public class GenericRecord {
       throw new ReaderException("Not a valid schema for column: " + columnName);
     }
 
-    values[field.getPos()] = value;
+    values[field.getOrdinal()] = value;
   }
 
   public void put(int i, Object v) {
@@ -88,7 +88,7 @@ public class GenericRecord {
     if (field == null) {
       return null;
     }
-    return values[field.getPos()];
+    return values[field.getOrdinal()];
   }
 
   public Object get(int i) {

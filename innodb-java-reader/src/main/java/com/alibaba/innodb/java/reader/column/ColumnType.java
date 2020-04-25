@@ -3,9 +3,8 @@
  */
 package com.alibaba.innodb.java.reader.column;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Set;
 
 /**
@@ -55,27 +54,28 @@ public final class ColumnType {
   public static final String DATETIME = "DATETIME";
   public static final String TIMESTAMP = "TIMESTAMP";
 
-  public static final Set<String> VARIABLE_LENGTH_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(VARCHAR, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB,
-          TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT)));
+  public static final Set<String> VARIABLE_LENGTH_TYPES =
+      ImmutableSet.<String>builder().add(VARCHAR, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB,
+          TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT).build();
 
-  public static final Set<String> BLOB_TEXT_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB,
-          TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT)));
+  public static final Set<String> BLOB_TEXT_TYPES =
+      ImmutableSet.<String>builder().add(TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB,
+          TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT).build();
 
-  public static final Set<String> CHAR_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(VARCHAR, CHAR)));
+  public static final Set<String> CHAR_TYPES =
+      ImmutableSet.<String>builder().add(VARCHAR, CHAR).build();
 
-  public static final Set<String> BLOB_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB)));
+  public static final Set<String> BLOB_TYPES =
+      ImmutableSet.<String>builder().add(TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB).build();
 
-  public static final Set<String> TEXT_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT)));
+  public static final Set<String> TEXT_TYPES =
+      ImmutableSet.<String>builder().add(TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT).build();
 
-  public static final Set<String> JAVA_INTEGER_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(UNSIGNED_TINYINT, UNSIGNED_SMALLINT, UNSIGNED_MEDIUMINT, UNSIGNED_INT,
-          TINYINT, SMALLINT, MEDIUMINT, INT)));
+  public static final Set<String> JAVA_INTEGER_TYPES =
+      ImmutableSet.<String>builder().add(UNSIGNED_TINYINT, UNSIGNED_SMALLINT,
+          UNSIGNED_MEDIUMINT, UNSIGNED_INT, TINYINT, SMALLINT, MEDIUMINT, INT).build();
 
-  public static final Set<String> JAVA_LONG_TYPES = Collections.unmodifiableSet(
-      new HashSet<>(Arrays.asList(UNSIGNED_BIGINT, BIGINT)));
+  public static final Set<String> JAVA_LONG_TYPES =
+      ImmutableSet.<String>builder().add(UNSIGNED_BIGINT, BIGINT).build();
+
 }

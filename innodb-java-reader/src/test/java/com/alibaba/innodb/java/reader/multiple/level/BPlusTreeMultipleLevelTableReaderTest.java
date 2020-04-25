@@ -102,15 +102,14 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
     testMultipleLevelTableQueryAll1000(path, 1, 1000);
   }
 
-  @Test
-  public void testMultipleLevelTableQueryAll40000() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testMultipleLevelTableQueryAll1000(String path, int start, int end) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();
-      assertThat(recordList.size(), is(40000));
+      assertThat(recordList.size(), is(end - start + 1));
       int index = 0;
-      for (int i = 1; i <= 20000; i++) {
+      for (int i = 1; i <= recordList.size(); i++) {
         GenericRecord record = recordList.get(index++);
         //System.out.println(record);
         assertThat(record.get("a"), is(i * 2L));
@@ -120,14 +119,24 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
     }
   }
 
-  public void testMultipleLevelTableQueryAll1000(String path, int start, int end) {
+  @Test
+  public void testMultipleLevelTableQueryAll40000Mysql56() {
+    testMultipleLevelTableQueryAll40000(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testMultipleLevelTableQueryAll40000Mysql57() {
+    testMultipleLevelTableQueryAll40000(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testMultipleLevelTableQueryAll40000(String path) {
     try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();
-      assertThat(recordList.size(), is(end - start + 1));
+      assertThat(recordList.size(), is(40000));
       int index = 0;
-      for (int i = 1; i <= recordList.size(); i++) {
+      for (int i = 1; i <= 20000; i++) {
         GenericRecord record = recordList.get(index++);
         //System.out.println(record);
         assertThat(record.get("a"), is(i * 2L));

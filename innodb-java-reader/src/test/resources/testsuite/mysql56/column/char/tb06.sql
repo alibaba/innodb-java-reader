@@ -5,8 +5,8 @@ CREATE TABLE `tb06`
 `b` varchar(16380) NOT NULL,
 PRIMARY KEY (`id`))
 ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- in 5.7 varchar(16383) ERROR 1074 (42000): Column length too big for column 'b' (max = 16383); use BLOB or TEXT instead
--- in 5.6 varchar(32768) is ok
+-- in 5.7 varchar(16383) got error
+-- ERROR 1074 (42000): Column length too big for column 'b' (max = 16383); use BLOB or TEXT instead
 
 delimiter ;;
 drop procedure if EXISTS idata;

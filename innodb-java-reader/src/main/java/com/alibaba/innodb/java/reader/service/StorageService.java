@@ -44,7 +44,8 @@ public interface StorageService extends Closeable {
   FilHeader loadPageHeader(long pageNumber) throws ReaderException;
 
   /**
-   * Number of pages in the tablespace.
+   * Number of pages in the tablespace, call underlying storage system API to
+   * get the current value.
    *
    * @return Number of pages
    */

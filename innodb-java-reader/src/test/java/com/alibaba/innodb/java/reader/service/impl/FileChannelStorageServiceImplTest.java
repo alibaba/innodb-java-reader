@@ -11,6 +11,9 @@ import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_PAGE;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author xu.zx
@@ -24,6 +27,7 @@ public class FileChannelStorageServiceImplTest extends AbstractTest {
       storageService.open(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
       long numOfPages = storageService.numOfPages();
       log.info("numOfPages={}", numOfPages);
+      assertThat(numOfPages, greaterThan(1000L));
       long start = System.currentTimeMillis();
       int runTimes = 500;
       for (int times = 0; times < runTimes; times++) {
@@ -31,8 +35,10 @@ public class FileChannelStorageServiceImplTest extends AbstractTest {
           storageService.loadPage(i);
         }
       }
+      long elapsedTimeInMs = System.currentTimeMillis() - start;
+      assertThat(elapsedTimeInMs, lessThan(180000L));
       log.info("load {} pages {} times ({}) using {}ms", numOfPages, runTimes,
-          Utils.humanReadableBytes(SIZE_OF_PAGE * numOfPages * runTimes), System.currentTimeMillis() - start);
+          Utils.humanReadableBytes(SIZE_OF_PAGE * numOfPages * runTimes), elapsedTimeInMs);
     }
   }
 

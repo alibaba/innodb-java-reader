@@ -6,6 +6,7 @@ package com.alibaba.innodb.java.reader.schema;
 import com.google.common.base.Joiner;
 
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
+import com.alibaba.innodb.java.reader.util.Symbol;
 
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -33,19 +34,21 @@ public class SchemaUtil {
   public static Schema covertFromSqlToSchema(String sql) {
     CreateTable stmt;
     try {
-      log.debug("sql is {}", sql);
       stmt = (CreateTable) CCJSqlParserUtil.parse(sql);
-      checkNotNull(stmt, "CreateTable statement can not be null");
+      checkNotNull(stmt, "CreateTable statement should not be null");
       Schema schema = new Schema();
+      // set charset first
       handleCharset(stmt, schema);
       handleColumns(stmt, schema);
       handleIndex(stmt, schema);
 
-      log.debug("origin sql:" + sql);
-      log.debug("parsed sql:" + stmt);
+      if (log.isDebugEnabled()) {
+        log.debug("origin sql:" + sql);
+        log.debug("parsed sql:" + stmt);
+      }
       return schema;
     } catch (Exception e) {
-      throw new SqlParseException("parse create table sql " + sql + " failed " + e.getMessage(), e);
+      throw new SqlParseException("Parse create table sql failed " + sql, e);
     }
   }
 
@@ -54,7 +57,7 @@ public class SchemaUtil {
     if (CollectionUtils.isNotEmpty(tableOptions)) {
       int indexOfCharset = tableOptions.indexOf("CHARSET");
       if (indexOfCharset > 0) {
-        schema.setTableCharset((String) tableOptions.get(indexOfCharset + 2));
+        schema.setCharset((String) tableOptions.get(indexOfCharset + 2));
       }
     }
   }
@@ -65,10 +68,9 @@ public class SchemaUtil {
       for (Index index : indices) {
         if ("PRIMARY KEY".equals(index.getType().toUpperCase())) {
           List<String> colNames = index.getColumnsNames();
-          if (CollectionUtils.isEmpty(colNames) || colNames.size() > 1) {
-            throw new SqlParseException("only one column supported for primary key currently");
-          }
-          String pkColumnName = colNames.get(0).replace("`", "");
+          String pkColumnName = colNames.get(0)
+              .replace(Symbol.BACKTICK, Symbol.EMPTY)
+              .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
           if (schema.getColumnNames().contains(pkColumnName)) {
             Column pk = schema.getField(pkColumnName).getColumn();
             pk.setPrimaryKey(true);
@@ -82,7 +84,7 @@ public class SchemaUtil {
   private static void handleColumns(CreateTable stmt, Schema schema) {
     // parse columns
     if (CollectionUtils.isEmpty(stmt.getColumnDefinitions())) {
-      throw new SqlParseException("cannot found any column");
+      throw new SqlParseException("Cannot found any column");
     }
     for (ColumnDefinition col : stmt.getColumnDefinitions()) {
       Column column = new Column();
@@ -90,7 +92,7 @@ public class SchemaUtil {
       List<String> argList = col.getColDataType().getArgumentsStringList();
       if (CollectionUtils.isNotEmpty(argList)) {
         if (argList.size() > 2) {
-          throw new SqlParseException("column " + col.getColumnName()
+          throw new SqlParseException("Column " + col.getColumnName()
               + " contains more than two argument, " + argList);
         }
         column.setType(col.getColDataType().getDataType()

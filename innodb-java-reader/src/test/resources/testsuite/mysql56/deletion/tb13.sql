@@ -4,8 +4,11 @@ CREATE TABLE `tb13`
 `a` bigint(20) NOT NULL,
 `b` varchar(64) NOT NULL,
 `c` varchar(1024) default 'THIS_IS_DEFAULT_VALUE',
-PRIMARY KEY (`id`))
-ENGINE=InnoDB;
+PRIMARY KEY (`id`),
+INDEX a_idx (a),
+UNIQUE INDEX b_a_idx (b, a)
+)
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 delimiter ;;
 drop procedure if EXISTS idata;
@@ -22,3 +25,17 @@ delimiter ;
 call idata();
 
 delete from tb13 where a % 4 = 0;
+
+delimiter ;;
+drop procedure if EXISTS idata;
+create procedure idata()
+begin
+declare i int;
+set i=2001;
+while(i<=3000)do
+insert into tb13 values(i, i * 5, REPEAT('我', 8), concat(REPEAT('你', 4), char(97+(i % 26))));
+set i=i+1;
+end while;
+end;;
+delimiter ;
+call idata();

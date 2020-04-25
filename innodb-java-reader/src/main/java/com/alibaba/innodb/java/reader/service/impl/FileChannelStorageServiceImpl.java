@@ -3,6 +3,8 @@
  */
 package com.alibaba.innodb.java.reader.service.impl;
 
+import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
+import com.alibaba.innodb.java.reader.exception.PageLoadException;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.FilHeader;
 import com.alibaba.innodb.java.reader.page.InnerPage;
@@ -15,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,20 +47,23 @@ public class FileChannelStorageServiceImpl implements StorageService {
 
   private FileChannel fileChannel;
 
-  private long numOfPages;
-
-  private ThreadLocal<ByteBuffer> pageHeaderBuffer =
+  private ThreadLocal<ByteBuffer> pageHeaderBufferThreadLocal =
       ThreadLocal.withInitial(() -> ByteBuffer.allocateDirect(SIZE_OF_FIL_HEADER));
 
   @Override
   public void open(String ibdFilePath) throws IOException {
     fileChannel = new FileInputStream(new File(ibdFilePath)).getChannel();
-    long tableFileLength = fileChannel.size();
-    checkState(tableFileLength % SIZE_OF_PAGE == 0,
-        "table file length is invalid");
-    this.numOfPages = tableFileLength / SIZE_OF_PAGE;
-    log.debug("Open {} done, len={}({}), numOfPages={}",
-        ibdFilePath, tableFileLength, humanReadableBytes(tableFileLength), numOfPages);
+    if (ReaderSystemProperty.ENABLE_IBD_FILE_LENGTH_CHECK.value()) {
+      long tableFileLength = fileChannel.size();
+      checkState(tableFileLength % SIZE_OF_PAGE == 0,
+          "Table file length is invalid, actual file size is " + tableFileLength);
+    }
+    if (log.isDebugEnabled()) {
+      long tableFileLength = fileChannel.size();
+      long numOfPages = tableFileLength / SIZE_OF_PAGE;
+      log.debug("Open {} done, file length is {}({}), numOfPages is {}",
+          ibdFilePath, tableFileLength, humanReadableBytes(tableFileLength), numOfPages);
+    }
   }
 
   @Override
@@ -67,20 +73,23 @@ public class FileChannelStorageServiceImpl implements StorageService {
       fileChannel.read(buffer, pageNumber * SIZE_OF_PAGE);
       return new InnerPage(pageNumber, Slices.fromByteBuffer(buffer));
     } catch (IOException e) {
-      throw new ReaderException("load page " + pageNumber + "failed", e);
+      throw new PageLoadException("Load page number " + pageNumber + " failed", e);
     }
   }
 
+  /**
+   * Note that the buffer to store the header is shared
+   */
   @Override
   public FilHeader loadPageHeader(long pageNumber) throws ReaderException {
     try {
       // GC-less, get thread local buffer for reusing
-      ByteBuffer buffer = pageHeaderBuffer.get();
+      ByteBuffer buffer = pageHeaderBufferThreadLocal.get();
       buffer.clear();
       fileChannel.read(buffer, pageNumber * SIZE_OF_PAGE);
       return FilHeader.fromSlice(Slices.fromByteBuffer(buffer).input());
     } catch (IOException e) {
-      throw new ReaderException("load page " + pageNumber + "failed", e);
+      throw new PageLoadException("Load page number " + pageNumber + " failed", e);
     }
   }
 
@@ -91,6 +100,12 @@ public class FileChannelStorageServiceImpl implements StorageService {
 
   @Override
   public long numOfPages() {
-    return numOfPages;
+    Objects.requireNonNull(fileChannel);
+    try {
+      return fileChannel.size() / SIZE_OF_PAGE;
+    } catch (IOException e) {
+      throw new ReaderException(e);
+    }
   }
+
 }

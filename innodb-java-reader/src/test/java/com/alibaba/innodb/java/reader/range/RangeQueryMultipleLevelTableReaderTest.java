@@ -50,9 +50,22 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
     }
   }
 
+  //==========================================================================
+  // range query all
+  //==========================================================================
+
   @Test
-  public void testMultipleLevelTableRangeQueryAll() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testMultipleLevelTableRangeQueryAllMysql56() {
+    testMultipleLevelTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testMultipleLevelTableRangeQueryAllMysql57() {
+    testMultipleLevelTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testMultipleLevelTableRangeQueryAll(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, 50001);
@@ -64,9 +77,22 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
     }
   }
 
+  //==========================================================================
+  // range query nothing
+  //==========================================================================
+
   @Test
-  public void testMultipleLevelTableRangeQueryLowerNothing() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testMultipleLevelTableRangeQueryNothingMysql56() {
+    testMultipleLevelTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testMultipleLevelTableRangeQueryNothingMysql57() {
+    testMultipleLevelTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testMultipleLevelTableRangeQueryNothing(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(-1, 0);
       assertThat(recordList.size(), is(0));
@@ -82,13 +108,28 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
     }
   }
 
+  //==========================================================================
+  // range query partially
+  //==========================================================================
+
   @Test
-  public void testMultipleLevelTableRangeQueryPart() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testMultipleLevelTableRangeQueryPartMysql56() {
+    testMultipleLevelTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testMultipleLevelTableRangeQueryPartMysql57() {
+    testMultipleLevelTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testMultipleLevelTableRangeQueryPart(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
+      rangeQuery(reader, 5000, 5001);
       rangeQuery(reader, 3000, 8000);
       rangeQuery(reader, 10000, 19999);
       rangeQuery(reader, 6000, 6000);
+      rangeQuery(reader, 8000, 8888);
     }
   }
 
@@ -110,9 +151,22 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
     }
   }
 
+  //==========================================================================
+  // range query half open and close
+  //==========================================================================
+
   @Test
-  public void testSimpleTableRangeQueryHalfOpenHalfClose() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+  public void testRangeQueryHalfOpenHalfCloseMysql56() {
+    testRangeQueryHalfOpenHalfClose(IBD_FILE_BASE_PATH_MYSQL56 + "multiple/level/tb11.ibd");
+  }
+
+  @Test
+  public void testRangeQueryHalfOpenHalfCloseMysql57() {
+    testRangeQueryHalfOpenHalfClose(IBD_FILE_BASE_PATH_MYSQL57 + "multiple/level/tb11.ibd");
+  }
+
+  public void testRangeQueryHalfOpenHalfClose(String path) {
+    try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, null);
@@ -122,7 +176,10 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
       assertThat(recordList.size(), is(40000));
 
       recordList = reader.rangeQueryByPrimaryKey(5, null);
-      assertThat(recordList.size(), is(39996));
+      assertThat(recordList.size(), is(40000 - 5 + 1));
+
+      recordList = reader.rangeQueryByPrimaryKey(16500, null);
+      assertThat(recordList.size(), is(40000 - 16500 + 1));
 
       recordList = reader.rangeQueryByPrimaryKey(null, 100);
       assertThat(recordList.size(), is(99));
@@ -132,6 +189,9 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
 
       recordList = reader.rangeQueryByPrimaryKey(null, 1);
       assertThat(recordList.size(), is(0));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, 16500);
+      assertThat(recordList.size(), is(16499));
     }
   }
 

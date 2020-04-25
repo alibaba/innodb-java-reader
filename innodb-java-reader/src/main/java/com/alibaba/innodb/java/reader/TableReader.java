@@ -74,7 +74,7 @@ public class TableReader implements Closeable {
       indexService = new IndexServiceImpl(storageService, schema);
       log.debug("{}", schema);
     } catch (IOException e) {
-      throw new ReaderException("open failed", e);
+      throw new ReaderException("Open " + ibdFilePath + " failed", e);
     }
   }
 

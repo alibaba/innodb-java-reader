@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -10,6 +9,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -28,26 +28,30 @@ public class ColumnBooleanTableReaderTest extends AbstractTest {
 
   @Test
   public void testBooleanColumnMysql56() {
-    testBooleanColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/boolean/tb18.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testBooleanColumnMysql57() {
-    testBooleanColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/boolean/tb18.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testBooleanColumnMysql80() {
-    testBooleanColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/boolean/tb18.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testBooleanColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(3);
-
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
       assertThat(recordList.size(), is(2));
 
       GenericRecord r1 = recordList.get(0);
@@ -63,6 +67,6 @@ public class ColumnBooleanTableReaderTest extends AbstractTest {
       assertThat(r2.getPrimaryKey(), is(2));
       assertThat(r2.get("a"), is(false));
       assertThat(r2.get("b"), is(true));
-    }
+    };
   }
 }

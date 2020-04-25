@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -10,6 +9,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -40,25 +40,30 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
 
   @Test
   public void testTimeFractionalSecondsColumnMysql56() {
-    testTimeFractionalSecondsColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/time/tb17.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testTimeFractionalSecondsColumnMysql57() {
-    testTimeFractionalSecondsColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/time/tb17.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testTimeFractionalSecondsColumnMysql80() {
-    testTimeFractionalSecondsColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/time/tb17.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testTimeFractionalSecondsColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(3);
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       assertThat(recordList.size(), is(3));
 
@@ -91,6 +96,6 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r3.get("c"), is("1227403380.294000"));
       assertThat(r3.get("d"), is("09:23:00.29400"));
       assertThat(r3.get("e"), is("2008-11-23 09:23:00"));
-    }
+    };
   }
 }

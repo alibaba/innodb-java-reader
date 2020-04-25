@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.nullcolumn;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -11,6 +10,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -34,24 +34,30 @@ public class NullColumnTableReaderTest extends AbstractTest {
 
   @Test
   public void testNullColumnMysql56() {
-    testNullColumn(IBD_FILE_BASE_PATH_MYSQL56 + "nullcolumn/tb12.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testNullColumnMysql57() {
-    testNullColumn(IBD_FILE_BASE_PATH_MYSQL57 + "nullcolumn/tb12.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testNullColumnMysql80() {
-    testNullColumn(IBD_FILE_BASE_PATH_MYSQL80 + "nullcolumn/tb12.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testNullColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      List<GenericRecord> recordList = reader.queryAll();
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       GenericRecord r1 = recordList.get(0);
       System.out.println(Arrays.asList(r1.getValues()));
@@ -88,7 +94,7 @@ public class NullColumnTableReaderTest extends AbstractTest {
       assertThat(r4.get("d"), is(StringUtils.repeat("a4", 16)));
       assertThat(r4.get("e"), is(StringUtils.repeat("a4", 16)));
       assertThat(r4.get("f"), is(StringUtils.repeat("a4", 16)));
-    }
+    };
   }
 
 }

@@ -23,7 +23,7 @@ public class SchemaUtilTest {
         + "`a` bigint(20) unsigneD NOT NULL,\n"
         + "b tinyint DEFAULT 0 COMMENT 'comment here你好，：呵呵',\n"
         + "c text NOT NULL,\n"
-        + "d datetime NOT NULL DEFAULT '9999-00-00 00:00:00',\n"
+        + "\"d\" datetime NOT NULL DEFAULT '9999-00-00 00:00:00',\n"
         + "`e` varchar(64) NOT NULL,\n"
         + "`f` varchar(1024) default 'THIS_IS_DEFAULT_VALUE',\n"
         + "`g` timestamp(3) DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\n"
@@ -35,7 +35,7 @@ public class SchemaUtilTest {
         + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
     Schema schema = SchemaUtil.covertFromSqlToSchema(sql);
     System.out.println(schema);
-    assertThat(schema.getTableCharset(), is("utf8mb4"));
+    assertThat(schema.getCharset(), is("utf8mb4"));
 
     assertThat(schema.getPrimaryKeyColumn().getName(), is("id"));
 
@@ -71,7 +71,7 @@ public class SchemaUtilTest {
     assertThat(columnList.get(3).getScale(), is(0));
     assertThat(columnList.get(3).isPrimaryKey(), is(false));
     assertThat(columnList.get(3).isNullable(), is(false));
-    assertThat(columnList.get(3).getCharset(), nullValue());
+    assertThat(columnList.get(3).getCharset(), is("utf8mb4"));
 
     assertThat(columnList.get(4).getName(), is("d"));
     assertThat(columnList.get(4).getType(), is(ColumnType.DATETIME));
@@ -88,7 +88,7 @@ public class SchemaUtilTest {
     assertThat(columnList.get(5).getScale(), is(0));
     assertThat(columnList.get(5).isPrimaryKey(), is(false));
     assertThat(columnList.get(5).isNullable(), is(false));
-    assertThat(columnList.get(5).getCharset(), nullValue());
+    assertThat(columnList.get(5).getCharset(), is("utf8mb4"));
 
     assertThat(columnList.get(6).getName(), is("f"));
     assertThat(columnList.get(6).getType(), is(ColumnType.VARCHAR));
@@ -97,7 +97,7 @@ public class SchemaUtilTest {
     assertThat(columnList.get(6).getScale(), is(0));
     assertThat(columnList.get(6).isPrimaryKey(), is(false));
     assertThat(columnList.get(6).isNullable(), is(true));
-    assertThat(columnList.get(6).getCharset(), nullValue());
+    assertThat(columnList.get(6).getCharset(), is("utf8mb4"));
 
     assertThat(schema.getField("g").getColumn().getName(), is("g"));
     assertThat(schema.getField("g").getColumn().getType(), is(ColumnType.TIMESTAMP));
@@ -132,7 +132,7 @@ public class SchemaUtilTest {
         + "ENGINE=InnoDB DEFAULT CHARSET = latin1;";
     Schema schema = SchemaUtil.covertFromSqlToSchema(sql);
     System.out.println(schema);
-    assertThat(schema.getTableCharset(), is("latin1"));
+    assertThat(schema.getCharset(), is("latin1"));
 
     assertThat(schema.getPrimaryKeyColumn().getName(), is("id"));
 
@@ -154,7 +154,7 @@ public class SchemaUtilTest {
     Schema schema = SchemaUtil.covertFromSqlToSchema(sql);
     System.out.println(schema);
     // by default set to utf8
-    assertThat(schema.getTableCharset(), is("utf8"));
+    assertThat(schema.getCharset(), is("utf8"));
 
     assertThat(schema.getPrimaryKeyColumn(), nullValue());
 

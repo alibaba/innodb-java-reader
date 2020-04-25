@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static org.hamcrest.Matchers.is;
@@ -29,26 +30,36 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("c").setType("varchar(1024)").setNullable(true));
   }
 
+  //==========================================================================
+  // range query all
+  //==========================================================================
+
   @Test
   public void testSimpleTableRangeQueryAllMysql56() {
-    testSimpleTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(), -1, 20);
   }
 
   @Test
   public void testSimpleTableRangeQueryAllMysql57() {
-    testSimpleTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(), Integer.MIN_VALUE, Integer.MAX_VALUE);
   }
 
   @Test
   public void testSimpleTableRangeQueryAllMysql80() {
-    testSimpleTableRangeQueryAll(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(), 0, 11);
   }
 
-  public void testSimpleTableRangeQueryAll(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, 11);
+  public Consumer<List<GenericRecord>> rangeQueryAllExpected() {
+    return recordList -> {
       assertThat(recordList.size(), is(10));
 
       int index = 0;
@@ -61,26 +72,89 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
         assertThat(values[2], is(StringUtils.repeat('A', 16)));
         assertThat(values[3], is(StringUtils.repeat('C', 8) + (char) (97 + i)));
       }
-    }
+    };
+  }
+
+  //==========================================================================
+  // range query nothing
+  //==========================================================================
+
+  @Test
+  public void testSimpleTableRangeQueryNothingMysql56() {
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), -1, 0);
+
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 0, 0);
+
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 11, 11);
+
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 12, 20);
   }
 
   @Test
-  public void testSimpleTableRangeQueryLowerNothing() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
-      reader.open();
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(-1, 0);
-      assertThat(recordList.size(), is(0));
+  public void testSimpleTableRangeQueryNothingMysql57() {
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), -1, 0);
 
-      recordList = reader.rangeQueryByPrimaryKey(0, 0);
-      assertThat(recordList.size(), is(0));
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 0, 0);
 
-      recordList = reader.rangeQueryByPrimaryKey(11, 11);
-      assertThat(recordList.size(), is(0));
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 11, 11);
 
-      recordList = reader.rangeQueryByPrimaryKey(12, 20);
-      assertThat(recordList.size(), is(0));
-    }
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 12, 20);
   }
+
+  @Test
+  public void testSimpleTableRangeQueryNothingMysql80() {
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), -1, 0);
+
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 0, 0);
+
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 11, 11);
+
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 12, 20);
+  }
+
+  public Consumer<List<GenericRecord>> rangeQueryNothingExpected() {
+    return recordList -> assertThat(recordList.size(), is(0));
+  }
+
+  //==========================================================================
+  // range query partially
+  //==========================================================================
 
   @Test
   public void testSimpleTableRangeQueryPartMysql56() {
@@ -100,8 +174,11 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
   public void testSimpleTableRangeQueryPart(String path) {
     try (TableReader reader = new TableReader(path, getSchema())) {
       reader.open();
-      rangeQuery(reader, 3, 8);
+      rangeQuery(reader, 1, 7);
       rangeQuery(reader, 1, 9);
+      rangeQuery(reader, 2, 4);
+      rangeQuery(reader, 3, 8);
+      rangeQuery(reader, 5, 7);
       rangeQuery(reader, 6, 6);
     }
   }
@@ -124,6 +201,10 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     }
   }
 
+  //==========================================================================
+  // range query illegal argument
+  //==========================================================================
+
   @Test(expected = IllegalArgumentException.class)
   public void testSimpleTableRangeQueryLowerUpperNotValid() {
     try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
@@ -131,6 +212,10 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(12, 5);
     }
   }
+
+  //==========================================================================
+  // range query half open and close
+  //==========================================================================
 
   @Test
   public void testSimpleTableRangeQueryHalfOpenHalfCloseMysql56() {
@@ -173,6 +258,10 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
       assertThat(recordList.size(), is(10));
     }
   }
+
+  //==========================================================================
+  // others
+  //==========================================================================
 
   @Test
   public void testSimpleTableRangeQueryStringKey() {

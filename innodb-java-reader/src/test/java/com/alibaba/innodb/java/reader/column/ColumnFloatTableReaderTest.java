@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -10,11 +9,36 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
+ * <pre>
+ * mysql> select * from tb15\G;
+ * *************************** 1. row ***************************
+ *       id: 1
+ *  c_float: 0
+ * c_double: 0
+ * *************************** 2. row ***************************
+ *       id: 2
+ *  c_float: 1
+ * c_double: -1
+ * *************************** 3. row ***************************
+ *       id: 3
+ *  c_float: 222.22
+ * c_double: 3333.333
+ * *************************** 4. row ***************************
+ *       id: 4
+ *  c_float: 12345700
+ * c_double: 1234567890.123456
+ * *************************** 5. row ***************************
+ *       id: 5
+ *  c_float: -12345700
+ * c_double: -1234567890.123456
+ * </pre>
+ *
  * @author xu.zx
  */
 public class ColumnFloatTableReaderTest extends AbstractTest {
@@ -28,25 +52,30 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
 
   @Test
   public void testIntColumnMysql56() {
-    testIntColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/float/tb15.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testIntColumnMysql57() {
-    testIntColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/float/tb15.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testIntColumnMysql80() {
-    testIntColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/float/tb15.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testIntColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(3);
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
 
       assertThat(recordList.size(), is(5));
 
@@ -79,6 +108,6 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
       assertThat(r5.getPrimaryKey(), is(5L));
       assertThat(r5.get("c_float"), is(-12345678.1234F));
       assertThat(r5.get("c_double"), is(-1234567890.123456D));
-    }
+    };
   }
 }

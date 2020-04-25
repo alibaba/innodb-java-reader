@@ -1,7 +1,6 @@
 package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
-import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.Schema;
@@ -11,17 +10,32 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
  * <pre>
- * +----+--------+-------------+-------------+-------+
- * | id | a      | b           | c           | d     |
- * +----+--------+-------------+-------------+-------+
- * |  1 | 123456 | 12345.67890 | 12345678901 | 12346 |
- * +----+--------+-------------+-------------+-------+
+ * mysql> select * from tb19\G;
+ * *************************** 1. row ***************************
+ * id: 1
+ *  a: 0
+ *  b: 0.00000
+ *  c: 0
+ *  d: 0
+ * *************************** 2. row ***************************
+ * id: 2
+ *  a: 123456
+ *  b: 12345.67890
+ *  c: 12345678901
+ *  d: 12346
+ * *************************** 3. row ***************************
+ * id: 3
+ *  a: -123456
+ *  b: -12345.67890
+ *  c: -12345678901
+ *  d: -12346
  * </pre>
  *
  * @author xu.zx
@@ -39,36 +53,58 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
 
   @Test
   public void testDecimalColumnMysql56() {
-    testDecimalColumn(IBD_FILE_BASE_PATH_MYSQL56 + "column/decimal/tb19.ibd");
+    assertTestOf(this)
+        .withMysql56()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testDecimalColumnMysql57() {
-    testDecimalColumn(IBD_FILE_BASE_PATH_MYSQL57 + "column/decimal/tb19.ibd");
+    assertTestOf(this)
+        .withMysql57()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
   @Test
   public void testDecimalColumnMysql80() {
-    testDecimalColumn(IBD_FILE_BASE_PATH_MYSQL80 + "column/decimal/tb19.ibd");
+    assertTestOf(this)
+        .withMysql80()
+        .withSchema(getSchema())
+        .checkAllRecordsIs(expected());
   }
 
-  public void testDecimalColumn(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
-      reader.open();
-
-      // check queryByPageNumber
-      List<GenericRecord> recordList = reader.queryByPageNumber(3);
-
-      assertThat(recordList.size(), is(1));
+  public Consumer<List<GenericRecord>> expected() {
+    return recordList -> {
+      assertThat(recordList.size(), is(3));
 
       GenericRecord r1 = recordList.get(0);
       Object[] v1 = r1.getValues();
       System.out.println(Arrays.asList(v1));
       assertThat(r1.getPrimaryKey(), is(1));
-      assertThat(r1.get("a"), is(new BigDecimal("123456")));
-      assertThat(r1.get("b"), is(new BigDecimal("12345.67890")));
-      assertThat(r1.get("c"), is(new BigDecimal("12345678901")));
-      assertThat(r1.get("d"), is(new BigDecimal("12346")));
-    }
+      assertThat(r1.get("a"), is(new BigDecimal("0")));
+      assertThat(r1.get("b"), is(new BigDecimal("0.00000")));
+      assertThat(r1.get("c"), is(new BigDecimal("0")));
+      assertThat(r1.get("d"), is(new BigDecimal("0")));
+
+      GenericRecord r2 = recordList.get(1);
+      Object[] v2 = r2.getValues();
+      System.out.println(Arrays.asList(v2));
+      assertThat(r2.getPrimaryKey(), is(2));
+      assertThat(r2.get("a"), is(new BigDecimal("123456")));
+      assertThat(r2.get("b"), is(new BigDecimal("12345.67890")));
+      assertThat(r2.get("c"), is(new BigDecimal("12345678901")));
+      assertThat(r2.get("d"), is(new BigDecimal("12346")));
+
+      GenericRecord r3 = recordList.get(2);
+      Object[] v3 = r3.getValues();
+      System.out.println(Arrays.asList(v3));
+      assertThat(r3.getPrimaryKey(), is(3));
+      assertThat(r3.get("a"), is(new BigDecimal("-123456")));
+      assertThat(r3.get("b"), is(new BigDecimal("-12345.67890")));
+      assertThat(r3.get("c"), is(new BigDecimal("-12345678901")));
+      assertThat(r3.get("d"), is(new BigDecimal("-12346")));
+    };
   }
 }

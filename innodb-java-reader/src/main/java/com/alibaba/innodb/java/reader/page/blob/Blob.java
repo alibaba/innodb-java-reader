@@ -22,6 +22,8 @@ public class Blob extends AbstractPage {
 
   private Long nextPageNumber;
 
+  private long offset;
+
   public Blob(InnerPage innerPage) {
     super(innerPage);
     this.length = sliceInput.readUnsignedInt();
@@ -30,6 +32,7 @@ public class Blob extends AbstractPage {
 
   public Blob(InnerPage innerPage, long offset) {
     super(innerPage);
+    this.offset = offset;
     sliceInput.setPosition((int) offset);
     this.length = sliceInput.readUnsignedInt();
     this.nextPageNumber = maybeUndefined(sliceInput.readUnsignedInt());

@@ -1,16 +1,154 @@
 package com.alibaba.innodb.java.reader;
 
+import com.google.common.base.MoreObjects;
+
+import com.alibaba.innodb.java.reader.page.index.GenericRecord;
+import com.alibaba.innodb.java.reader.schema.Schema;
+
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author xu.zx
  */
 public class AbstractTest {
 
-  public static final String IBD_FILE_BASE_PATH_MYSQL56 = "src/test/resources/testsuite/mysql56/";
-  public static final String IBD_FILE_BASE_PATH_MYSQL57 = "src/test/resources/testsuite/mysql57/";
-  public static final String IBD_FILE_BASE_PATH_MYSQL80 = "src/test/resources/testsuite/mysql80/";
+  /**
+   * Holds a mapping of test case to Innodb file which will used when testing.
+   */
+  private static final Properties TEST_CASE_PROPERTIES = loadProperties();
+
+  public static final String IBD_FILE_BASE_PATH_MYSQL56 = TEST_CASE_PROPERTIES.getProperty("base.path.mysql56");
+  public static final String IBD_FILE_BASE_PATH_MYSQL57 = TEST_CASE_PROPERTIES.getProperty("base.path.mysql57");
+  public static final String IBD_FILE_BASE_PATH_MYSQL80 = TEST_CASE_PROPERTIES.getProperty("base.path.mysql80");
   public static final String IBD_FILE_BASE_PATH = IBD_FILE_BASE_PATH_MYSQL56;
+
+  protected static <T extends AbstractTest> AssertThat assertTestOf(T testInstance) {
+    return new AssertThat().withTestCase(testInstance);
+  }
+
+  protected ThreadLocal<Boolean> isMysql8Flag = ThreadLocal.withInitial(() -> false);
+
+  public static class AssertThat {
+
+    private Schema schema;
+
+    private String createTableSql;
+
+    private Class<?> testClass;
+
+    private String ibdFileBasePath;
+
+    private AbstractTest testInstance;
+
+    public AssertThat withSchema(Schema schema) {
+      this.schema = schema;
+      return this;
+    }
+
+    public AssertThat withSql(String createTableSql) {
+      this.createTableSql = createTableSql;
+      return this;
+    }
+
+    public <T extends AbstractTest> AssertThat withTestCase(T testInstance) {
+      this.testInstance = testInstance;
+      this.testClass = testInstance.getClass();
+      return this;
+    }
+
+    public AssertThat withMysql56() {
+      this.ibdFileBasePath = IBD_FILE_BASE_PATH_MYSQL56;
+      if (testInstance != null) {
+        testInstance.isMysql8Flag.set(false);
+      }
+      return this;
+    }
+
+    public AssertThat withMysql57() {
+      this.ibdFileBasePath = IBD_FILE_BASE_PATH_MYSQL57;
+      if (testInstance != null) {
+        testInstance.isMysql8Flag.set(false);
+      }
+      return this;
+    }
+
+    public AssertThat withMysql80() {
+      this.ibdFileBasePath = IBD_FILE_BASE_PATH_MYSQL80;
+      if (testInstance != null) {
+        testInstance.isMysql8Flag.set(true);
+      }
+      return this;
+    }
+
+    public <T, RES> AssertThat doWithTableReader(Function<RES, T> fn,
+                                                 Function<TableReader, RES> queryFn) {
+      String ibdDataFilePath = TEST_CASE_PROPERTIES.getProperty(testClass.getSimpleName());
+      if (StringUtils.isEmpty(ibdDataFilePath)) {
+        throw new RuntimeException("ibd data file path is empty for test case class " + testClass.getSimpleName());
+      }
+      TableReader reader;
+      if (schema != null) {
+        reader = new TableReader(ibdFileBasePath + ibdDataFilePath, schema);
+      } else if (createTableSql != null) {
+        reader = new TableReader(ibdFileBasePath + ibdDataFilePath, createTableSql);
+      } else {
+        throw new IllegalStateException("No schema or createTableSql found");
+      }
+
+      try {
+        reader.open();
+        RES recordList = queryFn.apply(reader);
+        T t = fn.apply(recordList);
+        return this;
+      } finally {
+        reader.close();
+      }
+    }
+
+    public AssertThat checkRootPageIs(Consumer<List<GenericRecord>> fn) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, tableReader -> tableReader.queryByPageNumber(3));
+    }
+
+    public AssertThat checkAllRecordsIs(Consumer<List<GenericRecord>> fn) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, TableReader::queryAll);
+    }
+
+    public AssertThat checkRangeQueryRecordsIs(Consumer<List<GenericRecord>> fn, Object start, Object end) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.rangeQueryByPrimaryKey(start, end));
+    }
+
+    public AssertThat checkQueryAllIterator(Consumer<Iterator<GenericRecord>> fn) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, TableReader::getQueryAllIterator);
+    }
+
+    public AssertThat checkRangeQueryIterator(Consumer<Iterator<GenericRecord>> fn, Object start, Object end) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.getRangeQueryIterator(start, end));
+    }
+  }
 
   protected byte[] getContent(byte prefix, byte b, int repeatB) {
     return getContent(prefix, b, repeatB, repeatB + 1);
@@ -28,6 +166,21 @@ public class AbstractTest {
       }
     }
     return buffer.array();
+  }
+
+  private static Properties loadProperties() {
+    Properties testCaseProperties = new Properties();
+    ClassLoader classLoader = MoreObjects.firstNonNull(
+        Thread.currentThread().getContextClassLoader(),
+        AbstractTest.class.getClassLoader());
+    try (InputStream stream = classLoader.getResourceAsStream("testcase.properties")) {
+      if (stream != null) {
+        testCaseProperties.load(stream);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("while reading from testcase.properties file", e);
+    }
+    return testCaseProperties;
   }
 
 }
