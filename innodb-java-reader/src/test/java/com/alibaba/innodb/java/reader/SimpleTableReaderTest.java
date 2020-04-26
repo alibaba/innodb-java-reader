@@ -14,7 +14,7 @@ import com.alibaba.innodb.java.reader.page.index.RecordHeader;
 import com.alibaba.innodb.java.reader.page.index.RecordType;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -44,8 +44,8 @@ public class SimpleTableReaderTest extends AbstractTest {
       + "PRIMARY KEY (`id`))\n"
       + "ENGINE=InnoDB;";
 
-  public Schema getSchema() {
-    return new Schema()
+  public TableDef getTableDef() {
+    return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
@@ -72,7 +72,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableReadAllPages(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -146,7 +146,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableGetPageIterator(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -179,7 +179,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableReadAllPageHeaders(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       List<FilHeader> pageHeaders = reader.readAllPageHeaders();
@@ -229,7 +229,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableReadPage(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       // check readPage function
@@ -261,7 +261,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryByPageNumberVerifyHeader(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       // check queryByPageNumber
@@ -271,7 +271,7 @@ public class SimpleTableReaderTest extends AbstractTest {
         GenericRecord record = recordList.get(index++);
         RecordHeader recordHeader = record.getHeader();
         assertThat(record.getPageNumber(), is(isMysql8 ? 4L : 3L));
-        assertThat(record.getSchema() == null, is(false));
+        assertThat(record.getTableDef() == null, is(false));
         assertThat(recordHeader.getRecordType(), is(RecordType.CONVENTIONAL));
         assertThat(recordHeader.getInfoFlag(), nullValue());
         assertThat(recordHeader.getNextRecOffset() != 0, is(true));
@@ -288,7 +288,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   public void testSimpleTableQueryByPageNumberMysql56() {
     assertTestOf(this)
         .withMysql56()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkRootPageIs(queryByPageNumberExpected());
   }
 
@@ -296,7 +296,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   public void testSimpleTableQueryByPageNumberMysql57() {
     assertTestOf(this)
         .withMysql57()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkRootPageIs(queryByPageNumberExpected());
   }
 
@@ -304,7 +304,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   public void testSimpleTableQueryByPageNumberMysql80() {
     assertTestOf(this)
         .withMysql80()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkRootPageIs(queryByPageNumberExpected());
   }
 
@@ -339,7 +339,7 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test(expected = IllegalStateException.class)
   public void testSimpleTableQueryByPageNumberNegativePage() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       reader.queryByPageNumber(1);
     }
@@ -365,7 +365,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryByPrimaryKey(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       for (int i = 1; i <= 10; i++) {
@@ -428,7 +428,7 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableQueryAllWithPredicate() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
       reader.open();
 
       Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
@@ -441,14 +441,14 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   //==========================================================================
-  // test getSchema
+  // test getTableDef
   //==========================================================================
 
   @Test
-  public void testGetSchema() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
-      System.out.println(reader.getSchema());
-      assertThat(reader.getSchema().equals(getSchema()), is(true));
+  public void testGetTableDef() {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      System.out.println(reader.getTableDef());
+      assertThat(reader.getTableDef().equals(getTableDef()), is(true));
     }
   }
 
@@ -458,7 +458,7 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test(expected = ReaderException.class)
   public void testSimpleTableOpenTwice() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       reader.open();
     }
@@ -470,7 +470,7 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableGetNumOfPages() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       assertThat(reader.getNumOfPages(), is(6L));
     }
@@ -483,7 +483,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   @Test
   public void testGetIndexPageFillingRate() {
     // small table
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       double fillingRate = reader.getIndexPageFillingRate(3);
       System.out.println(fillingRate);
@@ -491,7 +491,7 @@ public class SimpleTableReaderTest extends AbstractTest {
     }
 
     // big table
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
       reader.open();
       assertThat(String.valueOf(reader.getIndexPageFillingRate(37)).startsWith("0.7807"), is(true));
     }
@@ -504,7 +504,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   @Test
   public void testGetAllIndexPageFillingRate() {
     // big table
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
       reader.open();
       assertThat(String.valueOf(reader.getAllIndexPageFillingRate()).startsWith("0.9230"), is(true));
     }

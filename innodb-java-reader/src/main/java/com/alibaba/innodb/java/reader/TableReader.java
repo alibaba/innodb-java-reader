@@ -15,8 +15,8 @@ import com.alibaba.innodb.java.reader.page.ibuf.IbufBitmap;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
-import com.alibaba.innodb.java.reader.schema.Schema;
-import com.alibaba.innodb.java.reader.schema.SchemaUtil;
+import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.schema.TableDefUtil;
 import com.alibaba.innodb.java.reader.service.IndexService;
 import com.alibaba.innodb.java.reader.service.StorageService;
 import com.alibaba.innodb.java.reader.service.impl.FileChannelStorageServiceImpl;
@@ -48,20 +48,20 @@ public class TableReader implements Closeable {
 
   private String ibdFilePath;
 
-  private Schema schema;
+  private TableDef tableDef;
 
   private IndexService indexService;
 
   private StorageService storageService;
 
   public TableReader(String ibdFilePath, String createTableSql) {
-    this(ibdFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql));
+    this(ibdFilePath, TableDefUtil.covertToTableDef(createTableSql));
   }
 
-  public TableReader(String ibdFilePath, Schema schema) {
+  public TableReader(String ibdFilePath, TableDef tableDef) {
     this.ibdFilePath = ibdFilePath;
-    this.schema = schema;
-    this.schema.validate();
+    this.tableDef = tableDef;
+    this.tableDef.validate();
   }
 
   public void open() {
@@ -71,8 +71,8 @@ public class TableReader implements Closeable {
       }
       storageService = new FileChannelStorageServiceImpl();
       storageService.open(ibdFilePath);
-      indexService = new IndexServiceImpl(storageService, schema);
-      log.debug("{}", schema);
+      indexService = new IndexServiceImpl(storageService, tableDef);
+      log.debug("{}", tableDef);
     } catch (IOException e) {
       throw new ReaderException("Open " + ibdFilePath + " failed", e);
     }
@@ -165,7 +165,7 @@ public class TableReader implements Closeable {
       case INODE:
         return new Inode(page);
       case INDEX:
-        return new Index(page, schema);
+        return new Index(page, tableDef);
       case ALLOCATED:
         return new AllocatedPage(page);
       case BLOB:
@@ -247,8 +247,8 @@ public class TableReader implements Closeable {
     return indexService.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
   }
 
-  public Schema getSchema() {
-    return schema;
+  public TableDef getTableDef() {
+    return tableDef;
   }
 
   @Override

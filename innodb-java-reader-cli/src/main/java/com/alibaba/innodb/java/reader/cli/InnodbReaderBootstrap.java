@@ -18,7 +18,7 @@ import com.alibaba.innodb.java.reader.page.fsphdr.FspHdrXes;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import freemarker.template.TemplateException;
@@ -414,8 +414,8 @@ public class InnodbReaderBootstrap {
 
   private static void showHeaderIfSet(TableReader reader, Writer writer) {
     if (SHOW_HEADER) {
-      Schema schema = reader.getSchema();
-      writer.write(schema.getColumnNames().stream().collect(Collectors.joining(FIELD_DELIMITER)));
+      TableDef tableDef = reader.getTableDef();
+      writer.write(tableDef.getColumnNames().stream().collect(Collectors.joining(FIELD_DELIMITER)));
       if (writer.ifNewLineAfterWrite()) {
         writer.write("\n");
       }

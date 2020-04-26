@@ -8,7 +8,7 @@ import com.alibaba.innodb.java.reader.page.fsphdr.FspHdrXes;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import java.util.List;
 
@@ -23,12 +23,12 @@ import static com.alibaba.innodb.java.reader.page.PageType.INODE;
 public class ShowPagesMain {
 
   public static void main(String[] args) {
-    Schema schema = new Schema()
+    TableDef tableDef = new TableDef()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false));
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
-    try (TableReader reader = new TableReader(ibdFilePath, schema)) {
+    try (TableReader reader = new TableReader(ibdFilePath, tableDef)) {
       reader.open();
       List<AbstractPage> pages = reader.readAllPages();
       for (AbstractPage page : pages) {

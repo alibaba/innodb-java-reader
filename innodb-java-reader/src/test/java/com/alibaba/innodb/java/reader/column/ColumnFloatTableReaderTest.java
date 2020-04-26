@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.column;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.junit.Test;
 
@@ -43,8 +43,8 @@ import static org.junit.Assert.assertThat;
  */
 public class ColumnFloatTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema()
+  public TableDef getTableDef() {
+    return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11) unsigned").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("c_float").setType("float").setNullable(false))
         .addColumn(new Column().setName("c_double").setType("double").setNullable(false));
@@ -54,7 +54,7 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
   public void testIntColumnMysql56() {
     assertTestOf(this)
         .withMysql56()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -62,7 +62,7 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
   public void testIntColumnMysql57() {
     assertTestOf(this)
         .withMysql57()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -70,7 +70,7 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
   public void testIntColumnMysql80() {
     assertTestOf(this)
         .withMysql80()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 

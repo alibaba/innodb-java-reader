@@ -42,6 +42,11 @@ public class JSqlParserTest {
         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='商品信息'");
     System.out.println(stmt.toString());
 
+    System.out.println(stmt.getTable().getName());
+    System.out.println(stmt.getTable().getDatabase());
+    System.out.println(stmt.getTable().getFullyQualifiedName());
+    assertThat(stmt.getTable().getName(), is("`product001`"));
+
     System.out.println(stmt.getCreateOptionsStrings());
     assertThat(stmt.getCreateOptionsStrings(), nullValue());
 
@@ -125,6 +130,17 @@ public class JSqlParserTest {
     assertCanBeParsed("CREATE TABLE testtab (test varchar (255))");
   }
 
+  @Test
+  public void testParseSqlNoBackTickSemiColonEnding() throws JSQLParserException {
+    assertCanBeParsed("CREATE TABLE testtab (test varchar (255));");
+  }
+
+  @Test(expected = JSQLParserException.class)
+  public void testParseSqlNegate() throws JSQLParserException {
+    // can not parse more than one sql
+    assertCanBeParsed("CREATE TABLE testtab (test varchar (255));"
+        + "CREATE TABLE testtab (test varchar (255));");
+  }
 
   @Test
   public void testParseSqlDoubleQuotedColumn() throws JSQLParserException {
@@ -185,6 +201,11 @@ public class JSqlParserTest {
   public void testParseSql3() throws JSQLParserException {
     assertCanBeParsed("CREATE TABLE IF NOT EXISTS \"TABLE_OK\" "
         + "(\"SOME_FIELD\" VARCHAR2 (256 BYTE))");
+  }
+
+  @Test
+  public void testCreateTableAsSelect() throws JSQLParserException {
+    assertCanBeParsed("CREATE TABLE public.sales1 AS (SELECT * FROM public.sales)");
   }
 
   private void assertCanBeParsed(String sql) throws JSQLParserException {

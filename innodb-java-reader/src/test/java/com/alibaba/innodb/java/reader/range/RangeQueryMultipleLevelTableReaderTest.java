@@ -6,7 +6,7 @@ import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Ignore;
@@ -22,8 +22,8 @@ import static org.junit.Assert.assertThat;
  */
 public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema()
+  public TableDef getTableDef() {
+    return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
@@ -33,7 +33,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   @Ignore
   @Test
   public void testReadAllPages() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getSchema())) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -65,7 +65,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableRangeQueryAll(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, 50001);
@@ -92,7 +92,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableRangeQueryNothing(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(-1, 0);
       assertThat(recordList.size(), is(0));
@@ -123,7 +123,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableRangeQueryPart(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
       rangeQuery(reader, 5000, 5001);
       rangeQuery(reader, 3000, 8000);
@@ -166,7 +166,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testRangeQueryHalfOpenHalfClose(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, null);

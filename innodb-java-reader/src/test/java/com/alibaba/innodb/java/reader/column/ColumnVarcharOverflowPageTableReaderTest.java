@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.column;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -19,8 +19,8 @@ import static org.junit.Assert.assertThat;
  */
 public class ColumnVarcharOverflowPageTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema().setCharset("utf8mb4") // table charset is utf8mb4
+  public TableDef getTableDef() {
+    return new TableDef().setDefaultCharset("utf8mb4") // table charset is utf8mb4
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(16380)").setNullable(false));
@@ -30,7 +30,7 @@ public class ColumnVarcharOverflowPageTableReaderTest extends AbstractTest {
   public void testVarcharOverflowPageColumnMysql56() {
     assertTestOf(this)
         .withMysql56()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -38,7 +38,7 @@ public class ColumnVarcharOverflowPageTableReaderTest extends AbstractTest {
   public void testVarcharOverflowPageColumnMysql57() {
     assertTestOf(this)
         .withMysql57()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -46,7 +46,7 @@ public class ColumnVarcharOverflowPageTableReaderTest extends AbstractTest {
   public void testVarcharOverflowPageColumnMysql80() {
     assertTestOf(this)
         .withMysql80()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 

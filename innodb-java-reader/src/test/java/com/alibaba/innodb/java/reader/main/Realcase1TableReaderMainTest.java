@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.main;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -34,7 +34,7 @@ import java.util.List;
 public class Realcase1TableReaderMainTest {
 
   public static void main(String[] args) {
-    Schema schema = new Schema()
+    TableDef tableDef = new TableDef()
         .addColumn(new Column().setName("id").setType("bigint(20)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("user_id").setType("bigint(20)").setNullable(true))
         .addColumn(new Column().setName("feed_id").setType("int(11)").setNullable(true))
@@ -48,7 +48,7 @@ public class Realcase1TableReaderMainTest {
         .addColumn(new Column().setName("name_hash").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("deleted_state").setType("int(11)").setNullable(false));
 
-    try (TableReader reader = new TableReader("/usr/local/mysql/data/test/product001.ibd", schema)) {
+    try (TableReader reader = new TableReader("/usr/local/mysql/data/test/product001.ibd", tableDef)) {
       reader.open();
 
       for (long i = 1; i <= 10; i++) {

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author xu.zx
  */
-public class SchemaUtilTest {
+public class TableDefUtilTest {
 
   @Test
   public void testConvert() {
@@ -33,13 +33,14 @@ public class SchemaUtilTest {
         + "FOREIGN KEY (e)  REFERENCES employees (emp_no)    ON DELETE CASCADE,"
         + "KEY `ddd` (`a`))\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
-    Schema schema = SchemaUtil.covertFromSqlToSchema(sql);
-    System.out.println(schema);
-    assertThat(schema.getCharset(), is("utf8mb4"));
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    System.out.println(tableDef);
+    assertThat(tableDef.getName(), is("tb01"));
+    assertThat(tableDef.getDefaultCharset(), is("utf8mb4"));
 
-    assertThat(schema.getPrimaryKeyColumn().getName(), is("id"));
+    assertThat(tableDef.getPrimaryKeyColumn().getName(), is("id"));
 
-    List<Column> columnList = schema.getColumnList();
+    List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(10));
 
     assertThat(columnList.get(0).getName(), is("id"));
@@ -56,13 +57,13 @@ public class SchemaUtilTest {
     assertThat(columnList.get(1).isPrimaryKey(), is(false));
     assertThat(columnList.get(1).isNullable(), is(false));
 
-    assertThat(schema.getField("b").getColumn().getName(), is("b"));
-    assertThat(schema.getField("b").getColumn().getType(), is(ColumnType.TINYINT));
-    assertThat(schema.getField("b").getColumn().getLength(), is(0));
-    assertThat(schema.getField("b").getColumn().getPrecision(), is(0));
-    assertThat(schema.getField("b").getColumn().getScale(), is(0));
-    assertThat(schema.getField("b").getColumn().isPrimaryKey(), is(false));
-    assertThat(schema.getField("b").getColumn().isNullable(), is(true));
+    assertThat(tableDef.getField("b").getColumn().getName(), is("b"));
+    assertThat(tableDef.getField("b").getColumn().getType(), is(ColumnType.TINYINT));
+    assertThat(tableDef.getField("b").getColumn().getLength(), is(0));
+    assertThat(tableDef.getField("b").getColumn().getPrecision(), is(0));
+    assertThat(tableDef.getField("b").getColumn().getScale(), is(0));
+    assertThat(tableDef.getField("b").getColumn().isPrimaryKey(), is(false));
+    assertThat(tableDef.getField("b").getColumn().isNullable(), is(true));
 
     assertThat(columnList.get(3).getName(), is("c"));
     assertThat(columnList.get(3).getType(), is(ColumnType.TEXT));
@@ -99,13 +100,13 @@ public class SchemaUtilTest {
     assertThat(columnList.get(6).isNullable(), is(true));
     assertThat(columnList.get(6).getCharset(), is("utf8mb4"));
 
-    assertThat(schema.getField("g").getColumn().getName(), is("g"));
-    assertThat(schema.getField("g").getColumn().getType(), is(ColumnType.TIMESTAMP));
-    assertThat(schema.getField("g").getColumn().getLength(), is(0));
-    assertThat(schema.getField("g").getColumn().getPrecision(), is(3));
-    assertThat(schema.getField("g").getColumn().getScale(), is(0));
-    assertThat(schema.getField("g").getColumn().isPrimaryKey(), is(false));
-    assertThat(schema.getField("g").getColumn().isNullable(), is(true));
+    assertThat(tableDef.getField("g").getColumn().getName(), is("g"));
+    assertThat(tableDef.getField("g").getColumn().getType(), is(ColumnType.TIMESTAMP));
+    assertThat(tableDef.getField("g").getColumn().getLength(), is(0));
+    assertThat(tableDef.getField("g").getColumn().getPrecision(), is(3));
+    assertThat(tableDef.getField("g").getColumn().getScale(), is(0));
+    assertThat(tableDef.getField("g").getColumn().isPrimaryKey(), is(false));
+    assertThat(tableDef.getField("g").getColumn().isNullable(), is(true));
 
     assertThat(columnList.get(8).getName(), is("h"));
     assertThat(columnList.get(8).getType(), is(ColumnType.DECIMAL));
@@ -130,13 +131,13 @@ public class SchemaUtilTest {
         + "(`id` int(11) NOT NULL PRIMARY KEY,\n"
         + "`a` bigint(20) unsigneD NOT NULL)\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = latin1;";
-    Schema schema = SchemaUtil.covertFromSqlToSchema(sql);
-    System.out.println(schema);
-    assertThat(schema.getCharset(), is("latin1"));
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    System.out.println(tableDef);
+    assertThat(tableDef.getDefaultCharset(), is("latin1"));
 
-    assertThat(schema.getPrimaryKeyColumn().getName(), is("id"));
+    assertThat(tableDef.getPrimaryKeyColumn().getName(), is("id"));
 
-    List<Column> columnList = schema.getColumnList();
+    List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(2));
 
     assertThat(columnList.get(0).getName(), is("id"));
@@ -151,14 +152,14 @@ public class SchemaUtilTest {
   @Test
   public void testConvertColumnCharset() {
     String sql = "CREATE TABLE t (c CHAR(20) CHARACTER SET utf8 COLLATE utf8_bin);";
-    Schema schema = SchemaUtil.covertFromSqlToSchema(sql);
-    System.out.println(schema);
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    System.out.println(tableDef);
     // by default set to utf8
-    assertThat(schema.getCharset(), is("utf8"));
+    assertThat(tableDef.getDefaultCharset(), is("utf8"));
 
-    assertThat(schema.getPrimaryKeyColumn(), nullValue());
+    assertThat(tableDef.getPrimaryKeyColumn(), nullValue());
 
-    List<Column> columnList = schema.getColumnList();
+    List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(1));
 
     assertThat(columnList.get(0).getName(), is("c"));
@@ -184,7 +185,7 @@ public class SchemaUtilTest {
         + "                                           -- INDEX (first_name)\n"
         + "                                           -- INDEX (last_name)\n"
         + ");";
-    SchemaUtil.covertFromSqlToSchema(sql);
+    TableDefUtil.covertToTableDef(sql);
   }
 
   @Test(expected = SqlParseException.class)
@@ -192,7 +193,7 @@ public class SchemaUtilTest {
     String sql = "CREATE TABLE `tb01`\n"
         + "()\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
-    SchemaUtil.covertFromSqlToSchema(sql);
+    TableDefUtil.covertToTableDef(sql);
   }
 
   @Test
@@ -206,7 +207,7 @@ public class SchemaUtilTest {
         + "`e` varchar(64) NOT NULL,\n"
         + "`f` varchar(1024) default 'THIS_IS_DEFAULT_VALUE')\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
-    SchemaUtil.covertFromSqlToSchema(sql);
+    TableDefUtil.covertToTableDef(sql);
   }
 
 }

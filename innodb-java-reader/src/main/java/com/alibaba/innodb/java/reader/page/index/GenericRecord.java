@@ -4,7 +4,7 @@
 package com.alibaba.innodb.java.reader.page.index;
 
 import com.alibaba.innodb.java.reader.exception.ReaderException;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import lombok.Data;
@@ -36,7 +36,7 @@ public class GenericRecord {
    * Table schema.
    */
   @ToString.Exclude
-  private Schema schema;
+  private TableDef tableDef;
 
   /**
    * Column values.
@@ -48,29 +48,29 @@ public class GenericRecord {
    */
   private long childPageNumber;
 
-  public GenericRecord(RecordHeader header, Schema schema, long pageNumber) {
+  public GenericRecord(RecordHeader header, TableDef tableDef, long pageNumber) {
     this.header = header;
-    this.schema = schema;
+    this.tableDef = tableDef;
     this.pageNumber = pageNumber;
-    this.values = new Object[schema.getColumnList().size()];
+    this.values = new Object[tableDef.getColumnList().size()];
     if (header.getRecordType() == RecordType.INFIMUM) {
-      put(schema.getPrimaryKeyColumn().getName(), Utils.MIN);
+      put(tableDef.getPrimaryKeyColumn().getName(), Utils.MIN);
     }
     if (header.getRecordType() == RecordType.SUPREMUM) {
-      put(schema.getPrimaryKeyColumn().getName(), Utils.MAX);
+      put(tableDef.getPrimaryKeyColumn().getName(), Utils.MAX);
     }
   }
 
-  public Schema getSchema() {
-    return schema;
+  public TableDef getTableDef() {
+    return tableDef;
   }
 
   public void put(String columnName, Object value) {
-    checkNotNull(schema);
+    checkNotNull(tableDef);
     checkNotNull(values);
-    Schema.Field field = schema.getField(columnName);
+    TableDef.Field field = tableDef.getField(columnName);
     if (field == null) {
-      throw new ReaderException("Not a valid schema for column: " + columnName);
+      throw new ReaderException("Not valid for column: " + columnName);
     }
 
     values[field.getOrdinal()] = value;
@@ -82,9 +82,9 @@ public class GenericRecord {
   }
 
   public Object get(String columnName) {
-    checkNotNull(schema);
+    checkNotNull(tableDef);
     checkNotNull(values);
-    Schema.Field field = schema.getField(columnName);
+    TableDef.Field field = tableDef.getField(columnName);
     if (field == null) {
       return null;
     }
@@ -97,8 +97,8 @@ public class GenericRecord {
   }
 
   public Object getPrimaryKey() {
-    checkNotNull(schema);
-    return get(schema.getPrimaryKeyColumn().getName());
+    checkNotNull(tableDef);
+    return get(tableDef.getPrimaryKeyColumn().getName());
   }
 
   public void setPrimaryKeyPosition(int primaryKeyPosition) {

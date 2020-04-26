@@ -24,45 +24,46 @@ import lombok.extern.slf4j.Slf4j;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Schema utility.
+ * TableDef utility.
  *
  * @author xu.zx
  */
 @Slf4j
-public class SchemaUtil {
+public class TableDefUtil {
 
-  public static Schema covertFromSqlToSchema(String sql) {
+  public static TableDef covertToTableDef(String sql) {
     CreateTable stmt;
     try {
       stmt = (CreateTable) CCJSqlParserUtil.parse(sql);
       checkNotNull(stmt, "CreateTable statement should not be null");
-      Schema schema = new Schema();
+      TableDef tableDef = new TableDef();
+      tableDef.setName(stmt.getTable().getName());
       // set charset first
-      handleCharset(stmt, schema);
-      handleColumns(stmt, schema);
-      handleIndex(stmt, schema);
+      handleCharset(stmt, tableDef);
+      handleColumns(stmt, tableDef);
+      handleIndex(stmt, tableDef);
 
       if (log.isDebugEnabled()) {
         log.debug("origin sql:" + sql);
         log.debug("parsed sql:" + stmt);
       }
-      return schema;
+      return tableDef;
     } catch (Exception e) {
       throw new SqlParseException("Parse create table sql failed " + sql, e);
     }
   }
 
-  private static void handleCharset(CreateTable stmt, Schema schema) {
+  private static void handleCharset(CreateTable stmt, TableDef tableDef) {
     List<?> tableOptions = stmt.getTableOptionsStrings();
     if (CollectionUtils.isNotEmpty(tableOptions)) {
       int indexOfCharset = tableOptions.indexOf("CHARSET");
       if (indexOfCharset > 0) {
-        schema.setCharset((String) tableOptions.get(indexOfCharset + 2));
+        tableDef.setDefaultCharset((String) tableOptions.get(indexOfCharset + 2));
       }
     }
   }
 
-  private static void handleIndex(CreateTable stmt, Schema schema) {
+  private static void handleIndex(CreateTable stmt, TableDef tableDef) {
     List<Index> indices = stmt.getIndexes();
     if (CollectionUtils.isNotEmpty(indices)) {
       for (Index index : indices) {
@@ -71,17 +72,17 @@ public class SchemaUtil {
           String pkColumnName = colNames.get(0)
               .replace(Symbol.BACKTICK, Symbol.EMPTY)
               .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
-          if (schema.getColumnNames().contains(pkColumnName)) {
-            Column pk = schema.getField(pkColumnName).getColumn();
+          if (tableDef.getColumnNames().contains(pkColumnName)) {
+            Column pk = tableDef.getField(pkColumnName).getColumn();
             pk.setPrimaryKey(true);
-            schema.setPrimaryKeyColumn(pk);
+            tableDef.setPrimaryKeyColumn(pk);
           }
         }
       }
     }
   }
 
-  private static void handleColumns(CreateTable stmt, Schema schema) {
+  private static void handleColumns(CreateTable stmt, TableDef tableDef) {
     // parse columns
     if (CollectionUtils.isEmpty(stmt.getColumnDefinitions())) {
       throw new SqlParseException("Cannot found any column");
@@ -118,7 +119,7 @@ public class SchemaUtil {
           column.setPrimaryKey(true);
         }
       }
-      schema.addColumn(column);
+      tableDef.addColumn(column);
     }
   }
 

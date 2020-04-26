@@ -10,7 +10,7 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -25,8 +25,8 @@ import static org.junit.Assert.assertThat;
  */
 public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema()
+  public TableDef getTableDef() {
+    return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
@@ -58,7 +58,7 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testNLevelTableReadAllPages(String path, int maxLevel, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -103,7 +103,7 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableQueryAll1000(String path, int start, int end) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();
@@ -130,7 +130,7 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableQueryAll40000(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();

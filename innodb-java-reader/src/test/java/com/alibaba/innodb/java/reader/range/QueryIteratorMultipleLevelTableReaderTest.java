@@ -5,7 +5,7 @@ import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.junit.Test;
 
@@ -20,8 +20,8 @@ import static org.junit.Assert.assertThat;
  */
 public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema()
+  public TableDef getTableDef() {
+    return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
@@ -39,7 +39,7 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testTableLevel(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       long numOfPages = reader.getNumOfPages();
@@ -61,7 +61,7 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testQueryAllIterator(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
@@ -86,7 +86,7 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testRangeQueryIterator(String path) {
-    try (TableReader reader = new TableReader(path, getSchema())) {
+    try (TableReader reader = new TableReader(path, getTableDef())) {
       reader.open();
 
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(10000, 40000);

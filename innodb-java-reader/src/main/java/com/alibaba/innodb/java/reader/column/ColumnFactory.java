@@ -42,6 +42,12 @@ public class ColumnFactory {
   private ColumnFactory() {
   }
 
+  /**
+   * Get {@link ColumnParser} from column type.
+   *
+   * @param columnType column type
+   * @return column parser
+   */
   public static ColumnParser<?> getColumnParser(String columnType) {
     ColumnParser<?> result = TYPE_TO_COLUMN_PARSER_MAP.get(columnType);
     if (result == null) {

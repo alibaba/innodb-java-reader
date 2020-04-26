@@ -18,7 +18,7 @@ import com.alibaba.innodb.java.reader.page.index.OverflowPagePointer;
 import com.alibaba.innodb.java.reader.page.index.RecordHeader;
 import com.alibaba.innodb.java.reader.page.index.RecordType;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.service.IndexService;
 import com.alibaba.innodb.java.reader.service.StorageService;
 import com.alibaba.innodb.java.reader.util.SliceInput;
@@ -62,13 +62,13 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 public class IndexServiceImpl implements IndexService, Constants {
 
-  private Schema schema;
+  private TableDef tableDef;
 
   private StorageService storageService;
 
-  public IndexServiceImpl(StorageService storageService, Schema schema) {
+  public IndexServiceImpl(StorageService storageService, TableDef tableDef) {
     this.storageService = storageService;
-    this.schema = schema;
+    this.tableDef = tableDef;
   }
 
   @Override
@@ -144,7 +144,7 @@ public class IndexServiceImpl implements IndexService, Constants {
 
   @Override
   public GenericRecord queryByPrimaryKey(Object key) {
-    key = tryCastString(key, schema.getPrimaryKeyColumn().getType());
+    key = tryCastString(key, tableDef.getPrimaryKeyColumn().getType());
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
     checkState(index.isRootPage(), "Root page is wrong which should not happen");
     GenericRecord record = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, key);
@@ -177,8 +177,8 @@ public class IndexServiceImpl implements IndexService, Constants {
    */
   @Override
   public Iterator<GenericRecord> getRangeQueryIterator(Object lowerInclusiveKey, Object upperExclusiveKey) {
-    Object lower = tryCastString(lowerInclusiveKey, schema.getPrimaryKeyColumn().getType());
-    Object upper = tryCastString(upperExclusiveKey, schema.getPrimaryKeyColumn().getType());
+    Object lower = tryCastString(lowerInclusiveKey, tableDef.getPrimaryKeyColumn().getType());
+    Object upper = tryCastString(upperExclusiveKey, tableDef.getPrimaryKeyColumn().getType());
     if (lower != null && upper != null) {
       if (castCompare(lower, upper) > 0) {
         throw new IllegalArgumentException("Lower is greater than upper");
@@ -441,7 +441,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     }
     checkState(page.getFilHeader().getPageType() == PageType.INDEX,
         "Page " + pageNumber + " is not index page, actual page type is " + page.getFilHeader().getPageType());
-    Index index = new Index(page, schema);
+    Index index = new Index(page, tableDef);
     if (log.isDebugEnabled()) {
       log.debug("Load {} page {}, {} records", index.isLeafPage()
           ? "leaf" : "non-leaf", pageNumber, index.getIndexHeader().getNumOfRecs());
@@ -476,7 +476,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     bodyInput.decrPosition(SIZE_OF_REC_HEADER);
 
     if (header.getRecordType() == RecordType.INFIMUM || header.getRecordType() == RecordType.SUPREMUM) {
-      GenericRecord mum = new GenericRecord(header, schema, pageNumber);
+      GenericRecord mum = new GenericRecord(header, tableDef, pageNumber);
       mum.setPrimaryKeyPosition(primaryKeyPos);
       log.debug("Read system record recordHeader={}", header);
       return mum;
@@ -484,23 +484,23 @@ public class IndexServiceImpl implements IndexService, Constants {
 
     // nullByteSize is an array indicating which fields(nullable) are null.
     List<String> nullColumnNames = null;
-    int nullableColumnNum = schema.getNullableColumnNum();
+    int nullableColumnNum = tableDef.getNullableColumnNum();
     int nullByteSize = (nullableColumnNum + 7) / 8;
-    if (isLeafPage && schema.containsNullColumn()) {
+    if (isLeafPage && tableDef.containsNullColumn()) {
       int[] nullBitmap = Utils.getBitArray(bodyInput, nullableColumnNum);
-      nullColumnNames = Utils.getFromBitArray(schema.getNullableColumnList(), nullBitmap, Column::getName);
+      nullColumnNames = Utils.getFromBitArray(tableDef.getNullableColumnList(), nullBitmap, Column::getName);
     }
 
     // For each non-NULL variable-length field, the record header contains the length
     // in one or two bytes.
     int[] varLenArray = null;
     boolean[] overflowPageArray = null;
-    if (isLeafPage && schema.containsVariableLengthColumn()) {
-      varLenArray = new int[schema.getVariableLengthColumnNum()];
-      overflowPageArray = new boolean[schema.getVariableLengthColumnNum()];
+    if (isLeafPage && tableDef.containsVariableLengthColumn()) {
+      varLenArray = new int[tableDef.getVariableLengthColumnNum()];
+      overflowPageArray = new boolean[tableDef.getVariableLengthColumnNum()];
       bodyInput.decrPosition(nullByteSize);
-      for (int i = 0; i < schema.getVariableLengthColumnNum(); i++) {
-        Column varColumn = schema.getVariableLengthColumnList().get(i);
+      for (int i = 0; i < tableDef.getVariableLengthColumnNum(); i++) {
+        Column varColumn = tableDef.getVariableLengthColumnList().get(i);
         if (nullColumnNames != null && nullColumnNames.contains(varColumn.getName())) {
           continue;
         }
@@ -523,15 +523,15 @@ public class IndexServiceImpl implements IndexService, Constants {
 
     // read primary key
     bodyInput.setPosition(primaryKeyPos);
-    GenericRecord record = new GenericRecord(header, schema, pageNumber);
-    String primaryKeyColumnType = schema.getPrimaryKeyColumn().getType();
+    GenericRecord record = new GenericRecord(header, tableDef, pageNumber);
+    String primaryKeyColumnType = tableDef.getPrimaryKeyColumn().getType();
     Object primaryKey = ColumnFactory.getColumnParser(primaryKeyColumnType)
-        .readFrom(bodyInput, schema.getPrimaryKeyColumn());
+        .readFrom(bodyInput, tableDef.getPrimaryKeyColumn());
     if (log.isTraceEnabled()) {
       log.trace("Read record, pkPos={}, key={}, recordHeader={}, nullColumnNames={}, varLenArray={}",
           primaryKeyPos, primaryKey, header, nullColumnNames, Arrays.toString(varLenArray));
     }
-    record.put(schema.getPrimaryKeyColumn().getName(), primaryKey);
+    record.put(tableDef.getPrimaryKeyColumn().getName(), primaryKey);
     record.setPrimaryKeyPosition(primaryKeyPos);
 
     if (isLeafPage) {
@@ -542,7 +542,7 @@ public class IndexServiceImpl implements IndexService, Constants {
     if (isLeafPage) {
       // read all columns
       int varLenIdx = 0;
-      for (Column column : schema.getColumnList()) {
+      for (Column column : tableDef.getColumnList()) {
         if (column.isPrimaryKey()) {
           continue;
         }
@@ -623,7 +623,7 @@ public class IndexServiceImpl implements IndexService, Constants {
   private boolean isTwoBytesLen(Column varColumn, int len) {
     int factor = 1;
     if (CHAR_TYPES.contains(varColumn.getType())) {
-      factor = schema.getMaxBytesPerChar();
+      factor = tableDef.getMaxBytesPerChar();
     }
     return len > 127
         && (BLOB_TEXT_TYPES.contains(varColumn.getType()) || (varColumn.getLength() * factor) > 255);

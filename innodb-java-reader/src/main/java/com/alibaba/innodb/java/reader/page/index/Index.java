@@ -5,7 +5,7 @@ package com.alibaba.innodb.java.reader.page.index;
 
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.InnerPage;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import lombok.Data;
 
@@ -33,7 +33,7 @@ public class Index extends AbstractPage {
 
   private int[] dirSlots;
 
-  public Index(InnerPage innerPage, Schema schema) {
+  public Index(InnerPage innerPage, TableDef tableDef) {
     super(innerPage);
 
     // 36 bytes index header
@@ -48,7 +48,7 @@ public class Index extends AbstractPage {
     // end offset = 38(file header) + 56 + 13 = 107
     // infimum content page offset = 107 - 8 = 99
     RecordHeader infimumHeader = RecordHeader.fromSlice(sliceInput);
-    this.infimum = new GenericRecord(infimumHeader, schema, innerPage.getPageNumber());
+    this.infimum = new GenericRecord(infimumHeader, tableDef, innerPage.getPageNumber());
     this.infimum.setPrimaryKeyPosition(sliceInput.position());
     String infimumString = sliceInput.readUTF8String(SIZE_OF_MUM_RECORD);
     checkState("infimum\0".equals(infimumString));
@@ -57,7 +57,7 @@ public class Index extends AbstractPage {
     // end offset = 107 + 13 = 120
     // supremum content page offset = 120 - 8 = 112
     RecordHeader supremumHeader = RecordHeader.fromSlice(sliceInput);
-    this.supremum = new GenericRecord(supremumHeader, schema, innerPage.getPageNumber());
+    this.supremum = new GenericRecord(supremumHeader, tableDef, innerPage.getPageNumber());
     this.supremum.setPrimaryKeyPosition(sliceInput.position());
     String supremumString = sliceInput.readUTF8String(SIZE_OF_MUM_RECORD);
     checkState("supremum".equals(supremumString));

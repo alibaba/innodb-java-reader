@@ -4,6 +4,7 @@
 package com.alibaba.innodb.java.reader.schema;
 
 import com.alibaba.innodb.java.reader.CharsetMapping;
+import com.alibaba.innodb.java.reader.util.Symbol;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,13 +26,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Schema description, like <code>SHOW CREATE TABLE LIKE 'TTT'</code>.
+ * Table definition, like the result of the sql command: <code>SHOW CREATE TABLE LIKE 'TTT'</code>.
  *
  * @author xu.zx
  */
 @EqualsAndHashCode
 @Slf4j
-public class Schema {
+public class TableDef {
+
+  private String name;
 
   private List<String> columnNames;
 
@@ -49,17 +52,21 @@ public class Schema {
 
   private List<Column> variableLengthColumnList;
 
+  /**
+   * Column ordinal.
+   */
   private int ordinal = 0;
 
   /**
-   * For decoding string in Java.
+   * Default charset for decoding string in Java. Derived from table DDL default charset
+   * according to {@link CharsetMapping}.
    */
-  private String javaCharset = DEFAULT_JAVA_CHARSET;
+  private String defaultJavaCharset = DEFAULT_JAVA_CHARSET;
 
   /**
-   * Table DDL charset, for example can be latin, utf8, utf8mb4.
+   * Table DDL default charset, for example can be latin, utf8, utf8mb4.
    */
-  private String charset = DEFAULT_MYSQL_CHARSET;
+  private String defaultCharset = DEFAULT_MYSQL_CHARSET;
 
   /**
    * //TODO make sure this is the right way to implement
@@ -68,7 +75,7 @@ public class Schema {
    */
   private int maxBytesPerChar = 1;
 
-  public Schema() {
+  public TableDef() {
     this.columnList = new ArrayList<>();
     this.columnNames = new ArrayList<>();
     this.nameToFieldMap = new HashMap<>();
@@ -108,7 +115,7 @@ public class Schema {
     return variableLengthColumnNum;
   }
 
-  public Schema addColumn(Column column) {
+  public TableDef addColumn(Column column) {
     checkNotNull(column, "Column should not be null");
     checkArgument(StringUtils.isNotEmpty(column.getName()), "Column name is empty");
     checkArgument(StringUtils.isNotEmpty(column.getType()), "Column type is empty");
@@ -130,10 +137,11 @@ public class Schema {
       variableLengthColumnList.add(column);
       variableLengthColumnNum++;
     }
-    column.setSchema(this);
+    column.setOrdinal(ordinal++);
+    column.setTableDef(this);
     columnList.add(column);
     columnNames.add(column.getName());
-    nameToFieldMap.put(column.getName(), new Field(ordinal++, column.getName(), column));
+    nameToFieldMap.put(column.getName(), new Field(column.getOrdinal(), column.getName(), column));
     return this;
   }
 
@@ -157,19 +165,30 @@ public class Schema {
     return nullableColumnList;
   }
 
-  public String getJavaCharset() {
-    return javaCharset;
+  public String getDefaultJavaCharset() {
+    return defaultJavaCharset;
   }
 
-  public String getCharset() {
-    return charset;
+  public String getDefaultCharset() {
+    return defaultCharset;
   }
 
-  public Schema setCharset(String charset) {
-    checkArgument(CollectionUtils.isEmpty(columnList), "Charset should be set before adding columns");
-    this.charset = charset;
-    this.javaCharset =  CharsetMapping.getJavaCharsetForMysqlCharset(charset);
-    this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(charset);
+  public TableDef setDefaultCharset(String defaultCharset) {
+    checkArgument(CollectionUtils.isEmpty(columnList), "Default charset should be set before adding columns");
+    this.defaultCharset = defaultCharset;
+    this.defaultJavaCharset = CharsetMapping.getJavaCharsetForMysqlCharset(defaultCharset);
+    this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(defaultCharset);
+    return this;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public TableDef setName(String name) {
+    this.name = name
+        .replace(Symbol.BACKTICK, Symbol.EMPTY)
+        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
     return this;
   }
 
@@ -197,23 +216,36 @@ public class Schema {
 
   public String toString(boolean multiLine) {
     StringBuilder sb = new StringBuilder();
-    sb.append("Table columns");
-    sb.append(" (tableCharset=");
-    sb.append(charset);
-    sb.append("):");
-    for (Column column : columnList) {
-      sb.append(multiLine ? "\n" : ",");
-      sb.append(column.getName()).append(" ");
-      sb.append(column.getType());
-      //TODO add extra info like maxVarLen, time precision, and decimal precision and scale
+    sb.append("CREATE TABLE ");
+    sb.append(name == null ? "<undefined>" : name);
+    sb.append(" (");
+    for (int i = 0; i < columnList.size(); i++) {
+      Column column = columnList.get(i);
+      if (multiLine) {
+        sb.append("\n");
+      }
+      sb.append(column.getName());
       sb.append(" ");
+      sb.append(column.getFullType());
       if (!column.isNullable()) {
-        sb.append("NOT NULL ");
+        sb.append(" NOT NULL");
       }
       if (column.isPrimaryKey()) {
-        sb.append("PRIMARY KEY");
+        sb.append(" PRIMARY KEY");
+      }
+      if (i != columnList.size() - 1) {
+        sb.append(",");
       }
     }
+    sb.append(")");
+    if (multiLine) {
+      sb.append("\n");
+    }
+    sb.append("ENGINE = InnoDB");
+    if (StringUtils.isNotEmpty(defaultCharset)) {
+      sb.append(" DEFAULT CHARSET = ").append(defaultCharset);
+    }
+    sb.append(";");
     return sb.toString();
   }
 }

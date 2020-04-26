@@ -33,12 +33,32 @@ import static com.google.common.base.Preconditions.checkState;
 public class Column {
 
   @EqualsAndHashCode.Exclude
-  private Schema schema;
+  private TableDef tableDef;
 
   private String name;
 
   /**
-   * Type is in upper case.
+   * Ordinal position.
+   */
+  private int ordinal;
+
+  /**
+   * Value before parsing type to length, precision or scale.
+   * Only meaningful for toString method.
+   */
+  private String fullType;
+
+  /**
+   * Type is treated as <code>DATE_TYPE</code> as in below query, also column type
+   * in this framework. It should be in upper case.
+   *
+   * <pre>
+   *   SELECT COLUMN_NAME, COLUMN_TYPE ,DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE,
+   *   COLUMN_DEFAULT, COLUMN_COMMENT
+   * FROM
+   *  INFORMATION_SCHEMA.COLUMNS
+   * where table_schema ='db' AND table_name  = 'tb';
+   * </pre>
    *
    * @see com.alibaba.innodb.java.reader.column.ColumnType
    */
@@ -105,12 +125,13 @@ public class Column {
   @ToString.Exclude
   private boolean isVarLenChar;
 
-  public void setSchema(Schema schema) {
-    this.schema = schema;
+  public void setTableDef(TableDef tableDef) {
+    this.tableDef = tableDef;
   }
 
   public Column setType(final String type) {
     checkArgument(StringUtils.isNotEmpty(type), "Column type should not be empty");
+    this.fullType = type;
     String t = type.trim();
     String[] part = t.split(Symbol.SPACE);
     handleRawType(part[0]);
@@ -125,6 +146,11 @@ public class Column {
     this.name = name
         .replace(Symbol.BACKTICK, Symbol.EMPTY)
         .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+    return this;
+  }
+
+  public Column setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
     return this;
   }
 
@@ -157,8 +183,8 @@ public class Column {
     if (javaCharset != null) {
       return javaCharset;
     }
-    if (schema != null) {
-      return schema.getJavaCharset();
+    if (tableDef != null) {
+      return tableDef.getDefaultJavaCharset();
     }
     return null;
   }
@@ -171,8 +197,8 @@ public class Column {
     if (charset != null) {
       return charset;
     }
-    if (schema != null) {
-      return schema.getCharset();
+    if (tableDef != null) {
+      return tableDef.getDefaultCharset();
     }
     return null;
   }

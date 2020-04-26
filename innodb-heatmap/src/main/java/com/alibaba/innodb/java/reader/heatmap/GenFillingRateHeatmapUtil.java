@@ -8,8 +8,8 @@ import com.google.common.collect.Maps;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.index.Index;
-import com.alibaba.innodb.java.reader.schema.Schema;
-import com.alibaba.innodb.java.reader.schema.SchemaUtil;
+import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.schema.TableDefUtil;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -50,7 +50,7 @@ public class GenFillingRateHeatmapUtil {
    */
   public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql,
                           int pageWrapNum) throws IOException, TemplateException {
-    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql),
+    dump(sourceIbdFilePath, destHtmlFilePath, TableDefUtil.covertToTableDef(createTableSql),
         pageWrapNum, Optional.empty());
   }
 
@@ -65,7 +65,7 @@ public class GenFillingRateHeatmapUtil {
    */
   public static void dump(String sourceIbdFilePath, String destHtmlFilePath, String createTableSql, int pageWrapNum,
                           Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
-    dump(sourceIbdFilePath, destHtmlFilePath, SchemaUtil.covertFromSqlToSchema(createTableSql),
+    dump(sourceIbdFilePath, destHtmlFilePath, TableDefUtil.covertToTableDef(createTableSql),
         pageWrapNum, widthAndHeight);
   }
 
@@ -74,11 +74,11 @@ public class GenFillingRateHeatmapUtil {
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
-   * @param schema            table schema
+   * @param tableDef          table definition
    * @param pageWrapNum       number of pages per line in heatmap
    * @param widthAndHeight    optional width and height in heatmap
    */
-  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, Schema schema, int pageWrapNum,
+  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, TableDef tableDef, int pageWrapNum,
                           Optional<Pair<String, String>> widthAndHeight) throws IOException, TemplateException {
     Pair<String, String> defaultWidthAndHeight = new Pair<>("1000", "1000");
 
@@ -91,7 +91,7 @@ public class GenFillingRateHeatmapUtil {
 
     log.info("Start dump {} to {}", sourceIbdFilePath, destHtmlFilePath);
     long start = System.currentTimeMillis();
-    try (TableReader reader = new TableReader(sourceIbdFilePath, schema)) {
+    try (TableReader reader = new TableReader(sourceIbdFilePath, tableDef)) {
       reader.open();
       Iterator<AbstractPage> pageIterator = reader.getPageIterator();
       List<Line<Float>> fillingRateList = new ArrayList<>((int) reader.getNumOfPages() / pageWrapNum + 1);

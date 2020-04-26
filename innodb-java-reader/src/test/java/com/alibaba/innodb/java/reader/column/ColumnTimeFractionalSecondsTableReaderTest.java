@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.column;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.junit.Test;
 
@@ -28,8 +28,8 @@ import static org.junit.Assert.assertThat;
  */
 public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema()
+  public TableDef getTableDef() {
+    return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("int(11)").setNullable(false))
         .addColumn(new Column().setName("b").setType("datetime(3)").setNullable(false))
@@ -42,7 +42,7 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
   public void testTimeFractionalSecondsColumnMysql56() {
     assertTestOf(this)
         .withMysql56()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -50,7 +50,7 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
   public void testTimeFractionalSecondsColumnMysql57() {
     assertTestOf(this)
         .withMysql57()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -58,7 +58,7 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
   public void testTimeFractionalSecondsColumnMysql80() {
     assertTestOf(this)
         .withMysql80()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 

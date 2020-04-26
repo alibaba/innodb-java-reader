@@ -4,7 +4,7 @@ import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.junit.Test;
 
@@ -41,8 +41,8 @@ import static org.junit.Assert.fail;
  */
 public class ColumnCharSimpleTableCharsetTableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema().setCharset("utf8")
+  public TableDef getTableDef() {
+    return new TableDef().setDefaultCharset("utf8")
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("varchar(64)").setNullable(false));
   }
@@ -51,7 +51,7 @@ public class ColumnCharSimpleTableCharsetTableReaderTest extends AbstractTest {
   public void testTableCharsetMysql56() {
     assertTestOf(this)
         .withMysql56()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -59,7 +59,7 @@ public class ColumnCharSimpleTableCharsetTableReaderTest extends AbstractTest {
   public void testTableCharsetMysql57() {
     assertTestOf(this)
         .withMysql57()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -67,7 +67,7 @@ public class ColumnCharSimpleTableCharsetTableReaderTest extends AbstractTest {
   public void testTableCharsetMysql80() {
     assertTestOf(this)
         .withMysql80()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -95,17 +95,17 @@ public class ColumnCharSimpleTableCharsetTableReaderTest extends AbstractTest {
 
   @Test(expected = UnsupportedOperationException.class)
   public void testNegativeNotExistTableCharset() {
-    Schema schema = new Schema().setCharset("wrong_charset")
+    TableDef tableDef = new TableDef().setDefaultCharset("wrong_charset")
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("varchar(64)").setNullable(false));
   }
 
   @Test(expected = IllegalStateException.class)
   public void testNegativeWonrgTableCharset() {
-    Schema schema = new Schema().setCharset("ucs2")
+    TableDef tableDef = new TableDef().setDefaultCharset("ucs2")
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("varchar(64)").setNullable(false));
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "column/char/tb05.ibd", schema)) {
+    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "column/char/tb05.ibd", tableDef)) {
       reader.open();
 
       // check queryByPageNumber

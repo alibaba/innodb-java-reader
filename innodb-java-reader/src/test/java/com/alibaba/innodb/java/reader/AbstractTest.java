@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader;
 import com.google.common.base.MoreObjects;
 
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,7 +39,7 @@ public class AbstractTest {
 
   public static class AssertThat {
 
-    private Schema schema;
+    private TableDef tableDef;
 
     private String createTableSql;
 
@@ -49,8 +49,8 @@ public class AbstractTest {
 
     private AbstractTest testInstance;
 
-    public AssertThat withSchema(Schema schema) {
-      this.schema = schema;
+    public AssertThat withTableDef(TableDef tableDef) {
+      this.tableDef = tableDef;
       return this;
     }
 
@@ -96,8 +96,8 @@ public class AbstractTest {
         throw new RuntimeException("ibd data file path is empty for test case class " + testClass.getSimpleName());
       }
       TableReader reader;
-      if (schema != null) {
-        reader = new TableReader(ibdFileBasePath + ibdDataFilePath, schema);
+      if (tableDef != null) {
+        reader = new TableReader(ibdFileBasePath + ibdDataFilePath, tableDef);
       } else if (createTableSql != null) {
         reader = new TableReader(ibdFileBasePath + ibdDataFilePath, createTableSql);
       } else {

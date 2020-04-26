@@ -3,7 +3,7 @@ package com.alibaba.innodb.java.reader.column;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
-import com.alibaba.innodb.java.reader.schema.Schema;
+import com.alibaba.innodb.java.reader.schema.TableDef;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -19,8 +19,8 @@ import static org.junit.Assert.assertThat;
  */
 public class ColumnCharLatin1TableReaderTest extends AbstractTest {
 
-  public Schema getSchema() {
-    return new Schema().setCharset("latin1")
+  public TableDef getTableDef() {
+    return new TableDef().setDefaultCharset("latin1")
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("varchar(32)").setNullable(false))
         .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
@@ -39,7 +39,7 @@ public class ColumnCharLatin1TableReaderTest extends AbstractTest {
   public void testVarcharColumnMysql56() {
     assertTestOf(this)
         .withMysql56()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -47,7 +47,7 @@ public class ColumnCharLatin1TableReaderTest extends AbstractTest {
   public void testVarcharColumnMysql57() {
     assertTestOf(this)
         .withMysql57()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
@@ -55,7 +55,7 @@ public class ColumnCharLatin1TableReaderTest extends AbstractTest {
   public void testVarcharColumnMysql80() {
     assertTestOf(this)
         .withMysql80()
-        .withSchema(getSchema())
+        .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
   }
 
