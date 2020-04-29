@@ -3,7 +3,10 @@
  */
 package com.alibaba.innodb.java.reader;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
+import com.alibaba.innodb.java.reader.util.Utils;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -21,9 +24,10 @@ public class GetRangeQueryIteratorMain {
         "PRIMARY KEY (`id`))\n" +
         "ENGINE=InnoDB;";
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
-      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(1, 10);
+      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(1), ImmutableList.of(10));
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();
@@ -33,7 +37,20 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      iterator = reader.getRangeQueryIterator(5, null);
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(5), null);
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        assert record.getPrimaryKey() == record.get("id");
+        System.out.println("id=" + record.get("id"));
+        System.out.println("a=" + record.get("a"));
+      }
+
+      // for upper null works the same as empty array list
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(6), ImmutableList.of());
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();
@@ -44,6 +61,18 @@ public class GetRangeQueryIteratorMain {
       }
 
       iterator = reader.getRangeQueryIterator(null, null);
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        assert record.getPrimaryKey() == record.get("id");
+        System.out.println("id=" + record.get("id"));
+        System.out.println("a=" + record.get("a"));
+      }
+
+      // the same as query all
+      iterator = reader.getRangeQueryIterator(Utils.constructMinRecord(1),
+          Utils.constructMaxRecord(2));
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();

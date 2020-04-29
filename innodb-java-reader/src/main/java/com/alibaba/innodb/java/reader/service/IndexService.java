@@ -4,6 +4,7 @@
 package com.alibaba.innodb.java.reader.service;
 
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
+import com.alibaba.innodb.java.reader.page.index.Index;
 
 import java.util.Iterator;
 import java.util.List;
@@ -34,14 +35,6 @@ public interface IndexService {
   List<GenericRecord> queryByPageNumber(long pageNumber);
 
   /**
-   * Query record by primary key in a tablespace.
-   *
-   * @param key primary key
-   * @return record
-   */
-  GenericRecord queryByPrimaryKey(Object key);
-
-  /**
    * Query all records in a tablespace.
    * <p>
    * Note this will cause out-of-memory if the table size is too big.
@@ -53,9 +46,19 @@ public interface IndexService {
   List<GenericRecord> queryAll(Optional<Predicate<GenericRecord>> recordPredicate);
 
   /**
-   * Range query records by primary key in a tablespace.
-   * <p>
-   * Note this will cause out-of-memory if there are too many records within the range.
+   * Query record by primary key in a tablespace.
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param key primary key, single key or a composite key
+   * @return record
+   */
+  GenericRecord queryByPrimaryKey(List<Object> key);
+
+  /**
+   * Range query records by primary key in a tablespace with a filter.
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
    *
    * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
    * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
@@ -63,7 +66,7 @@ public interface IndexService {
    *                          result set, else skip it
    * @return list of records
    */
-  List<GenericRecord> rangeQueryByPrimaryKey(Object lowerInclusiveKey, Object upperExclusiveKey,
+  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey,
                                              Optional<Predicate<GenericRecord>> recordPredicate);
 
   /**
@@ -79,11 +82,22 @@ public interface IndexService {
    * Return an iterator to do range query records by primary key in a tablespace.
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
    *
    * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
    * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
    * @return record iterator
    */
-  Iterator<GenericRecord> getRangeQueryIterator(Object lowerInclusiveKey, Object upperExclusiveKey);
+  Iterator<GenericRecord> getRangeQueryIterator(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey);
+
+  /**
+   * Load index page by page number.
+   *
+   * @param pageNumber page number
+   * @return index page
+   */
+  Index loadIndexPage(long pageNumber);
 
 }

@@ -22,7 +22,7 @@ public class QueryAllMain {
         "PRIMARY KEY (`id`))\n" +
         "ENGINE=InnoDB;";
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       List<GenericRecord> recordList = reader.queryAll();
       for (GenericRecord record : recordList) {

@@ -29,14 +29,14 @@ public class FileChannelStorageServiceImplTest extends AbstractTest {
       log.info("numOfPages={}", numOfPages);
       assertThat(numOfPages, greaterThan(1000L));
       long start = System.currentTimeMillis();
-      int runTimes = 500;
+      int runTimes = 200;
       for (int times = 0; times < runTimes; times++) {
         for (long i = 0; i < numOfPages; i++) {
           storageService.loadPage(i);
         }
       }
       long elapsedTimeInMs = System.currentTimeMillis() - start;
-      assertThat(elapsedTimeInMs, lessThan(180000L));
+      assertThat(elapsedTimeInMs, lessThan(90000L));
       log.info("load {} pages {} times ({}) using {}ms", numOfPages, runTimes,
           Utils.humanReadableBytes(SIZE_OF_PAGE * numOfPages * runTimes), elapsedTimeInMs);
     }

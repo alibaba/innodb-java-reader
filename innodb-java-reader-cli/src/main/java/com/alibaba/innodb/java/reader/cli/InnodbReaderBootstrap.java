@@ -7,18 +7,19 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.cli.writer.SysoutWriter;
 import com.alibaba.innodb.java.reader.cli.writer.Writer;
 import com.alibaba.innodb.java.reader.cli.writer.WriterFactory;
 import com.alibaba.innodb.java.reader.heatmap.GenFillingRateHeatmapUtil;
 import com.alibaba.innodb.java.reader.heatmap.GenLsnHeatmapUtil;
-import com.alibaba.innodb.java.reader.heatmap.Pair;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.fsphdr.FspHdrXes;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.util.Pair;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import freemarker.template.TemplateException;
@@ -250,7 +251,7 @@ public class InnodbReaderBootstrap {
   }
 
   private static void queryAll(String ibdFilePath, Writer writer, String createTableSql) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
@@ -263,7 +264,7 @@ public class InnodbReaderBootstrap {
   }
 
   private static void queryByPageNumber(String ibdFilePath, Writer writer, String createTableSql, long pageNumber) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       List<GenericRecord> recordList = reader.queryByPageNumber(pageNumber);
@@ -277,10 +278,11 @@ public class InnodbReaderBootstrap {
   }
 
   private static void queryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql, String primaryKey) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      GenericRecord record = reader.queryByPrimaryKey(primaryKey);
+      // TODO
+      GenericRecord record = null; //reader.queryByPrimaryKey(primaryKey);
       StringBuilder b = new StringBuilder();
       if (record != null) {
         writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
@@ -290,10 +292,11 @@ public class InnodbReaderBootstrap {
 
   private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql,
                                              Object lowerInclusiveKey, Object upperExclusiveKey) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
+      // TODO
+      Iterator<GenericRecord> iterator = null; // reader.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
@@ -340,7 +343,7 @@ public class InnodbReaderBootstrap {
   }
 
   private static void showAllPages(String ibdFilePath, Writer writer, String createTableSql) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       Iterator<AbstractPage> iterator = reader.getPageIterator();
       writer.write(StringUtils.repeat("=", 5) + "page number, page type, other info"
@@ -389,7 +392,7 @@ public class InnodbReaderBootstrap {
 
   private static void showPages(String ibdFilePath, Writer writer, String createTableSql,
                                 List<Long> pageNumberList, boolean jsonStyle, boolean jsonPrettyStyle) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       for (Long pageNumber : pageNumberList) {
         AbstractPage page = reader.readPage(pageNumber);
@@ -405,7 +408,7 @@ public class InnodbReaderBootstrap {
   }
 
   private static void getAllIndexPageFillingRate(String ibdFilePath, Writer writer, String createTableSql) {
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       writer.write("Number of pages is " + reader.getNumOfPages());
       writer.write("Index page filling rate is " + reader.getAllIndexPageFillingRate());

@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.column;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -81,31 +83,31 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
 
       GenericRecord r1 = recordList.get(0);
       System.out.println(Arrays.asList(r1.getValues()));
-      assertThat(r1.getPrimaryKey(), is(1L));
+      assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1L)));
       assertThat(r1.get("c_float"), is(0.0F));
       assertThat(r1.get("c_double"), is(0.0D));
 
       GenericRecord r2 = recordList.get(1);
       System.out.println(Arrays.asList(r2.getValues()));
-      assertThat(r2.getPrimaryKey(), is(2L));
+      assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2L)));
       assertThat(r2.get("c_float"), is(1.0F));
       assertThat(r2.get("c_double"), is(-1.0D));
 
       GenericRecord r3 = recordList.get(2);
       System.out.println(Arrays.asList(r3.getValues()));
-      assertThat(r3.getPrimaryKey(), is(3L));
+      assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3L)));
       assertThat(r3.get("c_float"), is(222.22F));
       assertThat(r3.get("c_double"), is(3333.333D));
 
       GenericRecord r4 = recordList.get(3);
       System.out.println(Arrays.asList(r4.getValues()));
-      assertThat(r4.getPrimaryKey(), is(4L));
+      assertThat(r4.getPrimaryKey(), is(ImmutableList.of(4L)));
       assertThat(r4.get("c_float"), is(12345678.1234F));
       assertThat(r4.get("c_double"), is(1234567890.123456D));
 
       GenericRecord r5 = recordList.get(4);
       System.out.println(Arrays.asList(r5.getValues()));
-      assertThat(r5.getPrimaryKey(), is(5L));
+      assertThat(r5.getPrimaryKey(), is(ImmutableList.of(5L)));
       assertThat(r5.get("c_float"), is(-12345678.1234F));
       assertThat(r5.get("c_double"), is(-1234567890.123456D));
     };

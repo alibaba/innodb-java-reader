@@ -14,9 +14,35 @@ import java.util.List;
  */
 public interface Constants {
 
+  String MAX_VAL = "max_val";
+
+  String MIN_VAL = "min_val";
+
+  Object ANY_VAL = new Object();
+
   String DEFAULT_JAVA_CHARSET = "UTF-8";
 
   String DEFAULT_MYSQL_CHARSET = "utf8";
+
+  List<Object> MAX_RECORD_1 = ImmutableList.of(MAX_VAL);
+
+  List<Object> MAX_RECORD_2 = ImmutableList.of(MAX_VAL, MAX_VAL);
+
+  List<Object> MAX_RECORD_3 = ImmutableList.of(MAX_VAL, MAX_VAL, MAX_VAL);
+
+  List<Object> MAX_RECORD_4 = ImmutableList.of(MAX_VAL, MAX_VAL, MAX_VAL, MAX_VAL);
+
+  List<Object> MAX_RECORD_5 = ImmutableList.of(MAX_VAL, MAX_VAL, MAX_VAL, MAX_VAL, MAX_VAL);
+
+  List<Object> MIN_RECORD_1 = ImmutableList.of(MIN_VAL);
+
+  List<Object> MIN_RECORD_2 = ImmutableList.of(MIN_VAL, MIN_VAL);
+
+  List<Object> MIN_RECORD_3 = ImmutableList.of(MIN_VAL, MIN_VAL, MIN_VAL);
+
+  List<Object> MIN_RECORD_4 = ImmutableList.of(MIN_VAL, MIN_VAL, MIN_VAL, MIN_VAL);
+
+  List<Object> MIN_RECORD_5 = ImmutableList.of(MIN_VAL, MIN_VAL, MIN_VAL, MIN_VAL, MIN_VAL);
 
   /**
    * for mysql 5.6 and 5.7 the root page is usually page 3, but in mysql8 there introduces SDI page,

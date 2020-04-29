@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.heatmap;
 
+import com.alibaba.innodb.java.reader.util.Pair;
+
 import freemarker.template.TemplateException;
 
 import java.io.IOException;

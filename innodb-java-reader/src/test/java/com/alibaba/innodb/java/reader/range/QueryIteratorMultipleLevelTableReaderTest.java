@@ -1,7 +1,10 @@
 package com.alibaba.innodb.java.reader.range;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -39,7 +42,7 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testTableLevel(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       long numOfPages = reader.getNumOfPages();
@@ -61,7 +64,7 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testQueryAllIterator(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
@@ -86,10 +89,11 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testRangeQueryIterator(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
-      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(10000, 40000);
+      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(10000), ImmutableList.of(40000));
       int count = 0;
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();

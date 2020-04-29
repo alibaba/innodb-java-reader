@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.AllocatedPage;
@@ -19,6 +21,7 @@ import com.alibaba.innodb.java.reader.schema.TableDef;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -72,7 +75,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableReadAllPages(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -146,7 +149,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableGetPageIterator(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -179,7 +182,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableReadAllPageHeaders(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       List<FilHeader> pageHeaders = reader.readAllPageHeaders();
@@ -229,7 +232,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableReadPage(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       // check readPage function
@@ -261,7 +264,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryByPageNumberVerifyHeader(String path, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       // check queryByPageNumber
@@ -321,7 +324,7 @@ public class SimpleTableReaderTest extends AbstractTest {
         assertThat(values[2], is(StringUtils.repeat('A', 16)));
         assertThat(values[3], is(StringUtils.repeat('C', 8) + (char) (97 + i)));
 
-        assertThat(record.getPrimaryKey(), is(i));
+        assertThat(record.getPrimaryKey(), is(ImmutableList.of(i)));
         assertThat(record.get(0), is(i));
         assertThat(record.get("id"), is(i));
 
@@ -339,7 +342,7 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test(expected = IllegalStateException.class)
   public void testSimpleTableQueryByPageNumberNegativePage() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       reader.queryByPageNumber(1);
     }
@@ -365,11 +368,13 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryByPrimaryKey(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       for (int i = 1; i <= 10; i++) {
-        GenericRecord record = reader.queryByPrimaryKey(i);
+        List<Object> key = new ArrayList<>(1);
+        key.add(i);
+        GenericRecord record = reader.queryByPrimaryKey(key);
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
         assertThat(values[0], is(i));
@@ -378,10 +383,10 @@ public class SimpleTableReaderTest extends AbstractTest {
         assertThat(values[3], is(StringUtils.repeat('C', 8) + (char) (97 + i)));
       }
 
-      assertThat(reader.queryByPrimaryKey(100), nullValue());
-      assertThat(reader.queryByPrimaryKey(11), nullValue());
-      assertThat(reader.queryByPrimaryKey(0), nullValue());
-      assertThat(reader.queryByPrimaryKey(-1), nullValue());
+      assertThat(reader.queryByPrimaryKey(ImmutableList.of(100)), nullValue());
+      assertThat(reader.queryByPrimaryKey(ImmutableList.of(11)), nullValue());
+      assertThat(reader.queryByPrimaryKey(ImmutableList.of(0)), nullValue());
+      assertThat(reader.queryByPrimaryKey(ImmutableList.of(-1)), nullValue());
     }
   }
 
@@ -405,7 +410,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryAll(String path) {
-    try (TableReader reader = new TableReader(path, createSql)) {
+    try (TableReader reader = new TableReaderImpl(path, createSql)) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();
@@ -428,14 +433,14 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableQueryAllWithPredicate() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
       reader.open();
 
       Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
 
       List<GenericRecord> recordList = reader.queryAll(predicate);
       assertThat(recordList.size(), is(1));
-      assertThat(recordList.get(0).getPrimaryKey(), is(6));
+      assertThat(recordList.get(0).getPrimaryKey(), is(ImmutableList.of(6)));
       assertThat(recordList.get(0).get("a"), is(12L));
     }
   }
@@ -446,33 +451,9 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testGetTableDef() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       System.out.println(reader.getTableDef());
       assertThat(reader.getTableDef().equals(getTableDef()), is(true));
-    }
-  }
-
-  //==========================================================================
-  // table cannot be opened more than once
-  //==========================================================================
-
-  @Test(expected = ReaderException.class)
-  public void testSimpleTableOpenTwice() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
-      reader.open();
-      reader.open();
-    }
-  }
-
-  //==========================================================================
-  // table cannot be opened more than once
-  //==========================================================================
-
-  @Test
-  public void testSimpleTableGetNumOfPages() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
-      reader.open();
-      assertThat(reader.getNumOfPages(), is(6L));
     }
   }
 
@@ -483,7 +464,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   @Test
   public void testGetIndexPageFillingRate() {
     // small table
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       double fillingRate = reader.getIndexPageFillingRate(3);
       System.out.println(fillingRate);
@@ -491,7 +472,7 @@ public class SimpleTableReaderTest extends AbstractTest {
     }
 
     // big table
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
       reader.open();
       assertThat(String.valueOf(reader.getIndexPageFillingRate(37)).startsWith("0.7807"), is(true));
     }
@@ -504,9 +485,70 @@ public class SimpleTableReaderTest extends AbstractTest {
   @Test
   public void testGetAllIndexPageFillingRate() {
     // big table
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
       reader.open();
       assertThat(String.valueOf(reader.getAllIndexPageFillingRate()).startsWith("0.9230"), is(true));
     }
   }
+
+  //==========================================================================
+  // invalid key
+  //==========================================================================
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSimpleTableNotValidKey() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      List<Object> key = new ArrayList<>(1);
+      //key.add(i);
+      GenericRecord record = reader.queryByPrimaryKey(key);
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSimpleTableNotValidKey2() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      GenericRecord record = reader.queryByPrimaryKey(null);
+    }
+  }
+
+  // TODO type check
+  @Test(expected = ClassCastException.class)
+  public void testSimpleTableNotValidKey3() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of("abc"));
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSimpleTableNotValidKey4() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of(1, 2));
+    }
+  }
+
+  //==========================================================================
+  // others
+  //==========================================================================
+
+  @Test(expected = ReaderException.class)
+  public void testSimpleTableOpenTwice() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      reader.open();
+    }
+  }
+
+  @Test
+  public void testSimpleTableGetNumOfPages() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      assertThat(reader.getNumOfPages(), is(6L));
+    }
+  }
+
+
 }

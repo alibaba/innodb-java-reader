@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.column;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -65,28 +67,28 @@ public class ColumnYearDateTableReaderTest extends AbstractTest {
       GenericRecord r1 = recordList.get(0);
       Object[] v1 = r1.getValues();
       System.out.println(Arrays.asList(v1));
-      assertThat(r1.getPrimaryKey(), is(1));
+      assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1)));
       assertThat(r1.get("a"), is((short) 1901));
       assertThat(r1.get("b"), is("1900-01-01"));
 
       GenericRecord r2 = recordList.get(1);
       Object[] v2 = r2.getValues();
       System.out.println(Arrays.asList(v2));
-      assertThat(r2.getPrimaryKey(), is(2));
+      assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
       assertThat(r2.get("a"), is((short) 1901));
       assertThat(r2.get("b"), is("1901-12-31"));
 
       GenericRecord r3 = recordList.get(2);
       Object[] v3 = r3.getValues();
       System.out.println(Arrays.asList(v3));
-      assertThat(r3.getPrimaryKey(), is(3));
+      assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3)));
       assertThat(r3.get("a"), is((short) 1969));
       assertThat(r3.get("b"), is("1969-10-02"));
 
       GenericRecord r4 = recordList.get(3);
       Object[] v4 = r4.getValues();
       System.out.println(Arrays.asList(v4));
-      assertThat(r4.getPrimaryKey(), is(4));
+      assertThat(r4.getPrimaryKey(), is(ImmutableList.of(4)));
       assertThat(r4.get("a"), is((short) 2020));
       assertThat(r4.get("b"), is("2020-01-29"));
     };

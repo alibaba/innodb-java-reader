@@ -1,6 +1,9 @@
 package com.alibaba.innodb.java.reader.main;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
@@ -48,16 +51,17 @@ public class Realcase1TableReaderMainTest {
         .addColumn(new Column().setName("name_hash").setType("bigint(20)").setNullable(false))
         .addColumn(new Column().setName("deleted_state").setType("int(11)").setNullable(false));
 
-    try (TableReader reader = new TableReader("/usr/local/mysql/data/test/product001.ibd", tableDef)) {
+    try (TableReader reader = new TableReaderImpl("/usr/local/mysql/data/test/product001.ibd", tableDef)) {
       reader.open();
 
       for (long i = 1; i <= 10; i++) {
-        GenericRecord record = reader.queryByPrimaryKey(i);
+        GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of(i));
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
       }
 
-      List<GenericRecord> records = reader.rangeQueryByPrimaryKey(5000L, 5100L);
+      List<GenericRecord> records = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5000L), ImmutableList.of(5100L));
       for (GenericRecord record : records) {
         System.out.println(Arrays.toString(record.getValues()));
       }

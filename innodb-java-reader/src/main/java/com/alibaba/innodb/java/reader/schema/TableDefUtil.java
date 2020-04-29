@@ -6,7 +6,6 @@ package com.alibaba.innodb.java.reader.schema;
 import com.google.common.base.Joiner;
 
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
-import com.alibaba.innodb.java.reader.util.Symbol;
 
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -69,14 +68,10 @@ public class TableDefUtil {
       for (Index index : indices) {
         if ("PRIMARY KEY".equals(index.getType().toUpperCase())) {
           List<String> colNames = index.getColumnsNames();
-          String pkColumnName = colNames.get(0)
-              .replace(Symbol.BACKTICK, Symbol.EMPTY)
-              .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
-          if (tableDef.getColumnNames().contains(pkColumnName)) {
-            Column pk = tableDef.getField(pkColumnName).getColumn();
-            pk.setPrimaryKey(true);
-            tableDef.setPrimaryKeyColumn(pk);
+          if (CollectionUtils.isEmpty(colNames)) {
+            throw new SqlParseException("No column specified by PRIMARY KEY");
           }
+          tableDef.setPrimaryKeyColumns(colNames);
         }
       }
     }

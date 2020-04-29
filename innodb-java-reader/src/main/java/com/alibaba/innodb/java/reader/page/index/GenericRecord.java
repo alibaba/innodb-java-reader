@@ -3,17 +3,24 @@
  */
 package com.alibaba.innodb.java.reader.page.index;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.schema.TableDef;
-import com.alibaba.innodb.java.reader.util.Utils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import lombok.Data;
 import lombok.ToString;
 
+import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
+import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Generic record representing one row.
+ * Record representing one row.
  *
  * @author xu.zx
  */
@@ -39,7 +46,7 @@ public class GenericRecord {
   private TableDef tableDef;
 
   /**
-   * Column values.
+   * Record fields.
    */
   private Object[] values;
 
@@ -54,10 +61,17 @@ public class GenericRecord {
     this.pageNumber = pageNumber;
     this.values = new Object[tableDef.getColumnList().size()];
     if (header.getRecordType() == RecordType.INFIMUM) {
-      put(tableDef.getPrimaryKeyColumn().getName(), Utils.MIN);
-    }
-    if (header.getRecordType() == RecordType.SUPREMUM) {
-      put(tableDef.getPrimaryKeyColumn().getName(), Utils.MAX);
+      if (this.tableDef.getPrimaryKeyColumnNum() > 0) {
+        this.tableDef.getPrimaryKeyColumnNames().forEach(name -> {
+          put(name, MIN_VAL);
+        });
+      }
+    } else if (header.getRecordType() == RecordType.SUPREMUM) {
+      if (this.tableDef.getPrimaryKeyColumnNum() > 0) {
+        this.tableDef.getPrimaryKeyColumnNames().forEach(name -> {
+          put(name, MAX_VAL);
+        });
+      }
     }
   }
 
@@ -66,7 +80,6 @@ public class GenericRecord {
   }
 
   public void put(String columnName, Object value) {
-    checkNotNull(tableDef);
     checkNotNull(values);
     TableDef.Field field = tableDef.getField(columnName);
     if (field == null) {
@@ -82,7 +95,6 @@ public class GenericRecord {
   }
 
   public Object get(String columnName) {
-    checkNotNull(tableDef);
     checkNotNull(values);
     TableDef.Field field = tableDef.getField(columnName);
     if (field == null) {
@@ -96,9 +108,15 @@ public class GenericRecord {
     return values[i];
   }
 
-  public Object getPrimaryKey() {
-    checkNotNull(tableDef);
-    return get(tableDef.getPrimaryKeyColumn().getName());
+  public List<Object> getPrimaryKey() {
+    if (tableDef.getPrimaryKeyColumnNum() > 0) {
+      List<Object> pkList = new ArrayList<>(tableDef.getPrimaryKeyColumnNum());
+      for (String pkName : tableDef.getPrimaryKeyColumnNames()) {
+        pkList.add(get(pkName));
+      }
+      return Collections.unmodifiableList(pkList);
+    }
+    return ImmutableList.of();
   }
 
   public void setPrimaryKeyPosition(int primaryKeyPosition) {

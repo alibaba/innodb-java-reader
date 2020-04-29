@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.column;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -180,7 +182,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r1 = recordList.get(0);
       Object[] v1 = r1.getValues();
       System.out.println(Arrays.asList(v1));
-      assertThat(r1.getPrimaryKey(), is(100L));
+      assertThat(r1.getPrimaryKey(), is(ImmutableList.of(100L)));
       assertThat(r1.get("c_utinyint"), is(0));
       assertThat(r1.get("c_tinyint"), is(0));
       assertThat(r1.get("c_usmallint"), is(0));
@@ -195,7 +197,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r2 = recordList.get(1);
       Object[] v2 = r2.getValues();
       System.out.println(Arrays.asList(v2));
-      assertThat(r2.getPrimaryKey(), is(101L));
+      assertThat(r2.getPrimaryKey(), is(ImmutableList.of(101L)));
       assertThat(r2.get("c_utinyint"), is(1));
       assertThat(r2.get("c_tinyint"), is(-1));
       assertThat(r2.get("c_usmallint"), is(1));
@@ -210,7 +212,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r3 = recordList.get(2);
       Object[] v3 = r3.getValues();
       System.out.println(Arrays.asList(v3));
-      assertThat(r3.getPrimaryKey(), is(102L));
+      assertThat(r3.getPrimaryKey(), is(ImmutableList.of(102L)));
       assertThat(r3.get("c_utinyint"), is(1));
       assertThat(r3.get("c_tinyint"), is(1));
       assertThat(r3.get("c_usmallint"), is(1));
@@ -225,7 +227,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r4 = recordList.get(3);
       Object[] v4 = r4.getValues();
       System.out.println(Arrays.asList(v4));
-      assertThat(r4.getPrimaryKey(), is(103L));
+      assertThat(r4.getPrimaryKey(), is(ImmutableList.of(103L)));
       assertThat(r4.get("c_utinyint"), is(100));
       assertThat(r4.get("c_tinyint"), is(100));
       assertThat(r4.get("c_usmallint"), is(10000));
@@ -240,7 +242,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r5 = recordList.get(4);
       Object[] v5 = r5.getValues();
       System.out.println(Arrays.asList(v5));
-      assertThat(r5.getPrimaryKey(), is(104L));
+      assertThat(r5.getPrimaryKey(), is(ImmutableList.of(104L)));
       assertThat(r5.get("c_utinyint"), is(100));
       assertThat(r5.get("c_tinyint"), is(-100));
       assertThat(r5.get("c_usmallint"), is(10000));
@@ -255,7 +257,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r6 = recordList.get(5);
       Object[] v6 = r6.getValues();
       System.out.println(Arrays.asList(v6));
-      assertThat(r6.getPrimaryKey(), is(105L));
+      assertThat(r6.getPrimaryKey(), is(ImmutableList.of(105L)));
       assertThat(r6.get("c_utinyint"), is(Byte.MAX_VALUE - 1));
       assertThat(r6.get("c_tinyint"), is(Byte.MAX_VALUE - 1));
       assertThat(r6.get("c_usmallint"), is(Short.MAX_VALUE - 1));
@@ -270,7 +272,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r7 = recordList.get(6);
       Object[] v7 = r7.getValues();
       System.out.println(Arrays.asList(v7));
-      assertThat(r7.getPrimaryKey(), is(106L));
+      assertThat(r7.getPrimaryKey(), is(ImmutableList.of(106L)));
       assertThat(r7.get("c_utinyint"), is((int) Byte.MAX_VALUE));
       assertThat(r7.get("c_tinyint"), is((int) Byte.MAX_VALUE));
       assertThat(r7.get("c_usmallint"), is((int) Short.MAX_VALUE));
@@ -285,7 +287,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r8 = recordList.get(7);
       Object[] v8 = r8.getValues();
       System.out.println(Arrays.asList(v7));
-      assertThat(r8.getPrimaryKey(), is(107L));
+      assertThat(r8.getPrimaryKey(), is(ImmutableList.of(107L)));
       assertThat(r8.get("c_utinyint"), is(Byte.MAX_VALUE + 1));
       assertThat(r8.get("c_tinyint"), is((int) Byte.MIN_VALUE));
       assertThat(r8.get("c_usmallint"), is(Short.MAX_VALUE + 1));
@@ -300,7 +302,7 @@ public class ColumnIntegerTableReaderTest extends AbstractTest {
       GenericRecord r9 = recordList.get(8);
       Object[] v9 = r9.getValues();
       System.out.println(Arrays.asList(v9));
-      assertThat(r9.getPrimaryKey(), is(108L));
+      assertThat(r9.getPrimaryKey(), is(ImmutableList.of(108L)));
       assertThat(r9.get("c_utinyint"), is(Byte.MAX_VALUE + 2));
       assertThat(r9.get("c_tinyint"), is((int) Byte.MIN_VALUE + 1));
       assertThat(r9.get("c_usmallint"), is(Short.MAX_VALUE + 2));

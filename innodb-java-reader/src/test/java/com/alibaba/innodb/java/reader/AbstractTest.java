@@ -97,9 +97,9 @@ public class AbstractTest {
       }
       TableReader reader;
       if (tableDef != null) {
-        reader = new TableReader(ibdFileBasePath + ibdDataFilePath, tableDef);
+        reader = new TableReaderImpl(ibdFileBasePath + ibdDataFilePath, tableDef);
       } else if (createTableSql != null) {
-        reader = new TableReader(ibdFileBasePath + ibdDataFilePath, createTableSql);
+        reader = new TableReaderImpl(ibdFileBasePath + ibdDataFilePath, createTableSql);
       } else {
         throw new IllegalStateException("No schema or createTableSql found");
       }
@@ -128,7 +128,7 @@ public class AbstractTest {
       }, TableReader::queryAll);
     }
 
-    public AssertThat checkRangeQueryRecordsIs(Consumer<List<GenericRecord>> fn, Object start, Object end) {
+    public AssertThat checkRangeQueryRecordsIs(Consumer<List<GenericRecord>> fn, List<Object> start, List<Object> end) {
       return doWithTableReader(c -> {
         fn.accept(c);
         return this;
@@ -142,7 +142,8 @@ public class AbstractTest {
       }, TableReader::getQueryAllIterator);
     }
 
-    public AssertThat checkRangeQueryIterator(Consumer<Iterator<GenericRecord>> fn, Object start, Object end) {
+    public AssertThat checkRangeQueryIterator(Consumer<Iterator<GenericRecord>> fn,
+                                              List<Object> start, List<Object> end) {
       return doWithTableReader(c -> {
         fn.accept(c);
         return this;

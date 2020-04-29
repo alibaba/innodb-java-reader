@@ -2,6 +2,7 @@ package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
@@ -105,7 +106,7 @@ public class ColumnCharSimpleTableCharsetTableReaderTest extends AbstractTest {
     TableDef tableDef = new TableDef().setDefaultCharset("ucs2")
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("varchar(64)").setNullable(false));
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "column/char/tb05.ibd", tableDef)) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "column/char/tb05.ibd", tableDef)) {
       reader.open();
 
       // check queryByPageNumber

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 1999-2019 Alibaba Group Holding Limited
+ */
 package com.alibaba.innodb.java.reader.util;
 
 import java.util.concurrent.Callable;

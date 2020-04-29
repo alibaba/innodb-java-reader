@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.alibaba</groupId>
+        <groupId>com.alibaba.database</groupId>
         <artifactId>innodb-java-reader-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
         <version>1.0.1</version>
     </parent>
 
-    <groupId>com.alibaba</groupId>
+    <groupId>com.alibaba.database</groupId>
     <artifactId>innodb-java-reader-cli</artifactId>
     <version>1.0.1</version>
     <packaging>jar</packaging>
@@ -20,13 +20,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.alibaba</groupId>
+            <groupId>com.alibaba.database</groupId>
             <artifactId>innodb-java-reader</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.alibaba</groupId>
+            <groupId>com.alibaba.database</groupId>
             <artifactId>innodb-heatmap</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -2,6 +2,7 @@ package com.alibaba.innodb.java.reader.multiple.level;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.PageType;
 import com.alibaba.innodb.java.reader.page.fsphdr.FspHdrXes;
@@ -58,7 +59,7 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testNLevelTableReadAllPages(String path, int maxLevel, boolean isMysql8) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -103,7 +104,7 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableQueryAll1000(String path, int start, int end) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();
@@ -130,7 +131,7 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableQueryAll40000(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       List<GenericRecord> recordList = reader.queryAll();

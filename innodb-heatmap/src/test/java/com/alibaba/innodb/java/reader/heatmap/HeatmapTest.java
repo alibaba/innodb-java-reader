@@ -2,6 +2,8 @@ package com.alibaba.innodb.java.reader.heatmap;
 
 import com.google.common.io.Files;
 
+import com.alibaba.innodb.java.reader.util.Pair;
+
 import freemarker.template.TemplateException;
 
 import org.junit.Test;

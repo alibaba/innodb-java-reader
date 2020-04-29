@@ -6,10 +6,12 @@ package com.alibaba.innodb.java.reader.heatmap;
 import com.google.common.collect.Maps;
 
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.schema.TableDefUtil;
+import com.alibaba.innodb.java.reader.util.Pair;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -91,7 +93,7 @@ public class GenFillingRateHeatmapUtil {
 
     log.info("Start dump {} to {}", sourceIbdFilePath, destHtmlFilePath);
     long start = System.currentTimeMillis();
-    try (TableReader reader = new TableReader(sourceIbdFilePath, tableDef)) {
+    try (TableReader reader = new TableReaderImpl(sourceIbdFilePath, tableDef)) {
       reader.open();
       Iterator<AbstractPage> pageIterator = reader.getPageIterator();
       List<Line<Float>> fillingRateList = new ArrayList<>((int) reader.getNumOfPages() / pageWrapNum + 1);

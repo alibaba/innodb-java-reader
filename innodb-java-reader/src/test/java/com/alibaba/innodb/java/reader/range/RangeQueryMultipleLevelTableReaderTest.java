@@ -1,17 +1,22 @@
 package com.alibaba.innodb.java.reader.range;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
@@ -33,7 +38,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   @Ignore
   @Test
   public void testReadAllPages() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", getTableDef())) {
       reader.open();
 
       // check read all pages function
@@ -65,10 +70,10 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableRangeQueryAll(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, 50001);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), ImmutableList.of(50001));
       assertThat(recordList.size(), is(40000));
       checkRecords(recordList.subList(0, 20000), 1, 20000);
       //  1 - 20000, 30001 - 50000
@@ -92,18 +97,18 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableRangeQueryNothing(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(-1, 0);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(-1), ImmutableList.of(0));
       assertThat(recordList.size(), is(0));
 
-      recordList = reader.rangeQueryByPrimaryKey(0, 0);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), ImmutableList.of(0));
       assertThat(recordList.size(), is(0));
 
-      recordList = reader.rangeQueryByPrimaryKey(50001, 50001);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(50001), ImmutableList.of(50001));
       assertThat(recordList.size(), is(0));
 
-      recordList = reader.rangeQueryByPrimaryKey(50001, 60001);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(50001), ImmutableList.of(60001));
       assertThat(recordList.size(), is(0));
     }
   }
@@ -123,7 +128,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testMultipleLevelTableRangeQueryPart(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
       rangeQuery(reader, 5000, 5001);
       rangeQuery(reader, 3000, 8000);
@@ -134,7 +139,7 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(start, end);
+    List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(start), ImmutableList.of(end));
     if (end == start) {
       end++;
     }
@@ -166,31 +171,43 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testRangeQueryHalfOpenHalfClose(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, null);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), null);
       assertThat(recordList.size(), is(40000));
 
-      recordList = reader.rangeQueryByPrimaryKey(1, null);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), null);
       assertThat(recordList.size(), is(40000));
 
-      recordList = reader.rangeQueryByPrimaryKey(5, null);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(5), null);
       assertThat(recordList.size(), is(40000 - 5 + 1));
 
-      recordList = reader.rangeQueryByPrimaryKey(16500, null);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(5), new ArrayList<>());
+      assertThat(recordList.size(), is(40000 - 5 + 1));
+
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(16500), null);
       assertThat(recordList.size(), is(40000 - 16500 + 1));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 100);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(16500), Utils.constructMaxRecord(1));
+      assertThat(recordList.size(), is(40000 - 16500 + 1));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(100));
       assertThat(recordList.size(), is(99));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 6);
+      recordList = reader.rangeQueryByPrimaryKey(new ArrayList<>(), ImmutableList.of(51));
+      assertThat(recordList.size(), is(50));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(6));
       assertThat(recordList.size(), is(5));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 1);
+      recordList = reader.rangeQueryByPrimaryKey(Utils.constructMinRecord(1), ImmutableList.of(7));
+      assertThat(recordList.size(), is(6));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(1));
       assertThat(recordList.size(), is(0));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 16500);
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(16500));
       assertThat(recordList.size(), is(16499));
     }
   }

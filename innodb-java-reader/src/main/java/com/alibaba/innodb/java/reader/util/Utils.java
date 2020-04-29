@@ -3,16 +3,31 @@
  */
 package com.alibaba.innodb.java.reader.util;
 
+import com.google.common.collect.ImmutableList;
+
+import org.apache.commons.collections.CollectionUtils;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.alibaba.innodb.java.reader.column.ColumnType.DOUBLE;
-import static com.alibaba.innodb.java.reader.column.ColumnType.FLOAT;
-import static com.alibaba.innodb.java.reader.column.ColumnType.JAVA_INTEGER_TYPES;
-import static com.alibaba.innodb.java.reader.column.ColumnType.JAVA_LONG_TYPES;
+import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_1;
+import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_2;
+import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_3;
+import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_4;
+import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_5;
+import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
+import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_1;
+import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_2;
+import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_3;
+import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_4;
+import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_5;
+import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Utils.
@@ -20,26 +35,6 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.JAVA_LONG_TYPES;
  * @author xu.zx
  */
 public class Utils {
-
-  public static final String MAX = "SUPREMUM";
-
-  public static final String MIN = "INFIMUM";
-
-  public static Object tryCastString(final Object object, String type) {
-    if (!(object instanceof String)) {
-      return object;
-    }
-    if (JAVA_INTEGER_TYPES.contains(type)) {
-      return Integer.parseInt((String) object);
-    } else if (JAVA_LONG_TYPES.contains(type)) {
-      return Long.parseLong((String) object);
-    } else if (FLOAT.equals(type)) {
-      return Float.parseFloat((String) object);
-    } else if (DOUBLE.equals(type)) {
-      return Double.parseDouble((String) object);
-    }
-    return object;
-  }
 
   public static <O> O cast(Object object) {
     @SuppressWarnings("unchecked")
@@ -102,17 +97,75 @@ public class Utils {
     return result;
   }
 
+  public static <T> List<T> makeNotNull(T obj) {
+    if (obj == null) {
+      return ImmutableList.of();
+    }
+    return ImmutableList.of(obj);
+  }
+
+  public static <T> List<T> makeNotNull(List<T> list) {
+    if (list == null) {
+      return ImmutableList.of();
+    }
+    return list;
+  }
+
+  public static boolean allEmpty(Collection<?>... collections) {
+    checkArgument(collections != null && collections.length > 0);
+    for (Collection<?> collection : collections) {
+      if (CollectionUtils.isNotEmpty(collection)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static boolean noneEmpty(Collection<?>... collections) {
+    checkArgument(collections != null && collections.length > 0);
+    for (Collection<?> collection : collections) {
+      if (CollectionUtils.isEmpty(collection)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static boolean anyElementEmpty(Collection<?> collection) {
+    checkArgument(collection != null);
+    for (Object o : collection) {
+      if (o == null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static int castCompare(List<Object> recordKey, List<Object> targetKey) {
+    if (recordKey.size() != targetKey.size()) {
+      throw new IllegalStateException("Record key " + recordKey
+          + " and target key " + targetKey + " length not match");
+    }
+    for (int i = 0; i < recordKey.size(); i++) {
+      int res = castCompare(recordKey.get(i), targetKey.get(i));
+      if (res != 0) {
+        return res;
+      }
+    }
+    return 0;
+  }
+
   public static int castCompare(Object recordKey, Object targetKey) {
-    if (MAX.equals(recordKey)) {
+    if (MAX_VAL.equals(recordKey)) {
       return 1;
     }
-    if (MIN.equals(recordKey)) {
+    if (MIN_VAL.equals(recordKey)) {
       return -1;
     }
-    if (MAX.equals(targetKey)) {
+    if (MAX_VAL.equals(targetKey)) {
       return -1;
     }
-    if (MIN.equals(targetKey)) {
+    if (MIN_VAL.equals(targetKey)) {
       return 1;
     }
     Comparable k1 = Utils.cast(recordKey);
@@ -125,6 +178,50 @@ public class Utils {
       return;
     }
     closeable.close();
+  }
+
+  public static List<Object> constructMaxRecord(int keyLen) {
+    checkArgument(keyLen > 0, "Key length should be bigger than 0");
+    switch (keyLen) {
+      case 1:
+        return MAX_RECORD_1;
+      case 2:
+        return MAX_RECORD_2;
+      case 3:
+        return MAX_RECORD_3;
+      case 4:
+        return MAX_RECORD_4;
+      case 5:
+        return MAX_RECORD_5;
+      default:
+        List<Object> res = new ArrayList<>(keyLen);
+        for (int i = 0; i < keyLen; i++) {
+          res.add(MAX_VAL);
+        }
+        return Collections.unmodifiableList(res);
+    }
+  }
+
+  public static List<Object> constructMinRecord(int keyLen) {
+    checkArgument(keyLen > 0, "Key length should be bigger than 0");
+    switch (keyLen) {
+      case 1:
+        return MIN_RECORD_1;
+      case 2:
+        return MIN_RECORD_2;
+      case 3:
+        return MIN_RECORD_3;
+      case 4:
+        return MIN_RECORD_4;
+      case 5:
+        return MIN_RECORD_5;
+      default:
+        List<Object> res = new ArrayList<>(keyLen);
+        for (int i = 0; i < keyLen; i++) {
+          res.add(MIN_VAL);
+        }
+        return Collections.unmodifiableList(res);
+    }
   }
 
   /**

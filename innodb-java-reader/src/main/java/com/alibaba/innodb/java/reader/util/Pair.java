@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 1999-2019 Alibaba Group Holding Limited
  */
-package com.alibaba.innodb.java.reader.heatmap;
+package com.alibaba.innodb.java.reader.util;
 
 /**
  * Pair
@@ -16,6 +16,10 @@ public final class Pair<F, S> {
   public Pair(F first, S second) {
     this.first = first;
     this.second = second;
+  }
+
+  public static <F, S> Pair<F, S> of(F first, S second) {
+    return new Pair<F, S>(first, second);
   }
 
   public static <F, S> Pair<F, S> newPair(F first, S second) {

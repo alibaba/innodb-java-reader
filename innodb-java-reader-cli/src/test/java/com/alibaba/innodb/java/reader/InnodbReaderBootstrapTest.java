@@ -8,6 +8,7 @@ import com.alibaba.innodb.java.reader.cli.InnodbReaderBootstrap;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author xu.zx
  */
+@Ignore
 public class InnodbReaderBootstrapTest {
 
   private String sourceIbdFilePath =

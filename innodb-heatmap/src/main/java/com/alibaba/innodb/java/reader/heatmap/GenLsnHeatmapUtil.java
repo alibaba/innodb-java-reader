@@ -6,10 +6,12 @@ package com.alibaba.innodb.java.reader.heatmap;
 import com.google.common.collect.Maps;
 
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.FilHeader;
 import com.alibaba.innodb.java.reader.page.PageType;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.schema.TableDefUtil;
+import com.alibaba.innodb.java.reader.util.Pair;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -90,7 +92,7 @@ public class GenLsnHeatmapUtil {
 
     log.info("Start dump {} to {}", sourceIbdFilePath, destHtmlFilePath);
     long start = System.currentTimeMillis();
-    try (TableReader reader = new TableReader(sourceIbdFilePath, tableDef)) {
+    try (TableReader reader = new TableReaderImpl(sourceIbdFilePath, tableDef)) {
       reader.open();
       List<FilHeader> pageHeaders = reader.readAllPageHeaders();
       List<FilHeader> printablePageHeaders = pageHeaders.stream()

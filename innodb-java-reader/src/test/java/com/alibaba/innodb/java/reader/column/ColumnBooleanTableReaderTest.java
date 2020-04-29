@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.column;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -57,14 +59,14 @@ public class ColumnBooleanTableReaderTest extends AbstractTest {
       GenericRecord r1 = recordList.get(0);
       Object[] v1 = r1.getValues();
       System.out.println(Arrays.asList(v1));
-      assertThat(r1.getPrimaryKey(), is(1));
+      assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1)));
       assertThat(r1.get("a"), is(true));
       assertThat(r1.get("b"), is(false));
 
       GenericRecord r2 = recordList.get(1);
       Object[] v2 = r2.getValues();
       System.out.println(Arrays.asList(v2));
-      assertThat(r2.getPrimaryKey(), is(2));
+      assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
       assertThat(r2.get("a"), is(false));
       assertThat(r2.get("b"), is(true));
     };

@@ -1,14 +1,19 @@
 package com.alibaba.innodb.java.reader.range;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
+import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -39,7 +44,26 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(), -1, 20);
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(-1), ImmutableList.of(20));
+
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(Integer.MIN_VALUE), ImmutableList.of(Integer.MAX_VALUE));
+
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(0), ImmutableList.of(11));
+
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(1), ImmutableList.of(11));
   }
 
   @Test
@@ -47,7 +71,26 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(-1), ImmutableList.of(20));
+
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(Integer.MIN_VALUE), ImmutableList.of(Integer.MAX_VALUE));
+
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(0), ImmutableList.of(11));
+
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(1), ImmutableList.of(11));
   }
 
   @Test
@@ -55,7 +98,26 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(), 0, 11);
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(-1), ImmutableList.of(20));
+
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(Integer.MIN_VALUE), ImmutableList.of(Integer.MAX_VALUE));
+
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(0), ImmutableList.of(11));
+
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(1), ImmutableList.of(11));
   }
 
   public Consumer<List<GenericRecord>> rangeQueryAllExpected() {
@@ -84,22 +146,22 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), -1, 0);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
 
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 0, 0);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
 
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 11, 11);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
 
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 12, 20);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
   }
 
   @Test
@@ -107,22 +169,22 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), -1, 0);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
 
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 0, 0);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
 
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 11, 11);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
 
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 12, 20);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
   }
 
   @Test
@@ -130,22 +192,22 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), -1, 0);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
 
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 0, 0);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
 
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 11, 11);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
 
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), 12, 20);
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
   }
 
   public Consumer<List<GenericRecord>> rangeQueryNothingExpected() {
@@ -172,19 +234,20 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableRangeQueryPart(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
-      rangeQuery(reader, 1, 7);
-      rangeQuery(reader, 1, 9);
-      rangeQuery(reader, 2, 4);
-      rangeQuery(reader, 3, 8);
-      rangeQuery(reader, 5, 7);
-      rangeQuery(reader, 6, 6);
+      for (int i = 1; i <= 10; i++) {
+        for (int j = i; j <= 10; j++) {
+          rangeQuery(reader, i, j);
+        }
+      }
     }
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(start, end);
+    System.out.println(start + " " + end);
+    List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+        ImmutableList.of(start), ImmutableList.of(end));
     if (end == start) {
       end++;
     }
@@ -207,9 +270,19 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testSimpleTableRangeQueryLowerUpperNotValid() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(12, 5);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(12), ImmutableList.of(5));
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSimpleTableRangeQueryLowerUpperNotValid2() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(12), Utils.constructMinRecord(1));
     }
   }
 
@@ -233,25 +306,37 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableRangeQueryHalfOpenHalfClose(String path) {
-    try (TableReader reader = new TableReader(path, getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, null);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), null);
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey(1, null);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), null);
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey(5, null);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), Utils.constructMaxRecord(1));
+      assertThat(recordList.size(), is(10));
+
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(5), null);
       assertThat(recordList.size(), is(6));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 100);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(5), new ArrayList<>());
+      assertThat(recordList.size(), is(6));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(100));
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 6);
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(6));
       assertThat(recordList.size(), is(5));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, 1);
+      recordList = reader.rangeQueryByPrimaryKey(new ArrayList<>(), ImmutableList.of(6));
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(Utils.constructMinRecord(1), ImmutableList.of(6));
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(1));
       assertThat(recordList.size(), is(0));
 
       recordList = reader.rangeQueryByPrimaryKey(null, null);
@@ -264,28 +349,29 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
   //==========================================================================
 
   @Test
-  public void testSimpleTableRangeQueryStringKey() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
+  public void testSimpleTableRangeQueryOther() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
       reader.open();
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey("0", null);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), null);
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey("1", 8);
+      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), ImmutableList.of(8));
       assertThat(recordList.size(), is(7));
     }
   }
 
   @Test
   public void testSimpleTableRangeQueryWithRecordPredicate() {
-    try (TableReader reader = new TableReader(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
       reader.open();
 
       Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(4, 9, predicate);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ImmutableList.of(9), predicate);
       assertThat(recordList.size(), is(1));
-      assertThat(recordList.get(0).getPrimaryKey(), is(6));
+      assertThat(recordList.get(0).getPrimaryKey(), is(ImmutableList.of(6)));
       assertThat(recordList.get(0).get("a"), is(12L));
     }
   }

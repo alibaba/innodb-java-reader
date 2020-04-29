@@ -3,6 +3,8 @@
  */
 package com.alibaba.innodb.java.reader;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import java.util.Arrays;
@@ -20,9 +22,9 @@ public class QueryByPrimaryKeyMain {
         "PRIMARY KEY (`id`))\n" +
         "ENGINE=InnoDB;";
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
-    try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
-      GenericRecord record = reader.queryByPrimaryKey(4);
+      GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of(4));
       Object[] values = record.getValues();
       System.out.println(Arrays.asList(values));
       assert record.getPrimaryKey() == record.get("id");

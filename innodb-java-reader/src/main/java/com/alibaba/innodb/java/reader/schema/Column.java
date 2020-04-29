@@ -66,6 +66,19 @@ public class Column {
 
   private boolean nullable;
 
+  /**
+   * Define in column definition explicitly like
+   * <pre>
+   *   c1 BIGINT(20) NOT NULL PRIMARY KEY,
+   * </pre>
+   * then this will be ture for the single column.
+   * <p>
+   * If primary key is specified in table definition like
+   * <pre>
+   *   PRIMARY KEY (c1)
+   * </pre>
+   * then this will be false.
+   */
   private boolean isPrimaryKey;
 
   /**

@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.schema;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.column.ColumnType;
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
 
@@ -38,17 +40,16 @@ public class TableDefUtilTest {
     assertThat(tableDef.getName(), is("tb01"));
     assertThat(tableDef.getDefaultCharset(), is("utf8mb4"));
 
-    assertThat(tableDef.getPrimaryKeyColumn().getName(), is("id"));
-
     List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(10));
+    assertThat(tableDef.getColumnNum(), is(10));
 
     assertThat(columnList.get(0).getName(), is("id"));
     assertThat(columnList.get(0).getType(), is(ColumnType.INT));
     assertThat(columnList.get(0).getLength(), is(11));
     assertThat(columnList.get(0).getPrecision(), is(0));
     assertThat(columnList.get(0).getScale(), is(0));
-    assertThat(columnList.get(0).isPrimaryKey(), is(true));
+    assertThat(columnList.get(0).isPrimaryKey(), is(false));
     assertThat(columnList.get(0).isNullable(), is(false));
 
     assertThat(columnList.get(1).getName(), is("a"));
@@ -123,6 +124,13 @@ public class TableDefUtilTest {
     assertThat(columnList.get(9).getScale(), is(0));
     assertThat(columnList.get(9).isPrimaryKey(), is(false));
     assertThat(columnList.get(9).isNullable(), is(false));
+
+    assertThat(tableDef.getField("a").getColumn(), is(columnList.get(1)));
+    assertThat(tableDef.getField("a").getOrdinal(), is(1));
+
+    assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
+    assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
+    assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
   }
 
   @Test
@@ -135,8 +143,6 @@ public class TableDefUtilTest {
     System.out.println(tableDef);
     assertThat(tableDef.getDefaultCharset(), is("latin1"));
 
-    assertThat(tableDef.getPrimaryKeyColumn().getName(), is("id"));
-
     List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(2));
 
@@ -147,6 +153,56 @@ public class TableDefUtilTest {
     assertThat(columnList.get(0).getScale(), is(0));
     assertThat(columnList.get(0).isPrimaryKey(), is(true));
     assertThat(columnList.get(0).isNullable(), is(false));
+
+    assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
+    assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
+    assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
+  }
+
+  @Test
+  public void testConvertCompositePrimaryKey() {
+    String sql = "CREATE TABLE `tb01`\n"
+        + "(`id` int(11) NOT NULL,\n"
+        + "`a` bigint(20) NOT NULL,"
+        + "`b` bigint(20) NOT NULL,"
+        + "`c` bigint(20) NOT NULL,"
+        + "`d` bigint(20) NOT NULL,"
+        + "`e` bigint(20) NOT NULL,"
+        + "PRIMARY KEY (`c`, b, e)\n"
+        + ")\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = latin1;";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+
+    List<Column> columnList = tableDef.getColumnList();
+    assertThat(columnList.size(), is(6));
+
+    assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(
+        tableDef.getField("c").getColumn(),
+        tableDef.getField("b").getColumn(),
+        tableDef.getField("e").getColumn()
+    )));
+    assertThat(tableDef.getPrimaryKeyColumnNum(), is(3));
+    assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("c", "b", "e")));
+  }
+
+  @Test(expected = SqlParseException.class)
+  public void testConvertPrimaryKeyNotExistColumn() {
+    String sql = "CREATE TABLE `tb01`\n"
+        + "(`id` int(11) NOT NULL,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "PRIMARY KEY (b, a))\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = utf8;";
+    TableDefUtil.covertToTableDef(sql);
+  }
+
+  @Test(expected = SqlParseException.class)
+  public void testConvertPrimaryKeyNoColumn() {
+    String sql = "CREATE TABLE `tb01`\n"
+        + "(`id` int(11) NOT NULL,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "PRIMARY KEY ())\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = utf8;";
+    TableDefUtil.covertToTableDef(sql);
   }
 
   @Test
@@ -157,7 +213,7 @@ public class TableDefUtilTest {
     // by default set to utf8
     assertThat(tableDef.getDefaultCharset(), is("utf8"));
 
-    assertThat(tableDef.getPrimaryKeyColumn(), nullValue());
+    assertThat(tableDef.getPrimaryKeyColumns(), nullValue());
 
     List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(1));
