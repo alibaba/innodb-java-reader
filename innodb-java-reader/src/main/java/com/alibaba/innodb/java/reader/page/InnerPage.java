@@ -6,6 +6,8 @@ package com.alibaba.innodb.java.reader.page;
 import com.alibaba.innodb.java.reader.util.Slice;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import lombok.Getter;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -35,6 +37,7 @@ public class InnerPage {
   /**
    * 16k page byte buffer with fil header and fil trailer.
    */
+  @JsonIgnore
   @Getter
   protected SliceInput sliceInput;
 

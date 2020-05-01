@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader;
 
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.FilHeader;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
@@ -129,24 +130,30 @@ public interface TableReader extends Closeable {
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
-   * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
    * @return list of records
    */
-  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey);
+  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                             List<Object> upper, ComparisonOperator upperOperator);
 
   /**
    * Range query records by primary key in a tablespace with a filter.
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
-   * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
-   * @param recordPredicate   optional. evaluating record, if true then it will be added to
-   *                          result set, else skip it
+   * @param lower           if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper           if rangeQuery is true, then this is the upper bound
+   * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
+   * @param recordPredicate optional. evaluating record, if true then it will be added to
+   *                        result set, else skip it
    * @return list of records
    */
-  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey,
+  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                             List<Object> upper, ComparisonOperator upperOperator,
                                              Predicate<GenericRecord> recordPredicate);
 
   /**
@@ -166,11 +173,14 @@ public interface TableReader extends Closeable {
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
-   * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
    * @return record iterator
    */
-  Iterator<GenericRecord> getRangeQueryIterator(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey);
+  Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator);
 
   /**
    * Return table definition.

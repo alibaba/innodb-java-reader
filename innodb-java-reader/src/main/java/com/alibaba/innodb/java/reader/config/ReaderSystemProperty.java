@@ -60,6 +60,18 @@ public final class ReaderSystemProperty<T> {
       booleanProperty("innodb.java.reader.enable.throw.exception.for.unsupported.mysql80.lob",
           true);
 
+  /**
+   * For cli, when parsing string to list of objects to build key, use the delimiter.
+   */
+  public static final ReaderSystemProperty<String> COMPOSITE_KEY_DELIMITER =
+      stringProperty("innodb.java.reader.composite.key.delimiter", ",");
+
+  /**
+   * For cli, when parsing range query parameters, the two values will use the delimiter.
+   */
+  public static final ReaderSystemProperty<String> RANGE_QUERY_KEY_DELIMITER =
+      stringProperty("innodb.java.reader.range.query.key.delimiter", ";");
+
   private static ReaderSystemProperty<Boolean> booleanProperty(String key,
                                                                boolean defaultValue) {
     // Note that "" -> true (convenient for command-lines flags like '-Dflag')

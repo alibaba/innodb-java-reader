@@ -11,6 +11,9 @@ import com.alibaba.innodb.java.reader.TableReaderImpl;
 import com.alibaba.innodb.java.reader.cli.writer.SysoutWriter;
 import com.alibaba.innodb.java.reader.cli.writer.Writer;
 import com.alibaba.innodb.java.reader.cli.writer.WriterFactory;
+import com.alibaba.innodb.java.reader.column.ColumnFactory;
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
+import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
 import com.alibaba.innodb.java.reader.heatmap.GenFillingRateHeatmapUtil;
 import com.alibaba.innodb.java.reader.heatmap.GenLsnHeatmapUtil;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
@@ -18,6 +21,7 @@ import com.alibaba.innodb.java.reader.page.fsphdr.FspHdrXes;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
+import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.util.Pair;
 import com.alibaba.innodb.java.reader.util.Utils;
@@ -37,7 +41,9 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -46,12 +52,15 @@ import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
+import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
 import static com.alibaba.innodb.java.reader.cli.CommandType.GEN_FILLING_RATE_HEATMAP;
 import static com.alibaba.innodb.java.reader.cli.CommandType.GEN_LSN_HEATMAP;
 import static com.alibaba.innodb.java.reader.page.PageType.EXTENT_DESCRIPTOR;
 import static com.alibaba.innodb.java.reader.page.PageType.FILE_SPACE_HEADER;
 import static com.alibaba.innodb.java.reader.page.PageType.INDEX;
 import static com.alibaba.innodb.java.reader.page.PageType.INODE;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
@@ -76,7 +85,26 @@ public class InnodbReaderBootstrap {
 
   private static boolean SHOW_HEADER = false;
 
+  /**
+   * Row field delimiter.
+   */
   private static String FIELD_DELIMITER = "\t";
+
+  /**
+   * For example,
+   * <ul>
+   *   <li>single key: 1</li>
+   *   <li>composite key: 1,"hello",100</li>
+   * </ul>
+   */
+  private static String COMPOSITE_KEY_DELIMITER = ReaderSystemProperty.COMPOSITE_KEY_DELIMITER.value();
+
+  /**
+   * For example,
+   * <p>range query with >=1 and <2, the args will be <code>>=;1;<;2,</code>
+   * </p>range query with >=5, the args will be <code>>=;5;nop;null</code>
+   */
+  private static String RANGE_QUERY_KEY_DELIMITER = ReaderSystemProperty.RANGE_QUERY_KEY_DELIMITER.value();
 
   public static void main(String[] arguments) {
     CommandLineParser parser = new DefaultParser();
@@ -216,11 +244,18 @@ public class InnodbReaderBootstrap {
           break;
         case RANGE_QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
-          List<String> range = Stream.of(args.split("[, ]")).collect(toList());
-          checkState(range != null && range.size() == 2, "argument number should not exactly two");
-          Object lowerInclusiveKey = "null".equalsIgnoreCase(range.get(0)) ? null : range.get(0);
-          Object upperExclusiveKey = "null".equalsIgnoreCase(range.get(1)) ? null : range.get(1);
-          rangeQueryByPrimaryKey(ibdFilePath, writer, createTableSql, lowerInclusiveKey, upperExclusiveKey);
+          List<String> range = Stream.of(args.split(RANGE_QUERY_KEY_DELIMITER)).collect(toList());
+          checkArgument(range.size() == 4,
+              "Argument number should not exactly 4, but " + range.size());
+          String lower = "null".equalsIgnoreCase(range.get(1)) ? null : range.get(1);
+          String upper = "null".equalsIgnoreCase(range.get(3)) ? null : range.get(3);
+          ComparisonOperator lowerOperator =
+              "nop".equalsIgnoreCase(range.get(0)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(0));
+          ComparisonOperator upperOperator =
+              "nop".equalsIgnoreCase(range.get(2)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(2));
+          rangeQueryByPrimaryKey(ibdFilePath, writer, createTableSql,
+              lower, lowerOperator,
+              upper, upperOperator);
           break;
         case GEN_LSN_HEATMAP:
           genHeatmap(ibdFilePath, createTableSql, args, commandType);
@@ -281,8 +316,7 @@ public class InnodbReaderBootstrap {
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      // TODO
-      GenericRecord record = null; //reader.queryByPrimaryKey(primaryKey);
+      GenericRecord record = reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false));
       StringBuilder b = new StringBuilder();
       if (record != null) {
         writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
@@ -291,12 +325,14 @@ public class InnodbReaderBootstrap {
   }
 
   private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql,
-                                             Object lowerInclusiveKey, Object upperExclusiveKey) {
+                                             String lower, ComparisonOperator lowerOperator,
+                                             String upper, ComparisonOperator upperOperator) {
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      // TODO
-      Iterator<GenericRecord> iterator = null; // reader.getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
+      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+          parseStringToKey(reader.getTableDef(), lower, true), lowerOperator,
+          parseStringToKey(reader.getTableDef(), upper, false), upperOperator);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
@@ -423,6 +459,28 @@ public class InnodbReaderBootstrap {
         writer.write("\n");
       }
     }
+  }
+
+  private static List<Object> parseStringToKey(TableDef tableDef, String input, boolean min) {
+    int keyColNum = tableDef.getPrimaryKeyColumnNum();
+    if (input == null) {
+      return null;
+    }
+    String[] array = input.split(COMPOSITE_KEY_DELIMITER);
+    if (array.length != keyColNum) {
+      throw new IllegalArgumentException("Key column number should be " + keyColNum + ", input is " + input);
+    }
+    List<Object> result = new ArrayList<>(keyColNum);
+    for (int i = 0; i < keyColNum; i++) {
+      Column pk = tableDef.getPrimaryKeyColumns().get(i);
+      if (array[i].length() == 0) {
+        // for empty string
+        result.add(min ? MIN_VAL : MAX_VAL);
+      }
+      Object val = ColumnFactory.getColumnToJavaTypeFunc(pk.getType()).apply(array[i]);
+      result.add(val);
+    }
+    return Collections.unmodifiableList(result);
   }
 
 }

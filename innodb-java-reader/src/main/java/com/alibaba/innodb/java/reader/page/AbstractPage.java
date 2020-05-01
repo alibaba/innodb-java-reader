@@ -7,6 +7,7 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import lombok.Data;
 
@@ -28,6 +29,7 @@ public abstract class AbstractPage {
   /**
    * page byte array.
    */
+  @JsonIgnore
   protected SliceInput sliceInput;
 
   public AbstractPage(InnerPage innerPage) {

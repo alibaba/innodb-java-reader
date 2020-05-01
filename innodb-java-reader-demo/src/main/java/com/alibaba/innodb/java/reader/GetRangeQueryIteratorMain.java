@@ -5,6 +5,7 @@ package com.alibaba.innodb.java.reader;
 
 import com.google.common.collect.ImmutableList;
 
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.util.Utils;
 
@@ -27,7 +28,8 @@ public class GetRangeQueryIteratorMain {
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
-          ImmutableList.of(1), ImmutableList.of(10));
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          ImmutableList.of(10), ComparisonOperator.LT);
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();
@@ -38,7 +40,8 @@ public class GetRangeQueryIteratorMain {
       }
 
       iterator = reader.getRangeQueryIterator(
-          ImmutableList.of(5), null);
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();
@@ -50,7 +53,8 @@ public class GetRangeQueryIteratorMain {
 
       // for upper null works the same as empty array list
       iterator = reader.getRangeQueryIterator(
-          ImmutableList.of(6), ImmutableList.of());
+          ImmutableList.of(6), ComparisonOperator.GTE,
+          ImmutableList.of(), ComparisonOperator.NOP);
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();
@@ -60,7 +64,9 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      iterator = reader.getRangeQueryIterator(null, null);
+      iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
+          null, ComparisonOperator.NOP);
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();
@@ -71,8 +77,9 @@ public class GetRangeQueryIteratorMain {
       }
 
       // the same as query all
-      iterator = reader.getRangeQueryIterator(Utils.constructMinRecord(1),
-          Utils.constructMaxRecord(2));
+      iterator = reader.getRangeQueryIterator(
+          Utils.constructMinRecord(1), ComparisonOperator.NOP,
+          Utils.constructMaxRecord(1), ComparisonOperator.NOP);
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.TableReaderImpl;
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
@@ -41,83 +42,71 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableRangeQueryAllMysql56() {
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(-1), ImmutableList.of(20));
-
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(Integer.MIN_VALUE), ImmutableList.of(Integer.MAX_VALUE));
-
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(0), ImmutableList.of(11));
-
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(1), ImmutableList.of(11));
+    testSimpleTableRangeQueryAll(a -> a.withMysql56());
   }
 
   @Test
   public void testSimpleTableRangeQueryAllMysql57() {
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(-1), ImmutableList.of(20));
-
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(Integer.MIN_VALUE), ImmutableList.of(Integer.MAX_VALUE));
-
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(0), ImmutableList.of(11));
-
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(1), ImmutableList.of(11));
+    testSimpleTableRangeQueryAll(a -> a.withMysql57());
   }
 
   @Test
   public void testSimpleTableRangeQueryAllMysql80() {
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(-1), ImmutableList.of(20));
+    testSimpleTableRangeQueryAll(a -> a.withMysql80());
+  }
 
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(Integer.MIN_VALUE), ImmutableList.of(Integer.MAX_VALUE));
+  public void testSimpleTableRangeQueryAll(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
 
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
         .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(0), ImmutableList.of(11));
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(20), ComparisonOperator.LT);
 
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
         .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
-            ImmutableList.of(1), ImmutableList.of(11));
+            ImmutableList.of(Integer.MIN_VALUE), ComparisonOperator.GTE,
+            ImmutableList.of(Integer.MAX_VALUE), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(0), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(1), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GT,
+            ImmutableList.of(11), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GT,
+            ImmutableList.of(10), ComparisonOperator.LTE);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryAllExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
   }
 
   public Consumer<List<GenericRecord>> rangeQueryAllExpected() {
@@ -143,71 +132,71 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableRangeQueryNothingMysql56() {
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
-
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
-
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
-
-    assertTestOf(this)
-        .withMysql56()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
+    testSimpleTableRangeQueryNothing(a -> a.withMysql56());
   }
 
   @Test
   public void testSimpleTableRangeQueryNothingMysql57() {
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
-
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
-
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
-
-    assertTestOf(this)
-        .withMysql57()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
+    testSimpleTableRangeQueryNothing(a -> a.withMysql57());
   }
 
   @Test
   public void testSimpleTableRangeQueryNothingMysql80() {
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
+    testSimpleTableRangeQueryNothing(a -> a.withMysql80());
+  }
 
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
+  public void testSimpleTableRangeQueryNothing(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
 
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
-    assertTestOf(this)
-        .withMysql80()
-        .withTableDef(getTableDef())
-        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(0), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(11), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(12), ComparisonOperator.GTE,
+            ImmutableList.of(20), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GT,
+            ImmutableList.of(1), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(-1), ComparisonOperator.LTE);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withTableDef(getTableDef())
+        .checkRangeQueryRecordsIs(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GT,
+            ImmutableList.of(-1), ComparisonOperator.LTE);
   }
 
   public Consumer<List<GenericRecord>> rangeQueryNothingExpected() {
@@ -247,7 +236,7 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
   private void rangeQuery(TableReader reader, int start, int end) {
     System.out.println(start + " " + end);
     List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-        ImmutableList.of(start), ImmutableList.of(end));
+        ImmutableList.of(start), ComparisonOperator.GTE, ImmutableList.of(end), ComparisonOperator.LT);
     if (end == start) {
       end++;
     }
@@ -273,7 +262,8 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(12), ImmutableList.of(5));
+          ImmutableList.of(12), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT);
     }
   }
 
@@ -282,7 +272,28 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(12), Utils.constructMinRecord(1));
+          ImmutableList.of(12), ComparisonOperator.GTE,
+          Utils.constructMinRecord(1), ComparisonOperator.LT);
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSimpleTableRangeQueryLowerUpperNotValid3() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          Utils.constructMaxRecord(1), ComparisonOperator.GTE,
+          ImmutableList.of(Integer.MIN_VALUE), ComparisonOperator.LT);
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSimpleTableRangeQueryLowerUpperNotValid4() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(2), ComparisonOperator.GT,
+          ImmutableList.of(1), ComparisonOperator.LT);
     }
   }
 
@@ -309,37 +320,268 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), null);
+      List<GenericRecord> recordList = null;
+
+      for (int i = 0; i <= 10; i++) {
+        recordList = reader.rangeQueryByPrimaryKey(
+            ImmutableList.of(i), ComparisonOperator.GT,
+            null, ComparisonOperator.NOP);
+        assertThat(recordList.size(), is(10 - i));
+      }
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(0), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), null);
+      for (int i = 1; i <= 10; i++) {
+        recordList = reader.rangeQueryByPrimaryKey(
+            ImmutableList.of(i), ComparisonOperator.GTE,
+            null, ComparisonOperator.NOP);
+        assertThat(recordList.size(), is(10 - i + 1));
+      }
+
+      // max & min
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          Utils.constructMaxRecord(1), ComparisonOperator.LT);
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), Utils.constructMaxRecord(1));
-      assertThat(recordList.size(), is(10));
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GT,
+          Utils.constructMaxRecord(1), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(9));
 
-      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(5), null);
-      assertThat(recordList.size(), is(6));
+      recordList = reader.rangeQueryByPrimaryKey(
+          Utils.constructMinRecord(1), ComparisonOperator.GTE,
+          ImmutableList.of(8), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(7));
 
-      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(5), new ArrayList<>());
-      assertThat(recordList.size(), is(6));
+      recordList = reader.rangeQueryByPrimaryKey(
+          Utils.constructMinRecord(1), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(8));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(100));
-      assertThat(recordList.size(), is(10));
+      // mid, side by side
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(4), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(2));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(6));
-      assertThat(recordList.size(), is(5));
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(4), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(1));
 
-      recordList = reader.rangeQueryByPrimaryKey(new ArrayList<>(), ImmutableList.of(6));
-      assertThat(recordList.size(), is(5));
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(4), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(1));
 
-      recordList = reader.rangeQueryByPrimaryKey(Utils.constructMinRecord(1), ImmutableList.of(6));
-      assertThat(recordList.size(), is(5));
-
-      recordList = reader.rangeQueryByPrimaryKey(null, ImmutableList.of(1));
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(4), ComparisonOperator.LT);
       assertThat(recordList.size(), is(0));
 
-      recordList = reader.rangeQueryByPrimaryKey(null, null);
+      // mid, gap
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(3));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(2));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(2));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(1));
+
+      // mid, gap
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(8), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(6));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(8), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(4));
+
+      // mid, end
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(10), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(8));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(12), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(8));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(10), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(7));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GTE,
+          ImmutableList.of(11), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(8));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(10), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(7));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(11), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(7));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(10), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(6));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(3), ComparisonOperator.GT,
+          ImmutableList.of(11), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(7));
+
+      // mid, start
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(0), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(4));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(-1), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(4));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(4));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(0), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(3));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(0), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(4));
+
+      // same element starts
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(1));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(1));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(1));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GT,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(0));
+      // same element ends
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(100), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(10));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(10), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(9));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(10), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(10));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(6), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          new ArrayList<>(), ComparisonOperator.NOP,
+          ImmutableList.of(6), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          Utils.constructMinRecord(1), ComparisonOperator.GTE,
+          ImmutableList.of(6), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(1), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(1));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(5), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(5));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(1), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(0));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(5), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(4));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          null, ComparisonOperator.NOP,
+          null, ComparisonOperator.NOP);
       assertThat(recordList.size(), is(10));
     }
   }
@@ -353,10 +595,14 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
       reader.open();
 
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(0), null);
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(0), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
       assertThat(recordList.size(), is(10));
 
-      recordList = reader.rangeQueryByPrimaryKey(ImmutableList.of(1), ImmutableList.of(8));
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          ImmutableList.of(8), ComparisonOperator.LT);
       assertThat(recordList.size(), is(7));
     }
   }
@@ -369,10 +615,48 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
       Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
 
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(4), ImmutableList.of(9), predicate);
+          ImmutableList.of(4), ComparisonOperator.GTE,
+          ImmutableList.of(9), ComparisonOperator.LT,
+          predicate);
       assertThat(recordList.size(), is(1));
       assertThat(recordList.get(0).getPrimaryKey(), is(ImmutableList.of(6)));
       assertThat(recordList.get(0).get("a"), is(12L));
+
+      predicate = r -> (long) (r.get("a")) == 99999L;
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ComparisonOperator.GTE,
+          ImmutableList.of(9), ComparisonOperator.LT,
+          predicate);
+      assertThat(recordList.size(), is(0));
+
+      predicate = r -> {
+        return (long) (r.get("a")) == 12L && (long) (r.get("a")) == 10L;
+      };
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ComparisonOperator.GTE,
+          ImmutableList.of(9), ComparisonOperator.LT,
+          predicate);
+      assertThat(recordList.size(), is(0));
+
+      predicate = r -> {
+        return (long) (r.get("a")) == 12L || (long) (r.get("a")) == 10L;
+      };
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ComparisonOperator.GTE,
+          ImmutableList.of(9), ComparisonOperator.LT,
+          predicate);
+      assertThat(recordList.size(), is(2));
+
+      predicate = r -> (long) (r.get("a")) == 12L;
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LTE,
+          predicate);
+      assertThat(recordList.size(), is(0));
     }
   }
 }

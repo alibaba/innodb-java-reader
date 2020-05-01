@@ -182,9 +182,9 @@
         <!--<property name="format" value="System\.out\.println"/>-->
         <!--<property name="illegalPattern" value="true"/>-->
         <!--</module>-->
-        <!-- return个数 8个-->
+        <!-- return个数 12个-->
         <module name="ReturnCount">
-            <property name="max" value="8"/>
+            <property name="max" value="12"/>
         </module>
         <!--try catch 异常处理数量 4-->
         <module name="NestedTryDepth ">

@@ -506,11 +506,13 @@ java -jar innodb-java-reader-cli.jar \
 
 The result is the same as `mysql -N -uroot -e "select * from test.t" > output.dat`
 
-Field is delimitered by `tab`, you can specify `-delimter ","` to use comma as delimiter.
+Field is delimited by `tab`, you can specify `-delimiter ","` to use comma as delimiter.
 
 #### Querying by page number
 
-Argument is page number, only index page type is supported.
+Argument is page number, the results is all the records within the page, only index page type is supported.
+
+For B+tree non-leaf page, the records are keys only, for leaf page, the records are full tuples.
 
 ```
 java -jar innodb-java-reader-cli.jar \
@@ -530,16 +532,37 @@ java -jar innodb-java-reader-cli.jar \
   -c query-by-pk -args 5
 ```
 
+For composite primary key, fields will be delimited by `,`, you can change the delimiter by applying `-Dinnodb.java.reader.composite.key.delimiter` or setting environment.
+
+For example,
+```
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-by-pk -args abc,123,bcd
+```
+
 #### Range querying by primary key
 
-Arguments are the lower bound target key (inclusive) and the upper bound target key (exclusive), separated by comma.
+Arguments are `lower operator;lower bound;upper operator;upper bound` separated by `;`.
+
+Operators include `>`, `>=`, `<`, `<=` and `nop` (works on unlimited bound).
+
+You can change delimiter by `-Dinnodb.java.reader.range.query.key.delimiter` or set environment.
 
 ```
 java -jar innodb-java-reader-cli.jar \
   -ibd-file-path /usr/local/mysql/data/test/t.ibd \
   -create-table-sql-file-path t.sql \
-  -c range-query-by-pk -args "1,3"
+  -c range-query-by-pk -args ">=;1;<;3"
+
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c range-query-by-pk -args ">=;1;nop;null" // no upper limit
 ```
+
+For composite key, args will like `>;abc,123,bcd;<;xyz,5,jkl` or `>;abc,123,bcd;<;xyz,5,null`.
 
 #### Dump data
 

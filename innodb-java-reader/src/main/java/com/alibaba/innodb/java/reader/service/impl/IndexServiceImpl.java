@@ -6,6 +6,7 @@ package com.alibaba.innodb.java.reader.service.impl;
 import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.column.ColumnFactory;
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.InnerPage;
 import com.alibaba.innodb.java.reader.page.PageType;
@@ -47,6 +48,11 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR_TYPES;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TEXT_TYPES;
 import static com.alibaba.innodb.java.reader.column.ColumnType.VARBINARY;
 import static com.alibaba.innodb.java.reader.column.ColumnType.VARCHAR;
+import static com.alibaba.innodb.java.reader.comparator.ComparisonOperator.GT;
+import static com.alibaba.innodb.java.reader.comparator.ComparisonOperator.GTE;
+import static com.alibaba.innodb.java.reader.comparator.ComparisonOperator.LT;
+import static com.alibaba.innodb.java.reader.comparator.ComparisonOperator.LTE;
+import static com.alibaba.innodb.java.reader.comparator.ComparisonOperator.NOP;
 import static com.alibaba.innodb.java.reader.config.ReaderSystemProperty.ENABLE_THROW_EXCEPTION_FOR_UNSUPPORTED_MYSQL80_LOB;
 import static com.alibaba.innodb.java.reader.util.Utils.allEmpty;
 import static com.alibaba.innodb.java.reader.util.Utils.anyElementEmpty;
@@ -111,53 +117,60 @@ public class IndexServiceImpl implements IndexService {
    * @return list of records
    */
   private List<GenericRecord> queryWithinIndexPage(Index index) {
-    return queryWithinIndexPage(index, false, ImmutableList.of(), ImmutableList.of());
+    return queryWithinIndexPage(index, false, ImmutableList.of(), NOP, ImmutableList.of(), NOP);
   }
 
   /**
    * Query within one index page, range query is supported.
    *
-   * @param index             index page
-   * @param rangeQuery        if the query is range enabled
-   * @param lowerInclusiveKey if rangeQuery is true, then this is the lower bound
-   * @param upperExclusiveKey if rangeQuery is true, then this is the upper bound
+   * @param index         index page
+   * @param rangeQuery    if the query is range enabled
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
    * @return list of records
    */
   private List<GenericRecord> queryWithinIndexPage(Index index, boolean rangeQuery,
-                                                   List<Object> lowerInclusiveKey,
-                                                   List<Object> upperExclusiveKey) {
-    checkKey(lowerInclusiveKey, upperExclusiveKey);
+                                                   List<Object> lower, ComparisonOperator lowerOperator,
+                                                   List<Object> upper, ComparisonOperator upperOperator) {
+    checkKey(lower, lowerOperator, upper, upperOperator);
 
     // num of heap records - system records
     List<GenericRecord> result = new ArrayList<>(index.getIndexHeader().getNumOfRecs());
     SliceInput sliceInput = index.getSliceInput();
 
-    log.debug("{}, {}", index.getIndexHeader(), index.getFsegHeader());
+    if (log.isDebugEnabled()) {
+      log.debug("{}, {}", index.getIndexHeader(), index.getFsegHeader());
+    }
     GenericRecord infimum = index.getInfimum();
     GenericRecord supremum = index.getSupremum();
     int nextRecPos = infimum.nextRecordPosition();
     int recCounter = 0;
     sliceInput.setPosition(nextRecPos);
 
+    boolean noneEmpty = noneEmpty(lower, upper);
+    boolean lowerNotEmpty = isNotEmpty(lower);
+    boolean upperNotEmpty = isNotEmpty(upper);
+
     while (nextRecPos != supremum.getPrimaryKeyPosition()) {
       GenericRecord record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
       if (rangeQuery) {
-        if (noneEmpty(lowerInclusiveKey, upperExclusiveKey)) {
-          if (keyComparator.compare(record.getPrimaryKey(), lowerInclusiveKey) >= 0
-              && keyComparator.compare(record.getPrimaryKey(), upperExclusiveKey) < 0) {
+        if (noneEmpty) {
+          if (qualified(record.getPrimaryKey(), lower, lowerOperator, upper, upperOperator)) {
             result.add(record);
           }
-        } else if (isNotEmpty(lowerInclusiveKey)) {
-          if (keyComparator.compare(record.getPrimaryKey(), lowerInclusiveKey) >= 0) {
+        } else if (lowerNotEmpty) {
+          if (lowerQualified(record.getPrimaryKey(), lower, lowerOperator)) {
             result.add(record);
           }
-        } else if (isNotEmpty(upperExclusiveKey)) {
-          if (keyComparator.compare(record.getPrimaryKey(), upperExclusiveKey) < 0) {
+        } else if (upperNotEmpty) {
+          if (upperQualified(record.getPrimaryKey(), upper, upperOperator)) {
             result.add(record);
             break;
           }
         } else {
-          throw new ReaderException("lowerInclusiveKey and upperExclusiveKey are not set correctly");
+          throw new ReaderException("Lower and upper should not be both empty");
         }
       } else {
         result.add(record);
@@ -213,7 +226,7 @@ public class IndexServiceImpl implements IndexService {
 
   /**
    * Return an iterator to query all records of a tablespace.
-   * Leverage {@link #getRangeQueryIterator(List, List)}.
+   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator)}.
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    *
@@ -221,7 +234,7 @@ public class IndexServiceImpl implements IndexService {
    */
   @Override
   public Iterator<GenericRecord> getQueryAllIterator() {
-    return getRangeQueryIterator(ImmutableList.of(), ImmutableList.of());
+    return getRangeQueryIterator(ImmutableList.of(), NOP, ImmutableList.of(), NOP);
   }
 
   /**
@@ -229,19 +242,25 @@ public class IndexServiceImpl implements IndexService {
    * This method will do point query to search the nearest lower and upper bound record, then visit the leaf
    * page, go through all the level 0 pages by the double-linked pages.
    * While {@link #queryAll(Optional)} traverses b+ tree in a depth-first way.
+   *
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
    */
   @Override
-  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lowerInclusiveKey,
-                                                       List<Object> upperExclusiveKey) {
-    checkKey(lowerInclusiveKey, upperExclusiveKey);
+  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator) {
+    checkKey(lower, lowerOperator, upper, upperOperator);
 
-    List<Object> lower = lowerInclusiveKey;
-    List<Object> upper = upperExclusiveKey;
     if (noneEmpty(lower, upper)) {
       if (keyComparator.compare(lower, upper) > 0) {
         throw new IllegalArgumentException("Lower is greater than upper");
       }
       if (keyComparator.compare(lower, upper) == 0) {
+        if (lowerOperator == GT && upperOperator == LT) {
+          return new RecordIterator(ImmutableList.of());
+        }
         GenericRecord record = queryByPrimaryKey(lower);
         return new RecordIterator(record == null ? ImmutableList.of() : ImmutableList.of(record)) {
 
@@ -254,25 +273,29 @@ public class IndexServiceImpl implements IndexService {
     }
     if (isEmpty(lower)) {
       lower = constructMinRecord(tableDef.getPrimaryKeyColumnNum());
+      lowerOperator = GTE;
     }
     if (isEmpty(upper)) {
       upper = constructMaxRecord(tableDef.getPrimaryKeyColumnNum());
+      upperOperator = LTE;
     }
-    final List<Object> finalLowerInclusiveKey = lower;
-    final List<Object> finalUpperExclusiveKey = upper;
+    final List<Object> finalLower = lower;
+    final List<Object> finalUpper = upper;
+    final ComparisonOperator finalLowerOperator = lowerOperator;
+    final ComparisonOperator finalUpperOperator = upperOperator;
 
     // load first page lazily
     return new RecordIterator() {
       @Override
       public void init() {
         Pair<Long, Long> startAndEndPageNumber = queryStartAndEndPageNumber(
-            finalLowerInclusiveKey, finalUpperExclusiveKey);
+            finalLower, finalLowerOperator, finalUpper, finalUpperOperator);
         // read from start page
         currPageNumber = startAndEndPageNumber.getFirst();
         endPageNumber = startAndEndPageNumber.getSecond();
         indexPage = loadIndexPage(currPageNumber);
         curr = queryWithinIndexPage(indexPage, true,
-            finalLowerInclusiveKey, finalUpperExclusiveKey);
+            finalLower, finalLowerOperator, finalUpper, finalUpperOperator);
         log.debug("RangeQuery, start page {} records, {}", curr.size(), indexPage.getIndexHeader());
         initialized = true;
       }
@@ -291,7 +314,7 @@ public class IndexServiceImpl implements IndexService {
               this.curr = queryWithinIndexPage(nextIndexPage);
             } else {
               this.curr = queryWithinIndexPage(nextIndexPage, true,
-                  finalLowerInclusiveKey, finalUpperExclusiveKey);
+                  finalLower, finalLowerOperator, finalUpper, finalUpperOperator);
             }
             this.currIndex = 0;
             return true;
@@ -304,11 +327,12 @@ public class IndexServiceImpl implements IndexService {
     };
   }
 
-  private Pair<Long, Long> queryStartAndEndPageNumber(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey) {
-    checkKey(lowerInclusiveKey, upperExclusiveKey);
+  private Pair<Long, Long> queryStartAndEndPageNumber(List<Object> lower, ComparisonOperator lowerOperator,
+                                                      List<Object> upper, ComparisonOperator upperOperator) {
+    checkKey(lower, lowerOperator, upper, upperOperator);
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
-    GenericRecord startRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, lowerInclusiveKey);
-    GenericRecord endRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, upperExclusiveKey);
+    GenericRecord startRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, lower);
+    GenericRecord endRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, upper);
     if (log.isDebugEnabled()) {
       log.debug("RangeQuery, start record(inc) is {}, end record(exc) is {}", startRecord, endRecord);
     }
@@ -318,26 +342,29 @@ public class IndexServiceImpl implements IndexService {
   /**
    * Range query records by primary key in a tablespace.
    * <p>
-   * Leverage {@link #getRangeQueryIterator(List, List)} if range is specified, or else
-   * fallback to {@link #queryAll(Optional)}.
+   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator)}
+   * if range is specified, or else fallback to {@link #queryAll(Optional)}.
    *
-   * @param lowerInclusiveKey lower bound, inclusive, if set to null means no limit for lower
-   * @param upperExclusiveKey upper bound, exclusive, if set to null means no limit for upper
-   * @param recordPredicate   optional. evaluating record, if true then it will be added to
-   *                          result set, else skip it
+   * @param lower           if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper           if rangeQuery is true, then this is the upper bound
+   * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
+   * @param recordPredicate optional. evaluating record, if true then it will be added to
+   *                        result set, else skip it
    * @return list of records
    */
   @Override
-  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey,
+  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                                    List<Object> upper, ComparisonOperator upperOperator,
                                                     Optional<Predicate<GenericRecord>> recordPredicate) {
-    checkKey(lowerInclusiveKey, upperExclusiveKey);
+    checkKey(lower, lowerOperator, upper, upperOperator);
 
     // shortcut to query all
-    if (allEmpty(lowerInclusiveKey, upperExclusiveKey)) {
+    if (allEmpty(lower, upper)) {
       return queryAll(recordPredicate);
     }
 
-    Iterator<GenericRecord> iterator = getRangeQueryIterator(lowerInclusiveKey, upperExclusiveKey);
+    Iterator<GenericRecord> iterator = getRangeQueryIterator(lower, lowerOperator, upper, upperOperator);
     List<GenericRecord> recordList = new ArrayList<>();
     if (recordPredicate != null && recordPredicate.isPresent()) {
       Predicate<GenericRecord> predicate = recordPredicate.get();
@@ -814,11 +841,56 @@ public class IndexServiceImpl implements IndexService {
     return buffer;
   }
 
-  private void checkKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey) {
-    checkArgument(lowerInclusiveKey != null, "lowerInclusiveKey should not be null");
-    checkArgument(upperExclusiveKey != null, "upperExclusiveKey should not be null");
-    checkArgument(!anyElementEmpty(lowerInclusiveKey), "lowerInclusiveKey should not contain null elements");
-    checkArgument(!anyElementEmpty(upperExclusiveKey), "upperExclusiveKey should not contain null elements");
+  private void checkKey(List<Object> lower, ComparisonOperator lowerOperator,
+                        List<Object> upper, ComparisonOperator upperOperator) {
+    checkArgument(lower != null, "lower should not be null");
+    checkArgument(upper != null, "upper should not be null");
+    checkArgument(lowerOperator != null, "lowerOperator is null");
+    checkArgument(upperOperator != null, "upperOperator is null");
+    checkArgument(!anyElementEmpty(lower), "lower should not contain null elements");
+    checkArgument(!anyElementEmpty(upper), "upper should not contain null elements");
+  }
+
+  private boolean qualified(List<Object> primaryKey,
+                            List<Object> lower, ComparisonOperator lowerOperator,
+                            List<Object> upper, ComparisonOperator upperOperator) {
+    if (lowerOperator == GT && upperOperator == LT) {
+      return keyComparator.compare(primaryKey, lower) > 0
+          && keyComparator.compare(primaryKey, upper) < 0;
+    } else if (lowerOperator == GT && upperOperator == LTE) {
+      return keyComparator.compare(primaryKey, lower) > 0
+          && keyComparator.compare(primaryKey, upper) <= 0;
+    } else if (lowerOperator == GTE && upperOperator == LT) {
+      return keyComparator.compare(primaryKey, lower) >= 0
+          && keyComparator.compare(primaryKey, upper) < 0;
+    } else if (lowerOperator == GTE && upperOperator == LTE) {
+      return keyComparator.compare(primaryKey, lower) >= 0
+          && keyComparator.compare(primaryKey, upper) <= 0;
+    }
+    throw new ReaderException("Operator is invalid, lower should be >= or >, upper should be "
+        + "<= or <, actual lower " + lowerOperator + ", upper " + upperOperator);
+  }
+
+  private boolean lowerQualified(List<Object> primaryKey,
+                                 List<Object> lower, ComparisonOperator lowerOperator) {
+    if (lowerOperator == GT) {
+      return keyComparator.compare(primaryKey, lower) > 0;
+    } else if (lowerOperator == GTE) {
+      return keyComparator.compare(primaryKey, lower) >= 0;
+    }
+    throw new ReaderException("Operator is invalid, lower should be >= or >, upper should be "
+        + "<= or <, actual lower " + lowerOperator);
+  }
+
+  private boolean upperQualified(List<Object> primaryKey,
+                                 List<Object> upper, ComparisonOperator upperOperator) {
+    if (upperOperator == LT) {
+      return keyComparator.compare(primaryKey, upper) < 0;
+    } else if (upperOperator == LTE) {
+      return keyComparator.compare(primaryKey, upper) <= 0;
+    }
+    throw new ReaderException("Operator is invalid, lower should be >= or >, upper should be "
+        + "<= or <, actual upper " + upperOperator);
   }
 
 }

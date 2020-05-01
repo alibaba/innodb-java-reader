@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import static com.alibaba.innodb.java.reader.Constants.PRECISION_LIMIT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BYTE;
@@ -590,6 +591,43 @@ public class ColumnFactory {
       }
     }
     return (int) usec;
+  }
+
+  /**
+   * Get function to parse string to java object from column type.
+   *
+   * @param columnType column type
+   * @return function to parse string to java object
+   */
+  public static Function<String, ?> getColumnToJavaTypeFunc(String columnType) {
+    ColumnParser<?> columnParser = TYPE_TO_COLUMN_PARSER_MAP.get(columnType);
+    if (columnParser == null) {
+      throw new ColumnParseException("Column parser not supported for type " + columnType);
+    }
+    Class<?> javaType = columnParser.typeClass();
+    if (Integer.class.equals(javaType)) {
+      return Integer::parseInt;
+    } else if (Long.class.equals(javaType)) {
+      return Long::parseLong;
+    } else if (Boolean.class.equals(javaType)) {
+      return Boolean::parseBoolean;
+    } else if (Byte.class.equals(javaType)) {
+      return Byte::parseByte;
+    } else if (Short.class.equals(javaType)) {
+      return Short::parseShort;
+    } else if (Float.class.equals(javaType)) {
+      return Float::parseFloat;
+    } else if (Double.class.equals(javaType)) {
+      return Double::parseDouble;
+    } else if (BigInteger.class.equals(javaType)) {
+      return BigInteger::new;
+    } else if (BigDecimal.class.equals(javaType)) {
+      return BigDecimal::new;
+    } else {
+      // also for year, date, time, timestamp and datetime
+      // we take them as string
+      return s -> s;
+    }
   }
 
   static {

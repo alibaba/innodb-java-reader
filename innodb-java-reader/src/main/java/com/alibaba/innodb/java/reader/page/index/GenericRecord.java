@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableList;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +44,7 @@ public class GenericRecord {
   /**
    * Table schema.
    */
+  @JsonIgnore
   @ToString.Exclude
   private TableDef tableDef;
 

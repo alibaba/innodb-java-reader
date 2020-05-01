@@ -2,6 +2,7 @@ package com.alibaba.innodb.java.reader;
 
 import com.google.common.base.MoreObjects;
 
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
@@ -128,11 +129,13 @@ public class AbstractTest {
       }, TableReader::queryAll);
     }
 
-    public AssertThat checkRangeQueryRecordsIs(Consumer<List<GenericRecord>> fn, List<Object> start, List<Object> end) {
+    public AssertThat checkRangeQueryRecordsIs(Consumer<List<GenericRecord>> fn,
+                                               List<Object> start, ComparisonOperator startOperator,
+                                               List<Object> end, ComparisonOperator endOperator) {
       return doWithTableReader(c -> {
         fn.accept(c);
         return this;
-      }, t -> t.rangeQueryByPrimaryKey(start, end));
+      }, t -> t.rangeQueryByPrimaryKey(start, startOperator, end, endOperator));
     }
 
     public AssertThat checkQueryAllIterator(Consumer<Iterator<GenericRecord>> fn) {
@@ -143,11 +146,12 @@ public class AbstractTest {
     }
 
     public AssertThat checkRangeQueryIterator(Consumer<Iterator<GenericRecord>> fn,
-                                              List<Object> start, List<Object> end) {
+                                              List<Object> start, ComparisonOperator startOperator,
+                                              List<Object> end, ComparisonOperator endOperator) {
       return doWithTableReader(c -> {
         fn.accept(c);
         return this;
-      }, t -> t.getRangeQueryIterator(start, end));
+      }, t -> t.getRangeQueryIterator(start, startOperator, end, endOperator));
     }
   }
 

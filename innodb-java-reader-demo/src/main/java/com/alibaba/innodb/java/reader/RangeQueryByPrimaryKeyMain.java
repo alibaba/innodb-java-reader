@@ -5,6 +5,7 @@ package com.alibaba.innodb.java.reader;
 
 import com.google.common.collect.ImmutableList;
 
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import java.util.Arrays;
@@ -27,7 +28,8 @@ public class RangeQueryByPrimaryKeyMain {
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(1), ImmutableList.of(3));
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          ImmutableList.of(3), ComparisonOperator.LT);
       for (GenericRecord record : recordList) {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
@@ -36,7 +38,8 @@ public class RangeQueryByPrimaryKeyMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      recordList = reader.rangeQueryByPrimaryKey(null, null);
+      recordList = reader.rangeQueryByPrimaryKey(null, ComparisonOperator.NOP,
+          null, ComparisonOperator.NOP);
       for (GenericRecord record : recordList) {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
@@ -46,7 +49,8 @@ public class RangeQueryByPrimaryKeyMain {
       }
 
       recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(5), ImmutableList.of());
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          ImmutableList.of(), ComparisonOperator.NOP);
       for (GenericRecord record : recordList) {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
@@ -58,7 +62,9 @@ public class RangeQueryByPrimaryKeyMain {
       // You can filter record like below
       Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
       List<GenericRecord> recordList2 = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(5), ImmutableList.of(8), predicate);
+          ImmutableList.of(5), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LT,
+          predicate);
     }
   }
 

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.TableReaderImpl;
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
@@ -61,7 +62,8 @@ public class Realcase1TableReaderMainTest {
       }
 
       List<GenericRecord> records = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(5000L), ImmutableList.of(5100L));
+          ImmutableList.of(5000L), ComparisonOperator.GTE,
+          ImmutableList.of(5100L), ComparisonOperator.LT);
       for (GenericRecord record : records) {
         System.out.println(Arrays.toString(record.getValues()));
       }

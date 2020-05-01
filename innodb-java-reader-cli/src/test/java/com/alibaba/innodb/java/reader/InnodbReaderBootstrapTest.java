@@ -8,7 +8,6 @@ import com.alibaba.innodb.java.reader.cli.InnodbReaderBootstrap;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -26,7 +25,6 @@ import static org.junit.Assert.assertThat;
 /**
  * @author xu.zx
  */
-@Ignore
 public class InnodbReaderBootstrapTest {
 
   private String sourceIbdFilePath =
@@ -52,7 +50,7 @@ public class InnodbReaderBootstrapTest {
   /**
    * By running the following command:
    * <pre>
-   *   mysql  -N -uroot -Dtest -e "select * from test.tb10" >
+   *   mysql -N -uroot -Dtest -e "select * from test.tb10" >
    *   tb10.dat2 && cat tb10.dat2 | tr "\t" "," > tb10-comma-delimiter.dat
    * </pre>
    */
@@ -65,7 +63,8 @@ public class InnodbReaderBootstrapTest {
    *   mysql -uroot -Dtest -e "select * from test.tb10" > tb10-with-header.dat
    * </pre>
    */
-  private static String TB10_DATA_FILE_WITH_HEADER = "src/test/resources/tb10-with-header.dat";
+  private static String TB10_DATA_FILE_WITH_HEADER =
+      "src/test/resources/tb10-with-header.dat";
 
   private static String EXPECTED_TB10_DATE_FILE_MD5;
   private static String EXPECTED_TB10_DATE_FILE_WITH_COMMA_DELIMITER_MD5;
@@ -116,6 +115,15 @@ public class InnodbReaderBootstrapTest {
   }
 
   @Test
+  public void testShowPagesJsonPrettyStyle() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-json-pretty-style", "-c", "show-pages", "-args", "3,4,5"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(3));
+  }
+
+  @Test
   public void testQueryAll() {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "query-all"};
@@ -156,13 +164,53 @@ public class InnodbReaderBootstrapTest {
   }
 
   @Test
-  public void testRangeQueryByPrimaryKey() {
+  public void testQueryByPrimaryKeyNotExist() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-pk", "-args", "999999"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(0));
+  }
+
+  /**
+   * print java.lang.IllegalArgumentException:
+   * argument number should not exactly two, delimited by ; 700,800
+   */
+  @Test
+  public void testRangeQueryByPrimaryKeyNegative() {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "range-query-by-pk", "-args", "700,800"};
+    InnodbReaderBootstrap.main(args);
+  }
+
+  @Test
+  public void testRangeQueryByPrimaryKey() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "range-query-by-pk", "-args", ">=;700;<;800"};
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(100));
     check(output, 700, 100);
+  }
+
+  @Test
+  public void testRangeQueryByPrimaryKey2() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "range-query-by-pk", "-args", "\">=;700;<;800\""};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(100));
+    check(output, 700, 100);
+  }
+
+  @Test
+  public void testRangeQueryByPrimaryKey3() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "range-query-by-pk", "-args", ">;700;nop;null"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(300));
+    check(output, 700, 300);
   }
 
   @Test

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.TableReaderImpl;
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
@@ -107,22 +108,30 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(0), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(11), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(12), ComparisonOperator.GTE,
+            ImmutableList.of(20), ComparisonOperator.LT);
   }
 
   @Test
@@ -130,22 +139,30 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(0), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(11), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(12), ComparisonOperator.GTE,
+            ImmutableList.of(20), ComparisonOperator.LT);
   }
 
   @Test
@@ -153,22 +170,30 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(-1), ImmutableList.of(0));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(-1), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(0), ImmutableList.of(0));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(0), ComparisonOperator.GTE,
+            ImmutableList.of(0), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(11), ImmutableList.of(11));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(11), ComparisonOperator.GTE,
+            ImmutableList.of(11), ComparisonOperator.LT);
 
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(rangeQueryNothingExpected(), ImmutableList.of(12), ImmutableList.of(20));
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of(12), ComparisonOperator.GTE,
+            ImmutableList.of(20), ComparisonOperator.LT);
   }
 
   public Consumer<Iterator<GenericRecord>> rangeQueryNothingExpected() {
@@ -206,7 +231,9 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(ImmutableList.of(start), ImmutableList.of(end));
+    Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+        ImmutableList.of(start), ComparisonOperator.GTE,
+        ImmutableList.of(end), ComparisonOperator.LT);
     if (end == start) {
       end++;
     }
@@ -252,31 +279,49 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
-      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(ImmutableList.of(0), null);
+      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(0), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
       assertThat(getIteratorSize(iterator), is(10));
 
-      iterator = reader.getRangeQueryIterator(ImmutableList.of(1), null);
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
       assertThat(getIteratorSize(iterator), is(10));
 
-      iterator = reader.getRangeQueryIterator(ImmutableList.of(5), null);
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
       assertThat(getIteratorSize(iterator), is(6));
 
-      iterator = reader.getRangeQueryIterator(ImmutableList.of(5), Utils.constructMaxRecord(1));
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          Utils.constructMaxRecord(1), ComparisonOperator.LT);
       assertThat(getIteratorSize(iterator), is(6));
 
-      iterator = reader.getRangeQueryIterator(null, ImmutableList.of(100));
+      iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(100), ComparisonOperator.LT);
       assertThat(getIteratorSize(iterator), is(10));
 
-      iterator = reader.getRangeQueryIterator(null, ImmutableList.of(6));
+      iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(6), ComparisonOperator.LT);
       assertThat(getIteratorSize(iterator), is(5));
 
-      iterator = reader.getRangeQueryIterator(Utils.constructMinRecord(1), ImmutableList.of(6));
+      iterator = reader.getRangeQueryIterator(
+          Utils.constructMinRecord(1), ComparisonOperator.GTE,
+          ImmutableList.of(6), ComparisonOperator.LT);
       assertThat(getIteratorSize(iterator), is(5));
 
-      iterator = reader.getRangeQueryIterator(null, ImmutableList.of(1));
+      iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
+          ImmutableList.of(1), ComparisonOperator.LT);
       assertThat(getIteratorSize(iterator), is(0));
 
-      iterator = reader.getRangeQueryIterator(null, null);
+      iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
+          null, ComparisonOperator.NOP);
       assertThat(getIteratorSize(iterator), is(10));
     }
   }

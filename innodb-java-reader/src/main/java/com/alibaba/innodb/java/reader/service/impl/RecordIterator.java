@@ -46,7 +46,6 @@ public class RecordIterator implements Iterator<GenericRecord> {
    * </ul>
    */
   public void init() {
-    throw new IllegalStateException("Should overwrite init method");
   }
 
   @Override

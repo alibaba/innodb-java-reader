@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader;
 
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.comparator.DefaultKeyComparator;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
@@ -218,16 +219,18 @@ public class TableReaderImpl implements TableReader {
   }
 
   @Override
-  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey) {
+  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                                    List<Object> upper, ComparisonOperator upperOperator) {
     return indexService.rangeQueryByPrimaryKey(
-        makeNotNull(lowerInclusiveKey), makeNotNull(upperExclusiveKey), Optional.empty());
+        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator, Optional.empty());
   }
 
   @Override
-  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey,
+  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                                    List<Object> upper, ComparisonOperator upperOperator,
                                                     Predicate<GenericRecord> recordPredicate) {
     return indexService.rangeQueryByPrimaryKey(
-        makeNotNull(lowerInclusiveKey), makeNotNull(upperExclusiveKey), Optional.of(recordPredicate));
+        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator, Optional.of(recordPredicate));
   }
 
   @Override
@@ -236,8 +239,9 @@ public class TableReaderImpl implements TableReader {
   }
 
   @Override
-  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lowerInclusiveKey, List<Object> upperExclusiveKey) {
-    return indexService.getRangeQueryIterator(makeNotNull(lowerInclusiveKey), makeNotNull(upperExclusiveKey));
+  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator) {
+    return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator);
   }
 
   @Override

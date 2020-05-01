@@ -37,11 +37,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>net.smacke</groupId>
             <artifactId>jaydio</artifactId>
         </dependency>

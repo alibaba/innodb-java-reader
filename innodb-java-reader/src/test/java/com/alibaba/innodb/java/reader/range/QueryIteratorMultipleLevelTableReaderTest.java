@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.TableReader;
 import com.alibaba.innodb.java.reader.TableReaderImpl;
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -93,7 +94,8 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
       reader.open();
 
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
-          ImmutableList.of(10000), ImmutableList.of(40000));
+          ImmutableList.of(10000), ComparisonOperator.GTE,
+          ImmutableList.of(40000), ComparisonOperator.LT);
       int count = 0;
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
