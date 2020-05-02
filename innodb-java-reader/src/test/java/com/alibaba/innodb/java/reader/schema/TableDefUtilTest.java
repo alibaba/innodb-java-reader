@@ -38,6 +38,7 @@ public class TableDefUtilTest {
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
     assertThat(tableDef.getName(), is("tb01"));
+    assertThat(tableDef.getFullyQualifiedName(), is("tb01"));
     assertThat(tableDef.getDefaultCharset(), is("utf8mb4"));
 
     List<Column> columnList = tableDef.getColumnList();

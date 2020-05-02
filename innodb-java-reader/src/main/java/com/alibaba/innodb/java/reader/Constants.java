@@ -56,4 +56,6 @@ public interface Constants {
 
   int PRECISION_LIMIT = 5;
 
+  String DEFAULT_DATA_FILE_SUFFIX = ".ibd";
+
 }

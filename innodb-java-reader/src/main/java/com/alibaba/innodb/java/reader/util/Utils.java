@@ -7,12 +7,16 @@ import com.google.common.collect.ImmutableList;
 
 import org.apache.commons.collections.CollectionUtils;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_1;
@@ -266,6 +270,50 @@ public class Utils {
       b.append("\n");
     }
     return b.toString();
+  }
+
+  /**
+   * Process file by dilimiter.
+   *
+   * @param filePath  file path
+   * @param charset   encoding charset
+   * @param func      consumer function to process each part separated by delimiter
+   * @param delimiter delimiter
+   * @return pair, left is success processing count, right is the last string read
+   */
+  public static Pair<Integer, String> processFileWithDelimiter(String filePath, String charset,
+                                                               Consumer<String> func, String delimiter) {
+    BufferedReader bufferedReader = null;
+    try {
+      int count = 0;
+      bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), charset));
+      String line;
+      StringBuilder str = new StringBuilder();
+      while ((line = bufferedReader.readLine()) != null) {
+        if (line.contains(delimiter)) {
+          int index = line.indexOf(delimiter);
+          str.append(line.substring(0, index + 1));
+          String content = str.toString();
+          func.accept(content);
+          str.delete(0, str.length());
+          str.append(line.substring(index + 1));
+          count++;
+        } else {
+          str.append(line);
+        }
+      }
+      return Pair.of(count, str.toString());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      try {
+        if (bufferedReader != null) {
+          bufferedReader.close();
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
 }

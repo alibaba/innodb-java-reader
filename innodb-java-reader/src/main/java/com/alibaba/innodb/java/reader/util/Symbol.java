@@ -17,4 +17,5 @@ public interface Symbol {
   String RIGHT_PARENTHESES = ")";
   String BACKTICK = "`";
   String DOUBLE_QUOTE = "\"";
+  String DOT = ".";
 }

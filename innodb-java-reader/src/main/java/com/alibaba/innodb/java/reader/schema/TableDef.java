@@ -38,6 +38,12 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 public class TableDef {
 
+  /**
+   * Full qualified name, like <tt>db.t1</tt>. If not set, it is the same
+   * as {@link #name}.
+   */
+  private String fullQualifiedName;
+
   private String name;
 
   private List<String> columnNames;
@@ -259,10 +265,34 @@ public class TableDef {
     return name;
   }
 
+  public String getFullyQualifiedName() {
+    return fullQualifiedName;
+  }
+
   public TableDef setName(String name) {
     this.name = name
         .replace(Symbol.BACKTICK, Symbol.EMPTY)
         .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+    // if full qualified name is null, make it the same as name
+    if (fullQualifiedName == null) {
+      setFullyQualifieName(this.name);
+    }
+    return this;
+  }
+
+  public TableDef setFullyQualifieName(String fullQualifiedName) {
+    this.fullQualifiedName = fullQualifiedName
+        .replace(Symbol.BACKTICK, Symbol.EMPTY)
+        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+    // if name is null, find the table name from full qualified name and assign to name
+    if (name == null) {
+      if (this.fullQualifiedName.contains(Symbol.DOT)) {
+        int start = this.fullQualifiedName.lastIndexOf(Symbol.DOT);
+        name = this.fullQualifiedName.substring(start + 1);
+      } else {
+        name = this.fullQualifiedName;
+      }
+    }
     return this;
   }
 

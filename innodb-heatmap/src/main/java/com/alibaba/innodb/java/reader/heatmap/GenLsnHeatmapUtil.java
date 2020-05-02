@@ -46,6 +46,19 @@ public class GenLsnHeatmapUtil {
    *
    * @param sourceIbdFilePath innodb ibd file path
    * @param destHtmlFilePath  destination html file path
+   * @param tableDef          table definition
+   * @param pageWrapNum       number of pages per line in heatmap
+   */
+  public static void dump(String sourceIbdFilePath, String destHtmlFilePath, TableDef tableDef,
+                          int pageWrapNum) throws IOException, TemplateException {
+    dump(sourceIbdFilePath, destHtmlFilePath, tableDef, pageWrapNum, Optional.empty());
+  }
+
+  /**
+   * Dump page lsn heatmap.
+   *
+   * @param sourceIbdFilePath innodb ibd file path
+   * @param destHtmlFilePath  destination html file path
    * @param createTableSql    create table sql
    * @param pageWrapNum       number of pages per line in heatmap
    */

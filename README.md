@@ -172,13 +172,15 @@ mysql> select * from t;
 +----+----+----------+
 ```
 
-### 5.1 Setting table schema
+### 5.1 Setting table definition
 
 Schema must be provided before accessing the table. There are two ways to specify a table schema.
 
 #### Using SQL
 
 Run `SHOW CREATE TABLE` statement in MySQL command-line and copy the output as a string. Inside `innodb-java-reader`, it leverages [JSqlParser](https://github.com/JSQLParser/JSqlParser) and [antlr4](https://github.com/antlr/antlr4) to parse SQL to AST and get the table definition.
+
+You can generate all table definitions by executing `mysqldump -d -u<username> -p<password> -h <hostname> <dbname>` in command-line.
 
 For example,
 ```
@@ -226,6 +228,51 @@ String ibdFilePath = "/usr/local/mysql/data/mydb/t.ibd";
 try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
   reader.open();
   // API invocation goes here...
+}
+```
+
+Moreover, there is an useful factory utility which can facilitate the process of creating `TableReader`.
+
+For example,
+
+```
+String createTableSql = "CREATE TABLE `tb11`\n" +
+        "(`id` int(11) NOT NULL ,\n" +
+        "`a` bigint(20) NOT NULL,\n" +
+        "`b` varchar(64) NOT NULL,\n" +
+        "PRIMARY KEY (`id`))\n" +
+        "ENGINE=InnoDB;";
+
+TableDefProvider tableDefProvider = new SqlTableDefProvider(createTableSql);
+TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+    .withProvider(tableDefProvider)
+    .withDataFileBasePath("/usr/local/mysql/data/test/")
+    .build();
+TableReader reader = tableReaderFactory.createTableReader("tb11");
+try {
+  reader.open();
+  // API invocation goes here...
+} finally {
+  reader.close();
+}
+``` 
+
+You can also providing a sql file path, the sql is DDL as SHOW CREATE TABLE <table_name>, the file can 
+contain multiple SQLs, the table name should match the ibd file name, or else the tool is not able to 
+identify the ibd file to read, you can generate the file by executing `mysqldump -d -u<username> -p<password> -h <hostname> <dbname>` in command-line.
+
+```
+TableDefProvider tableDefProvider = new SqlFileTableDefProvider("/path/mysqldump_ddl.sql");
+TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+    .withProvider(tableDefProvider)
+    .withDataFileBasePath("/usr/local/mysql/data/test/")
+    .build();
+TableReader reader = tableReaderFactory.createTableReader("t");
+try {
+  reader.open();
+  // API invocation goes here...
+} finally {
+  reader.close();
 }
 ```
 

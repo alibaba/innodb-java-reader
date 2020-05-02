@@ -4,10 +4,9 @@
 package com.alibaba.innodb.java.reader.cli;
 
 import com.google.common.base.Preconditions;
-import com.google.common.io.Files;
 
 import com.alibaba.innodb.java.reader.TableReader;
-import com.alibaba.innodb.java.reader.TableReaderImpl;
+import com.alibaba.innodb.java.reader.TableReaderFactory;
 import com.alibaba.innodb.java.reader.cli.writer.SysoutWriter;
 import com.alibaba.innodb.java.reader.cli.writer.Writer;
 import com.alibaba.innodb.java.reader.cli.writer.WriterFactory;
@@ -23,6 +22,8 @@ import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.schema.provider.TableDefProvider;
+import com.alibaba.innodb.java.reader.schema.provider.impl.SqlFileTableDefProvider;
 import com.alibaba.innodb.java.reader.util.Pair;
 import com.alibaba.innodb.java.reader.util.Utils;
 
@@ -38,9 +39,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -119,7 +118,11 @@ public class InnodbReaderBootstrap {
         "mandatory. command to run, valid commands are: " + ALL_COMMANDS);
 
     options.addOption("s", "create-table-sql-file-path", true,
-        "create table sql file path by running SHOW CREATE TABLE <table_name>");
+        "create table sql file path, the sql is DDL as SHOW CREATE TABLE <table_name>, "
+            + "the file can contain multiple SQLs, the table name should match the ibd file name, "
+            + "or else the tool is not able to identify the ibd file to read, you can generate the"
+            + " file by executing mysqldump -d -u<username> -p<password> -h "
+            + "<hostname> <dbname>` in command-line.");
 
     options.addOption("json", "json-style", false,
         "set to true if you would like to show page info in json format style");
@@ -143,12 +146,13 @@ public class InnodbReaderBootstrap {
 
     String command = null;
     String ibdFilePath = null;
-    String createTableSql = null;
+    String tableName = null;
     String outputFilePath;
     String args = null;
     // show all pages or show one page
     boolean jsonStyle = false;
     boolean jsonPrettyStyle = false;
+    TableDefProvider tableDefProvider = null;
     Writer writer = new SysoutWriter();
     writer.open();
 
@@ -163,6 +167,12 @@ public class InnodbReaderBootstrap {
         ibdFilePath = line.getOptionValue("ibd-file-path");
         Preconditions.checkArgument(StringUtils.isNotEmpty(ibdFilePath),
             "ibd-file-path is empty");
+        int slashIndex = ibdFilePath.lastIndexOf("/");
+        if (slashIndex >= 0) {
+          tableName = ibdFilePath.substring(slashIndex + 1, ibdFilePath.lastIndexOf("."));
+        } else {
+          tableName = ibdFilePath.substring(0, ibdFilePath.lastIndexOf("."));
+        }
       } else {
         log.error("please input ibd-file-path");
         showHelp(options, 1);
@@ -172,8 +182,7 @@ public class InnodbReaderBootstrap {
         String createTableSqlFilePath = line.getOptionValue("create-table-sql-file-path");
         Preconditions.checkArgument(StringUtils.isNotEmpty(createTableSqlFilePath),
             "create-table-sql-file-path is empty");
-        List<String> lines = Files.readLines(new File(createTableSqlFilePath), Charset.defaultCharset());
-        createTableSql = String.join(" ", lines);
+        tableDefProvider = new SqlFileTableDefProvider(createTableSqlFilePath);
       } else {
         log.error("please input create-table-sql");
         showHelp(options, 1);
@@ -223,24 +232,24 @@ public class InnodbReaderBootstrap {
       checkNotNull(commandType);
       switch (commandType) {
         case SHOW_ALL_PAGES:
-          showAllPages(ibdFilePath, writer, createTableSql);
+          showAllPages(ibdFilePath, writer, tableDefProvider, tableName);
           break;
         case SHOW_PAGES:
           checkNotNull(args, "args should not be null");
           List<Long> pageNumbers = Stream.of(args.split(",")).map(Long::parseLong).collect(toList());
-          showPages(ibdFilePath, writer, createTableSql, pageNumbers, jsonStyle, jsonPrettyStyle);
+          showPages(ibdFilePath, writer, tableDefProvider, tableName, pageNumbers, jsonStyle, jsonPrettyStyle);
           break;
         case QUERY_ALL:
-          queryAll(ibdFilePath, writer, createTableSql);
+          queryAll(ibdFilePath, writer, tableDefProvider, tableName);
           break;
         case QUERY_BY_PAGE_NUMBER:
           checkNotNull(args, "args should not be null");
           long pageNumber = Long.parseLong(args);
-          queryByPageNumber(ibdFilePath, writer, createTableSql, pageNumber);
+          queryByPageNumber(ibdFilePath, writer, tableDefProvider, tableName, pageNumber);
           break;
         case QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
-          queryByPrimaryKey(ibdFilePath, writer, createTableSql, args);
+          queryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName, args);
           break;
         case RANGE_QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
@@ -253,18 +262,18 @@ public class InnodbReaderBootstrap {
               "nop".equalsIgnoreCase(range.get(0)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(0));
           ComparisonOperator upperOperator =
               "nop".equalsIgnoreCase(range.get(2)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(2));
-          rangeQueryByPrimaryKey(ibdFilePath, writer, createTableSql,
+          rangeQueryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName,
               lower, lowerOperator,
               upper, upperOperator);
           break;
         case GEN_LSN_HEATMAP:
-          genHeatmap(ibdFilePath, createTableSql, args, commandType);
+          genHeatmap(ibdFilePath, tableDefProvider, tableName, args, commandType);
           break;
         case GEN_FILLING_RATE_HEATMAP:
-          genHeatmap(ibdFilePath, createTableSql, args, commandType);
+          genHeatmap(ibdFilePath, tableDefProvider, tableName, args, commandType);
           break;
         case GET_ALL_INDEX_PAGE_FILLING_RATE:
-          getAllIndexPageFillingRate(ibdFilePath, writer, createTableSql);
+          getAllIndexPageFillingRate(ibdFilePath, writer, tableDefProvider, tableName);
           break;
         default:
           log.error("invalid command type, cmd=" + ALL_COMMANDS);
@@ -285,8 +294,9 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void queryAll(String ibdFilePath, Writer writer, String createTableSql) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+  private static void queryAll(String ibdFilePath, Writer writer,
+                               TableDefProvider tableDefProvider, String tableName) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
@@ -298,8 +308,10 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void queryByPageNumber(String ibdFilePath, Writer writer, String createTableSql, long pageNumber) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+  private static void queryByPageNumber(String ibdFilePath, Writer writer,
+                                        TableDefProvider tableDefProvider, String tableName,
+                                        long pageNumber) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       List<GenericRecord> recordList = reader.queryByPageNumber(pageNumber);
@@ -312,8 +324,10 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void queryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql, String primaryKey) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+  private static void queryByPrimaryKey(String ibdFilePath, Writer writer,
+                                        TableDefProvider tableDefProvider, String tableName,
+                                        String primaryKey) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       GenericRecord record = reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false));
@@ -324,10 +338,11 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, String createTableSql,
+  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer,
+                                             TableDefProvider tableDefProvider, String tableName,
                                              String lower, ComparisonOperator lowerOperator,
                                              String upper, ComparisonOperator upperOperator) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
@@ -347,8 +362,8 @@ public class InnodbReaderBootstrap {
     System.exit(exitCode);
   }
 
-  private static void genHeatmap(String ibdFilePath, String createTableSql, String args,
-                                 CommandType commandType) throws IOException, TemplateException {
+  private static void genHeatmap(String ibdFilePath, TableDefProvider tableDefProvider, String tableName,
+                                 String args, CommandType commandType) throws IOException, TemplateException {
     checkNotNull(args, "args should not be null");
     String destHtmlPath = args;
     Optional<Pair<String, String>> widthAndHeight = Optional.empty();
@@ -360,26 +375,45 @@ public class InnodbReaderBootstrap {
       widthAndHeight = Optional.of(new Pair<>(wh.get(0), wh.get(1)));
     }
     if (GEN_LSN_HEATMAP.equals(commandType)) {
-      genLsnHeatmap(ibdFilePath, createTableSql, destHtmlPath, widthAndHeight);
+      genLsnHeatmap(ibdFilePath, tableDefProvider, tableName, destHtmlPath, widthAndHeight);
     } else if (GEN_FILLING_RATE_HEATMAP.equals(commandType)) {
-      genFillingRateHeatmap(ibdFilePath, createTableSql, destHtmlPath, widthAndHeight);
+      genFillingRateHeatmap(ibdFilePath, tableDefProvider, tableName, destHtmlPath, widthAndHeight);
     }
   }
 
-  private static void genLsnHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath,
-                                    Optional<Pair<String, String>> widthAndHeight)
+  private static void genLsnHeatmap(String ibdFilePath, TableDefProvider tableDefProvider, String tableName,
+                                    String destHtmlPath, Optional<Pair<String, String>> widthAndHeight)
       throws IOException, TemplateException {
-    GenLsnHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
+    TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+        .withProvider(tableDefProvider)
+        .withDataFilePath(ibdFilePath)
+        .build();
+    if (!tableReaderFactory.getIdentityTableDefMap().containsKey(tableName)) {
+      throw new IllegalArgumentException("table name " + tableName + " not found in sql file");
+    }
+    GenLsnHeatmapUtil.dump(ibdFilePath, destHtmlPath,
+        tableReaderFactory.getIdentityTableDefMap().get(tableName),
+        64, widthAndHeight);
   }
 
-  private static void genFillingRateHeatmap(String ibdFilePath, String createTableSql, String destHtmlPath,
-                                            Optional<Pair<String, String>> widthAndHeight)
+  private static void genFillingRateHeatmap(String ibdFilePath, TableDefProvider tableDefProvider, String tableName,
+                                            String destHtmlPath, Optional<Pair<String, String>> widthAndHeight)
       throws IOException, TemplateException {
-    GenFillingRateHeatmapUtil.dump(ibdFilePath, destHtmlPath, createTableSql, 64, widthAndHeight);
+    TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+        .withProvider(tableDefProvider)
+        .withDataFilePath(ibdFilePath)
+        .build();
+    if (!tableReaderFactory.getIdentityTableDefMap().containsKey(tableName)) {
+      throw new IllegalArgumentException("table name " + tableName + " not found in sql file");
+    }
+    GenFillingRateHeatmapUtil.dump(ibdFilePath, destHtmlPath,
+        tableReaderFactory.getIdentityTableDefMap().get(tableName),
+        64, widthAndHeight);
   }
 
-  private static void showAllPages(String ibdFilePath, Writer writer, String createTableSql) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+  private static void showAllPages(String ibdFilePath, Writer writer,
+                                   TableDefProvider tableDefProvider, String tableName) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       Iterator<AbstractPage> iterator = reader.getPageIterator();
       writer.write(StringUtils.repeat("=", 5) + "page number, page type, other info"
@@ -426,9 +460,10 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void showPages(String ibdFilePath, Writer writer, String createTableSql,
+  private static void showPages(String ibdFilePath, Writer writer,
+                                TableDefProvider tableDefProvider, String tableName,
                                 List<Long> pageNumberList, boolean jsonStyle, boolean jsonPrettyStyle) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       for (Long pageNumber : pageNumberList) {
         AbstractPage page = reader.readPage(pageNumber);
@@ -443,8 +478,9 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void getAllIndexPageFillingRate(String ibdFilePath, Writer writer, String createTableSql) {
-    try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+  private static void getAllIndexPageFillingRate(String ibdFilePath, Writer writer,
+                                                 TableDefProvider tableDefProvider, String tableName) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       writer.write("Number of pages is " + reader.getNumOfPages());
       writer.write("Index page filling rate is " + reader.getAllIndexPageFillingRate());
@@ -468,7 +504,8 @@ public class InnodbReaderBootstrap {
     }
     String[] array = input.split(COMPOSITE_KEY_DELIMITER);
     if (array.length != keyColNum) {
-      throw new IllegalArgumentException("Key column number should be " + keyColNum + ", input is " + input);
+      throw new IllegalArgumentException("Key column number should be "
+          + keyColNum + ", input is " + input);
     }
     List<Object> result = new ArrayList<>(keyColNum);
     for (int i = 0; i < keyColNum; i++) {
@@ -481,6 +518,16 @@ public class InnodbReaderBootstrap {
       result.add(val);
     }
     return Collections.unmodifiableList(result);
+  }
+
+  private static TableReader createTableReader(String ibdFilePath,
+                                               TableDefProvider tableDefProvider,
+                                               String tableName) {
+    TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+        .withProvider(tableDefProvider)
+        .withDataFilePath(ibdFilePath)
+        .build();
+    return tableReaderFactory.createTableReader(tableName);
   }
 
 }

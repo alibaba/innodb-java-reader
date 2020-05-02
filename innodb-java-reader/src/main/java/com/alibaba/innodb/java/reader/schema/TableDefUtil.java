@@ -37,6 +37,7 @@ public class TableDefUtil {
       checkNotNull(stmt, "CreateTable statement should not be null");
       TableDef tableDef = new TableDef();
       tableDef.setName(stmt.getTable().getName());
+      tableDef.setFullyQualifieName(stmt.getTable().getFullyQualifiedName());
       // set charset first
       handleCharset(stmt, tableDef);
       handleColumns(stmt, tableDef);

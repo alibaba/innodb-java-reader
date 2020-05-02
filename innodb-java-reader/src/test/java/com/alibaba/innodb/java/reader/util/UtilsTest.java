@@ -306,4 +306,23 @@ public class UtilsTest {
     o2 = ImmutableList.of(100, MAX_VAL);
     assertThat(Utils.castCompare(o1, o2), is(-1));
   }
+
+  @Test
+  public void testProcessFileWithDelimiter() {
+    String filePath = "src/test/resources/test.sql";
+    String delimiter = ";";
+    List<String> list = new ArrayList<>();
+    Utils.processFileWithDelimiter(filePath, "UTF-8", s -> {
+      if (s.startsWith("CREATE TABLE")) {
+        list.add(s.trim());
+      }
+    }, delimiter);
+    assertThat(list.isEmpty(), is(false));
+    for (String s : list) {
+      System.out.println(s);
+      assertThat(s.startsWith("CREATE TABLE"), is(true));
+      assertThat(s.endsWith(";"), is(true));
+    }
+  }
+
 }

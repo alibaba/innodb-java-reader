@@ -38,6 +38,7 @@ public class RangeQueryByPrimaryKeyMain {
         System.out.println("a=" + record.get("a"));
       }
 
+      // works like query all
       recordList = reader.rangeQueryByPrimaryKey(null, ComparisonOperator.NOP,
           null, ComparisonOperator.NOP);
       for (GenericRecord record : recordList) {
@@ -48,6 +49,7 @@ public class RangeQueryByPrimaryKeyMain {
         System.out.println("a=" + record.get("a"));
       }
 
+      // no upper limit
       recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(5), ComparisonOperator.GTE,
           ImmutableList.of(), ComparisonOperator.NOP);

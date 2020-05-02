@@ -22,7 +22,7 @@ public class JSqlParserTest {
 
   @Test
   public void testParseSql() throws JSQLParserException {
-    CreateTable stmt = (CreateTable) CCJSqlParserUtil.parse("CREATE TABLE  `product001` (\n"
+    CreateTable stmt = (CreateTable) CCJSqlParserUtil.parse("CREATE TABLE  `dbtest`.`product001` (\n"
         + "  `id` bigint(20) NOT NULL COMMENT '主键',\n"
         + "  `user_id` bigint(20) unsigned DEFAULT '0' COMMENT '用户id,不再使用',\n"
         + "  `feed_id` int(11) DEFAULT '0' COMMENT 'feed id,不再使用',\n"
@@ -207,6 +207,23 @@ public class JSqlParserTest {
   public void testCreateTableAsSelect() throws JSQLParserException {
     assertCanBeParsed("CREATE TABLE public.sales1 AS (SELECT * FROM public.sales)");
   }
+
+  // TODO JSQLParser does not support binary
+  // this will be solved in 3.2-SNAPSHOT, see https://github.com/JSQLParser/JSqlParser
+  @Test(expected = JSQLParserException.class)
+  public void testCreateTableBinaryType() throws JSQLParserException {
+    assertCanBeParsed("CREATE TABLE `tb07` (\n"
+        + "      `id` int(11) NOT NULL,\n"
+        + "  `a` varbinary(32) NOT NULL,\n"
+        + "  `b` varbinary(255) NOT NULL,\n"
+        + "  `c` varbinary(512) NOT NULL,\n"
+        + "  `d` binary(32) NOT NULL,\n"
+        + "  `e` binary(255) NOT NULL,\n"
+        + "  PRIMARY KEY (`id`)\n"
+        + ") ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+  }
+
+  /*!40101 SET character_set_client = @saved_cs_client */;
 
   private void assertCanBeParsed(String sql) throws JSQLParserException {
     CreateTable stmt = (CreateTable) CCJSqlParserUtil.parse(sql);
