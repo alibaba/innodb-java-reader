@@ -15,15 +15,6 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 public interface ColumnParser<V> {
 
   /**
-   * Read value from byte array input with length.
-   *
-   * @param input slice input
-   * @param len   length
-   * @return value
-   */
-  V readFrom(SliceInput input, int len);
-
-  /**
    * Read value from byte array input with length and charset.
    *
    * @param input   slice input
@@ -41,6 +32,27 @@ public interface ColumnParser<V> {
    * @return value
    */
   V readFrom(SliceInput input, Column column);
+
+  /**
+   * For row-oriented columnar storage format, there should be a way to
+   * skip value from byte array input with length and charset,
+   *
+   * @param input   slice input
+   * @param len     length
+   * @param charset charset
+   * @return value
+   */
+  void skipFrom(SliceInput input, int len, String charset);
+
+  /**
+   * For row-oriented columnar storage format, there should be a way to
+   * skip value from byte array input.
+   *
+   * @param input  slice input
+   * @param column column
+   * @return value
+   */
+  void skipFrom(SliceInput input, Column column);
 
   /**
    * Returned value class.

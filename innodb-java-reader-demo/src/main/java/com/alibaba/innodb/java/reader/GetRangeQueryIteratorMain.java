@@ -27,6 +27,8 @@ public class GetRangeQueryIteratorMain {
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
+
+      // ~~~ range query
       Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
           ImmutableList.of(1), ComparisonOperator.GTE,
           ImmutableList.of(10), ComparisonOperator.LT);
@@ -39,6 +41,7 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
+      // ~~~ range query with no upper limit
       iterator = reader.getRangeQueryIterator(
           ImmutableList.of(5), ComparisonOperator.GTE,
           null, ComparisonOperator.NOP);
@@ -51,7 +54,7 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // for upper null works the same as empty array list
+      // ~~~ range query with no upper limit
       iterator = reader.getRangeQueryIterator(
           ImmutableList.of(6), ComparisonOperator.GTE,
           ImmutableList.of(), ComparisonOperator.NOP);
@@ -64,6 +67,7 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
+      // range query with no limit, equivalent to query all
       iterator = reader.getRangeQueryIterator(
           null, ComparisonOperator.NOP,
           null, ComparisonOperator.NOP);
@@ -76,10 +80,11 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // the same as query all
+      // range query with projection
       iterator = reader.getRangeQueryIterator(
-          Utils.constructMinRecord(1), ComparisonOperator.NOP,
-          Utils.constructMaxRecord(1), ComparisonOperator.NOP);
+          ImmutableList.of(2), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT,
+          ImmutableList.of("a"));
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();

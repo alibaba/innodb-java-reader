@@ -205,24 +205,40 @@ public class TableReaderImpl implements TableReader {
 
   @Override
   public GenericRecord queryByPrimaryKey(List<Object> key) {
-    return indexService.queryByPrimaryKey(key);
+    return indexService.queryByPrimaryKey(key, Optional.empty());
+  }
+
+  @Override
+  public GenericRecord queryByPrimaryKey(List<Object> key, List<String> projection) {
+    return indexService.queryByPrimaryKey(key, Optional.of(projection));
   }
 
   @Override
   public List<GenericRecord> queryAll() {
-    return indexService.queryAll(Optional.empty());
+    return indexService.queryAll(Optional.empty(), Optional.empty());
   }
 
   @Override
   public List<GenericRecord> queryAll(Predicate<GenericRecord> recordPredicate) {
-    return indexService.queryAll(Optional.of(recordPredicate));
+    return indexService.queryAll(Optional.of(recordPredicate), Optional.empty());
+  }
+
+  @Override
+  public List<GenericRecord> queryAll(List<String> projection) {
+    return indexService.queryAll(Optional.empty(), Optional.of(projection));
+  }
+
+  @Override
+  public List<GenericRecord> queryAll(Predicate<GenericRecord> recordPredicate, List<String> projection) {
+    return indexService.queryAll(Optional.of(recordPredicate), Optional.of(projection));
   }
 
   @Override
   public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
                                                     List<Object> upper, ComparisonOperator upperOperator) {
     return indexService.rangeQueryByPrimaryKey(
-        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator, Optional.empty());
+        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.empty(), Optional.empty());
   }
 
   @Override
@@ -230,18 +246,52 @@ public class TableReaderImpl implements TableReader {
                                                     List<Object> upper, ComparisonOperator upperOperator,
                                                     Predicate<GenericRecord> recordPredicate) {
     return indexService.rangeQueryByPrimaryKey(
-        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator, Optional.of(recordPredicate));
+        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.of(recordPredicate), Optional.empty());
+  }
+
+  @Override
+  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                                    List<Object> upper, ComparisonOperator upperOperator,
+                                                    List<String> projection) {
+    return indexService.rangeQueryByPrimaryKey(
+        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.empty(), Optional.of(projection));
+  }
+
+  @Override
+  public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                                    List<Object> upper, ComparisonOperator upperOperator,
+                                                    Predicate<GenericRecord> recordPredicate,
+                                                    List<String> projection) {
+    return indexService.rangeQueryByPrimaryKey(
+        makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.of(recordPredicate), Optional.of(projection));
   }
 
   @Override
   public Iterator<GenericRecord> getQueryAllIterator() {
-    return indexService.getQueryAllIterator();
+    return indexService.getQueryAllIterator(Optional.empty());
+  }
+
+  @Override
+  public Iterator<GenericRecord> getQueryAllIterator(List<String> projection) {
+    return indexService.getQueryAllIterator(Optional.of(projection));
   }
 
   @Override
   public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
                                                        List<Object> upper, ComparisonOperator upperOperator) {
-    return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator);
+    return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.empty());
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       List<String> projection) {
+    return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.of(projection));
   }
 
   @Override

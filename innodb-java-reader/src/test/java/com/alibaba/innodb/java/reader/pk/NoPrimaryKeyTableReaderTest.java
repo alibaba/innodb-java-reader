@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.pk;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -59,6 +61,18 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
         .withMysql80()
         .withTableDef(getTableDef())
         .checkAllRecordsIs(expected());
+  }
+
+  /**
+   * Querying by primary key is not allowed.
+   */
+  @Test(expected = IllegalArgumentException.class)
+  public void testQueryByPk() {
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(record -> {
+        }, ImmutableList.of(100));
   }
 
   public Consumer<List<GenericRecord>> expected() {

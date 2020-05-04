@@ -24,12 +24,17 @@ public class QueryByPrimaryKeyMain {
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
+
+      // ~~~ query by primary key
       GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of(4));
       Object[] values = record.getValues();
       System.out.println(Arrays.asList(values));
       assert record.getPrimaryKey() == record.get("id");
       System.out.println("id=" + record.get("id"));
       System.out.println("a=" + record.get("a"));
+
+      // ~~~ query by primary key with projection
+      record = reader.queryByPrimaryKey(ImmutableList.of(4), ImmutableList.of("a"));
     }
   }
 

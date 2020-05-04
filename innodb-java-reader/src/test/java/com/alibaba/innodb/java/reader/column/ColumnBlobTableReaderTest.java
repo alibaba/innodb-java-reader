@@ -1,5 +1,7 @@
 package com.alibaba.innodb.java.reader.column;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
@@ -11,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -33,7 +36,7 @@ public class ColumnBlobTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkAllRecordsIs(expected());
+        .checkAllRecordsIs(expectedProjection(getTableDef().getColumnNames()));
   }
 
   @Test
@@ -41,7 +44,7 @@ public class ColumnBlobTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkAllRecordsIs(expected());
+        .checkAllRecordsIs(expectedProjection(getTableDef().getColumnNames()));
   }
 
   @Test
@@ -49,10 +52,49 @@ public class ColumnBlobTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkAllRecordsIs(expected());
+        .checkAllRecordsIs(expectedProjection(getTableDef().getColumnNames()));
   }
 
-  public Consumer<List<GenericRecord>> expected() {
+  @Test
+  public void testBlobColumnProjectionMysql56() {
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkAllRecordsIs(expectedProjection(ImmutableList.of("id")), ImmutableList.of("id"));
+
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkAllRecordsIs(expectedProjection(ImmutableList.of("a")), ImmutableList.of("a"));
+  }
+
+  @Test
+  public void testBlobColumnProjectionMysql57() {
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkAllRecordsIs(expectedProjection(ImmutableList.of("id")), ImmutableList.of("id"));
+
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkAllRecordsIs(expectedProjection(ImmutableList.of("a")), ImmutableList.of("a"));
+  }
+
+  @Test
+  public void testBlobColumnProjectionMysql80() {
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkAllRecordsIs(expectedProjection(ImmutableList.of("id")), ImmutableList.of("id"));
+
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkAllRecordsIs(expectedProjection(ImmutableList.of("a")), ImmutableList.of("a"));
+  }
+
+  public Consumer<List<GenericRecord>> expectedProjection(List<String> projection) {
     return recordList -> {
 
       assertThat(recordList.size(), is(10));
@@ -63,19 +105,35 @@ public class ColumnBlobTableReaderTest extends AbstractTest {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
 
-        assertThat(((byte[]) record.get("a")).length, is(201));
-        assertThat(record.get("a"), is(getContent((byte) (97 + i), (byte) 0x0a, 200)));
+        if (projection.contains("a")) {
+          assertThat(((byte[]) record.get("a")).length, is(201));
+          assertThat(record.get("a"), is(getContent((byte) (97 + i), (byte) 0x0a, 200)));
+        } else {
+          assertThat(((String) record.get("a")), nullValue());
+        }
 
         // TODO mysql8.0 lob is not supported
         if (!isMysql8Flag.get()) {
-          assertThat(((byte[]) record.get("b")).length, is(60001));
-          assertThat(record.get("b"), is(getContent((byte) (97 + i), (byte) 0x0b, 60000)));
+          if (projection.contains("b")) {
+            assertThat(((byte[]) record.get("b")).length, is(60001));
+            assertThat(record.get("b"), is(getContent((byte) (97 + i), (byte) 0x0b, 60000)));
+          } else {
+            assertThat(((String) record.get("b")), nullValue());
+          }
 
-          assertThat(((byte[]) record.get("c")).length, is(80001));
-          assertThat(record.get("c"), is(getContent((byte) (97 + i), (byte) 0x0c, 80000)));
+          if (projection.contains("c")) {
+            assertThat(((byte[]) record.get("c")).length, is(80001));
+            assertThat(record.get("c"), is(getContent((byte) (97 + i), (byte) 0x0c, 80000)));
+          } else {
+            assertThat(((String) record.get("c")), nullValue());
+          }
 
-          assertThat(((byte[]) record.get("d")).length, is(100001));
-          assertThat(record.get("d"), is(getContent((byte) (97 + i), (byte) 0x0d, 100000)));
+          if (projection.contains("d")) {
+            assertThat(((byte[]) record.get("d")).length, is(100001));
+            assertThat(record.get("d"), is(getContent((byte) (97 + i), (byte) 0x0d, 100000)));
+          } else {
+            assertThat(((String) record.get("d")), nullValue());
+          }
         }
       }
     };

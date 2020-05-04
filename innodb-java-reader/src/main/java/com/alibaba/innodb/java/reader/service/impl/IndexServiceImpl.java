@@ -25,10 +25,13 @@ import com.alibaba.innodb.java.reader.util.Pair;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Utils;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -58,6 +61,7 @@ import static com.alibaba.innodb.java.reader.util.Utils.allEmpty;
 import static com.alibaba.innodb.java.reader.util.Utils.anyElementEmpty;
 import static com.alibaba.innodb.java.reader.util.Utils.constructMaxRecord;
 import static com.alibaba.innodb.java.reader.util.Utils.constructMinRecord;
+import static com.alibaba.innodb.java.reader.util.Utils.isOptionalPresent;
 import static com.alibaba.innodb.java.reader.util.Utils.noneEmpty;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
@@ -89,7 +93,7 @@ public class IndexServiceImpl implements IndexService {
   }
 
   /**
-   * Query all records by single page.
+   * Query all records by single index page.
    *
    * @param pageNumber page number (int type), can be leaf or non-leaf page
    * @return list of records
@@ -100,7 +104,7 @@ public class IndexServiceImpl implements IndexService {
   }
 
   /**
-   * Query all records by single page.
+   * Query all records by single index page.
    *
    * @param pageNumber page number (long type), can be leaf or non-leaf page
    * @return list of records
@@ -111,13 +115,14 @@ public class IndexServiceImpl implements IndexService {
   }
 
   /**
-   * Query all records within one index page.
+   * Query all records within one index page with all fields included (nop projection is used).
    *
    * @param index index page
    * @return list of records
    */
   private List<GenericRecord> queryWithinIndexPage(Index index) {
-    return queryWithinIndexPage(index, false, ImmutableList.of(), NOP, ImmutableList.of(), NOP);
+    return queryWithinIndexPage(index, false, ImmutableList.of(),
+        NOP, ImmutableList.of(), NOP, NOP_PROJECTION);
   }
 
   /**
@@ -129,11 +134,13 @@ public class IndexServiceImpl implements IndexService {
    * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
    * @param upper         if rangeQuery is true, then this is the upper bound
    * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param projection    projection of selected column ordinal in bitmap
    * @return list of records
    */
   private List<GenericRecord> queryWithinIndexPage(Index index, boolean rangeQuery,
                                                    List<Object> lower, ComparisonOperator lowerOperator,
-                                                   List<Object> upper, ComparisonOperator upperOperator) {
+                                                   List<Object> upper, ComparisonOperator upperOperator,
+                                                   BitSet projection) {
     checkKey(lower, lowerOperator, upper, upperOperator);
 
     // num of heap records - system records
@@ -154,7 +161,7 @@ public class IndexServiceImpl implements IndexService {
     boolean upperNotEmpty = isNotEmpty(upper);
 
     while (nextRecPos != supremum.getPrimaryKeyPosition()) {
-      GenericRecord record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
+      GenericRecord record = readRecord(index.getPageNumber(), sliceInput, index.isLeafPage(), projection);
       if (rangeQuery) {
         if (noneEmpty) {
           if (qualified(record.getPrimaryKey(), lower, lowerOperator, upper, upperOperator)) {
@@ -191,33 +198,43 @@ public class IndexServiceImpl implements IndexService {
    * Query all records in a tablespace.
    * <p>
    * Note this will cause out-of-memory if the table size is too big.
+   * Make sure fields are included in projection for predicate to use.
    *
-   * @param recordPredicate optional. evaluating record, if true then it will be
-   *                        added to result set, else skip it
+   * @param recordPredicate  optional filtering, if predicate returns true upon
+   *                         record, then it will be added to result set
+   * @param recordProjection optional projection of selected column names, if no present, all
+   *                         fields will be included
    * @return all records
    */
   @Override
-  public List<GenericRecord> queryAll(Optional<Predicate<GenericRecord>> recordPredicate) {
+  public List<GenericRecord> queryAll(Optional<Predicate<GenericRecord>> recordPredicate,
+                                      Optional<List<String>> recordProjection) {
     List<GenericRecord> recordList = new ArrayList<>();
-    traverseBPlusTree(ROOT_PAGE_NUMBER, recordList, recordPredicate);
+    traverseBPlusTree(ROOT_PAGE_NUMBER, recordList, recordPredicate, transformProjection(recordProjection));
     return recordList;
   }
 
   /**
-   * Query record by primary key in a tablespace.
+   * Query record by primary key in a tablespace with projection list.
+   * <p>
+   * For single key, the the list size should be one, for composite key the size
+   * will be more than one.
    *
-   * @param key primary key, single key or a composite key
+   * @param key              primary key, single key or a composite key
+   * @param recordProjection optional projection of selected column names, if no present, all
+   *                         fields will be included
    * @return record
    */
   @Override
-  public GenericRecord queryByPrimaryKey(List<Object> key) {
+  public GenericRecord queryByPrimaryKey(List<Object> key, Optional<List<String>> recordProjection) {
     checkArgument(isNotEmpty(key), "Key should not be empty");
-    checkArgument(!anyElementEmpty(key), "key should not contain null elements");
+    checkArgument(!anyElementEmpty(key), "Key should not contain null elements");
     checkArgument(key.size() == tableDef.getPrimaryKeyColumnNum(), "Search key count not match");
 
+    BitSet projection = transformProjection(recordProjection);
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
     checkState(index.isRootPage(), "Root page is wrong which should not happen");
-    GenericRecord record = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, key);
+    GenericRecord record = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, key, projection);
     if (record == null || DumbGenericRecord.class.equals(record.getClass())) {
       return null;
     }
@@ -226,31 +243,39 @@ public class IndexServiceImpl implements IndexService {
 
   /**
    * Return an iterator to query all records of a tablespace.
-   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator)}.
+   * <p>
+   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator, Optional)}.
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    *
-   * @return record iterator
+   * @param recordProjection optional projection of selected column names, if no present, all
+   *                         fields will be included
+   * @return all records
    */
   @Override
-  public Iterator<GenericRecord> getQueryAllIterator() {
-    return getRangeQueryIterator(ImmutableList.of(), NOP, ImmutableList.of(), NOP);
+  public Iterator<GenericRecord> getQueryAllIterator(Optional<List<String>> recordProjection) {
+    return getRangeQueryIterator(ImmutableList.of(), NOP, ImmutableList.of(), NOP, recordProjection);
   }
 
   /**
-   * The implementation is different from the way {@link #queryAll(Optional)} works.
+   * The implementation is different from the way {@link #queryAll(Optional, Optional)} works.
+   * <p>
    * This method will do point query to search the nearest lower and upper bound record, then visit the leaf
    * page, go through all the level 0 pages by the double-linked pages.
-   * While {@link #queryAll(Optional)} traverses b+ tree in a depth-first way.
+   * While {@link #queryAll(Optional, Optional)} traverses b+ tree in a depth-first way.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower            if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator    if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper            if rangeQuery is true, then this is the upper bound
+   * @param upperOperator    if rangeQuery is true, then this is the comparison operator for upper
+   * @param recordProjection optional projection of selected column names, if no present, all
+   *                         fields will be included
+   * @return record iterator
    */
   @Override
   public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
-                                                       List<Object> upper, ComparisonOperator upperOperator) {
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       Optional<List<String>> recordProjection) {
     checkKey(lower, lowerOperator, upper, upperOperator);
 
     if (noneEmpty(lower, upper)) {
@@ -261,7 +286,7 @@ public class IndexServiceImpl implements IndexService {
         if (lowerOperator == GT && upperOperator == LT) {
           return new RecordIterator(ImmutableList.of());
         }
-        GenericRecord record = queryByPrimaryKey(lower);
+        GenericRecord record = queryByPrimaryKey(lower, recordProjection);
         return new RecordIterator(record == null ? ImmutableList.of() : ImmutableList.of(record)) {
 
           @Override
@@ -279,6 +304,7 @@ public class IndexServiceImpl implements IndexService {
       upper = constructMaxRecord(tableDef.getPrimaryKeyColumnNum());
       upperOperator = LTE;
     }
+    final BitSet projection = transformProjection(recordProjection);
     final List<Object> finalLower = lower;
     final List<Object> finalUpper = upper;
     final ComparisonOperator finalLowerOperator = lowerOperator;
@@ -289,13 +315,13 @@ public class IndexServiceImpl implements IndexService {
       @Override
       public void init() {
         Pair<Long, Long> startAndEndPageNumber = queryStartAndEndPageNumber(
-            finalLower, finalLowerOperator, finalUpper, finalUpperOperator);
+            finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
         // read from start page
         currPageNumber = startAndEndPageNumber.getFirst();
         endPageNumber = startAndEndPageNumber.getSecond();
         indexPage = loadIndexPage(currPageNumber);
         curr = queryWithinIndexPage(indexPage, true,
-            finalLower, finalLowerOperator, finalUpper, finalUpperOperator);
+            finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
         log.debug("RangeQuery, start page {} records, {}", curr.size(), indexPage.getIndexHeader());
         initialized = true;
       }
@@ -311,10 +337,11 @@ public class IndexServiceImpl implements IndexService {
             }
             this.indexPage = nextIndexPage;
             if (currPageNumber != endPageNumber) {
-              this.curr = queryWithinIndexPage(nextIndexPage);
+              this.curr = queryWithinIndexPage(nextIndexPage, false, ImmutableList.of(),
+                  NOP, ImmutableList.of(), NOP, projection);
             } else {
               this.curr = queryWithinIndexPage(nextIndexPage, true,
-                  finalLower, finalLowerOperator, finalUpper, finalUpperOperator);
+                  finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
             }
             this.currIndex = 0;
             return true;
@@ -328,11 +355,12 @@ public class IndexServiceImpl implements IndexService {
   }
 
   private Pair<Long, Long> queryStartAndEndPageNumber(List<Object> lower, ComparisonOperator lowerOperator,
-                                                      List<Object> upper, ComparisonOperator upperOperator) {
+                                                      List<Object> upper, ComparisonOperator upperOperator,
+                                                      BitSet projection) {
     checkKey(lower, lowerOperator, upper, upperOperator);
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
-    GenericRecord startRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, lower);
-    GenericRecord endRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, upper);
+    GenericRecord startRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, lower, projection);
+    GenericRecord endRecord = binarySearchByDirectory(ROOT_PAGE_NUMBER, index, upper, projection);
     if (log.isDebugEnabled()) {
       log.debug("RangeQuery, start record(inc) is {}, end record(exc) is {}", startRecord, endRecord);
     }
@@ -342,29 +370,32 @@ public class IndexServiceImpl implements IndexService {
   /**
    * Range query records by primary key in a tablespace.
    * <p>
-   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator)}
-   * if range is specified, or else fallback to {@link #queryAll(Optional)}.
+   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator, Optional)}
+   * if range is specified, or else fallback to {@link #queryAll(Optional, Optional)}.
    *
-   * @param lower           if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper           if rangeQuery is true, then this is the upper bound
-   * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
-   * @param recordPredicate optional. evaluating record, if true then it will be added to
-   *                        result set, else skip it
-   * @return list of records
+   * @param lower            if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator    if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper            if rangeQuery is true, then this is the upper bound
+   * @param upperOperator    if rangeQuery is true, then this is the comparison operator for upper
+   * @param recordPredicate  optional. evaluating record, if true then it will be added to
+   *                         result set, else skip it
+   * @param recordProjection optional projection of selected column names, if no present, all
+   *                         fields will be included
    */
   @Override
   public List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
                                                     List<Object> upper, ComparisonOperator upperOperator,
-                                                    Optional<Predicate<GenericRecord>> recordPredicate) {
+                                                    Optional<Predicate<GenericRecord>> recordPredicate,
+                                                    Optional<List<String>> recordProjection) {
     checkKey(lower, lowerOperator, upper, upperOperator);
 
     // shortcut to query all
     if (allEmpty(lower, upper)) {
-      return queryAll(recordPredicate);
+      return queryAll(recordPredicate, recordProjection);
     }
 
-    Iterator<GenericRecord> iterator = getRangeQueryIterator(lower, lowerOperator, upper, upperOperator);
+    Iterator<GenericRecord> iterator = getRangeQueryIterator(lower, lowerOperator,
+        upper, upperOperator, recordProjection);
     List<GenericRecord> recordList = new ArrayList<>();
     if (recordPredicate != null && recordPredicate.isPresent()) {
       Predicate<GenericRecord> predicate = recordPredicate.get();
@@ -389,11 +420,13 @@ public class IndexServiceImpl implements IndexService {
    *
    * @param pageNumber      page number
    * @param recordList      where record will be add to
-   * @param recordPredicate evaluating record, if true then it will be added to result set,
+   * @param recordPredicate optional filtering record, if true then it will be added to result set,
    *                        else skip it
+   * @param projection      projection of selected column ordinal in bitmap
    */
   private void traverseBPlusTree(long pageNumber, List<GenericRecord> recordList,
-                                 Optional<Predicate<GenericRecord>> recordPredicate) {
+                                 Optional<Predicate<GenericRecord>> recordPredicate,
+                                 BitSet projection) {
     Index index = loadIndexPage(pageNumber);
     SliceInput sliceInput = index.getSliceInput();
 
@@ -406,28 +439,30 @@ public class IndexServiceImpl implements IndexService {
     int recCounter = 0;
     sliceInput.setPosition(nextRecPos);
 
-    if (recordPredicate != null && recordPredicate.isPresent()) {
+    if (isOptionalPresent(recordPredicate)) {
       // duplicate some code to avoid break branch prediction
       Predicate<GenericRecord> predicate = recordPredicate.get();
       while (nextRecPos != supremum.getPrimaryKeyPosition()) {
-        GenericRecord record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
+        GenericRecord record = readRecord(index.getPageNumber(), sliceInput,
+            index.isLeafPage(), projection);
         if (record.isLeafRecord()) {
           if (predicate.test(record)) {
             recordList.add(record);
           }
         } else {
-          traverseBPlusTree(record.getChildPageNumber(), recordList, recordPredicate);
+          traverseBPlusTree(record.getChildPageNumber(), recordList, recordPredicate, projection);
         }
         nextRecPos = record.nextRecordPosition();
         recCounter++;
       }
     } else {
       while (nextRecPos != supremum.getPrimaryKeyPosition()) {
-        GenericRecord record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
+        GenericRecord record = readRecord(index.getPageNumber(), sliceInput,
+            index.isLeafPage(), projection);
         if (record.isLeafRecord()) {
           recordList.add(record);
         } else {
-          traverseBPlusTree(record.getChildPageNumber(), recordList, recordPredicate);
+          traverseBPlusTree(record.getChildPageNumber(), recordList, recordPredicate, projection);
         }
         nextRecPos = record.nextRecordPosition();
         recCounter++;
@@ -451,12 +486,14 @@ public class IndexServiceImpl implements IndexService {
    * @param position   record starting position, usually it is the primary
    *                   key position
    * @param targetKey  search target key
+   * @param projection projection of selected column ordinal in bitmap
    * @return GenericRecord if found, or else DumbGenericRecord representing a closest record
    */
-  private GenericRecord linearSearch(long pageNumber, Index index, int position, List<Object> targetKey) {
+  private GenericRecord linearSearch(long pageNumber, Index index, int position, List<Object> targetKey,
+                                     BitSet projection) {
     SliceInput sliceInput = index.getSliceInput();
     sliceInput.setPosition(position);
-    GenericRecord record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
+    GenericRecord record = readRecord(index.getPageNumber(), sliceInput, index.isLeafPage(), projection);
     checkNotNull(record, "Record should not be null");
     log.debug("LinearSearch: page={}, level={}, key={}, header={}",
         pageNumber, index.getIndexHeader().getPageLevel(), record.getPrimaryKey(), record.getHeader());
@@ -472,19 +509,19 @@ public class IndexServiceImpl implements IndexService {
           // corner case,对于比smallest还小的需要判断infimum
           long childPageNumber = Utils.cast(preRecord.equals(index.getInfimum())
               ? record.getChildPageNumber() : preRecord.getChildPageNumber());
-          return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey);
+          return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey, projection);
         }
       } else if (compare == 0) {
         if (isLeafPage) {
           return record;
         } else {
           long childPageNumber = Utils.cast(record.getChildPageNumber());
-          return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey);
+          return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey, projection);
         }
       }
 
       sliceInput.setPosition(record.nextRecordPosition());
-      GenericRecord nextRecord = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
+      GenericRecord nextRecord = readRecord(index.getPageNumber(), sliceInput, index.isLeafPage(), projection);
       preRecord = record;
       record = nextRecord;
     }
@@ -492,23 +529,26 @@ public class IndexServiceImpl implements IndexService {
       return new DumbGenericRecord(record);
     } else {
       long childPageNumber = Utils.cast(preRecord.getChildPageNumber());
-      return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey);
+      return binarySearchByDirectory(childPageNumber, loadIndexPage(childPageNumber), targetKey, projection);
     }
   }
 
   /**
    * Search from directory slots in binary search way, and then call
-   * {@link #linearSearch(long, Index, int, List)}
+   * {@link #linearSearch(long, Index, int, List, BitSet)}
+   *
    * to search the specific record.
    *
    * @param pageNumber page number
    * @param index      index page
    * @param targetKey  search target key
+   * @param projection projection of selected column ordinal in bitmap
    * @return GenericRecord
    * @see <a href="https://leetcode-cn.com/problems/search-insert-position">search-insert-position
    * on leetcode</a>
    */
-  private GenericRecord binarySearchByDirectory(long pageNumber, Index index, List<Object> targetKey) {
+  private GenericRecord binarySearchByDirectory(long pageNumber, Index index,
+                                                List<Object> targetKey, BitSet projection) {
     checkNotNull(index);
     checkNotNull(targetKey);
     int[] dirSlots = index.getDirSlots();
@@ -524,7 +564,7 @@ public class IndexServiceImpl implements IndexService {
       int mid = (start + end) / 2;
       int recPos = dirSlots[mid];
       sliceInput.setPosition(recPos);
-      record = readRecord(sliceInput, index.isLeafPage(), index.getPageNumber());
+      record = readRecord(index.getPageNumber(), sliceInput, index.isLeafPage(), projection);
       checkNotNull(record, "record should not be null");
       if (log.isTraceEnabled()) {
         log.trace("SearchByDir: page={}, level={}, recordKey={}, targetKey={}, dirSlotSize={}, "
@@ -540,11 +580,11 @@ public class IndexServiceImpl implements IndexService {
       } else if (compare < 0) {
         start = mid + 1;
       } else {
-        return linearSearch(pageNumber, index, recPos, targetKey);
+        return linearSearch(pageNumber, index, recPos, targetKey, projection);
       }
     }
     log.debug("SearchByDir, start={}", start);
-    return linearSearch(pageNumber, index, dirSlots[start - 1], targetKey);
+    return linearSearch(pageNumber, index, dirSlots[start - 1], targetKey, projection);
   }
 
   @Override
@@ -590,12 +630,14 @@ public class IndexServiceImpl implements IndexService {
   /**
    * Read fields from one row and construct them into a record.
    *
+   * @param pageNumber page number
    * @param bodyInput  bytes input
    * @param isLeafPage is B+ tree leaf page
-   * @param pageNumber page number
+   * @param projection projection of selected column ordinal in bitmap
    * @return record
    */
-  private GenericRecord readRecord(SliceInput bodyInput, boolean isLeafPage, long pageNumber) {
+  private GenericRecord readRecord(long pageNumber, SliceInput bodyInput,
+                                   boolean isLeafPage, BitSet projection) {
     int primaryKeyPos = bodyInput.position();
 
     bodyInput.decrPosition(SIZE_OF_REC_HEADER);
@@ -667,6 +709,9 @@ public class IndexServiceImpl implements IndexService {
     if (tableDef.getPrimaryKeyColumnNum() > 0) {
       // set primary key, single key or composite key
       for (Column pkColumn : tableDef.getPrimaryKeyColumns()) {
+        // columns that is not in projection bitmap will be included as well
+        // because in we rely on pk to compare when querying by pk and
+        // range querying to locating record in head and tail pages.
         putColumnValueToRecord(bodyInput, varLenArray, overflowPageArray,
             record, varLenIdx, pkColumn);
         if (pkColumn.isVariableLength()) {
@@ -690,9 +735,24 @@ public class IndexServiceImpl implements IndexService {
       bodyInput.skipBytes(13);
 
       for (Column column : tableDef.getColumnList()) {
+        // skip primary key since it is set
         if (tableDef.isColumnPrimaryKey(column)) {
           continue;
         }
+
+        // skip column that is not in projection bitmap
+        if (projection != NOP_PROJECTION && !projection.get(column.getOrdinal())) {
+          if (!columnValueIsNull(nullColumnNames, column)) {
+            skipColumn(bodyInput, varLenArray, overflowPageArray,
+                record, varLenIdx, column);
+            if (column.isVariableLength()) {
+              varLenIdx++;
+            }
+          }
+          // jump to next field
+          continue;
+        }
+
         if (columnValueIsNull(nullColumnNames, column)) {
           record.put(column.getName(), null);
         } else {
@@ -716,6 +776,28 @@ public class IndexServiceImpl implements IndexService {
     bodyInput.setPosition(record.nextRecordPosition());
 
     return record;
+  }
+
+  /**
+   * @see {@link #putColumnValueToRecord(SliceInput, List, List, GenericRecord, int, Column)}
+   */
+  private void skipColumn(SliceInput bodyInput, List<Integer> varLenArray, List<Boolean> overflowPageArray,
+                          GenericRecord record, int varLenIdx, Column column) {
+    if (column.isVariableLength()) {
+      checkState(varLenArray != null && overflowPageArray != null);
+      checkElementIndex(varLenIdx, varLenArray.size());
+      if (!overflowPageArray.get(varLenIdx)) {
+        ColumnFactory.getColumnParser(column.getType())
+            .skipFrom(bodyInput, varLenArray.get(varLenIdx), column.getJavaCharset());
+      } else {
+        skipOverflowPage(bodyInput, record, column, varLenArray.get(varLenIdx));
+      }
+    } else if (column.isFixedLength()) {
+      ColumnFactory.getColumnParser(column.getType())
+          .skipFrom(bodyInput, column.getLength(), column.getJavaCharset());
+    } else {
+      ColumnFactory.getColumnParser(column.getType()).skipFrom(bodyInput, column);
+    }
   }
 
   private void putColumnValueToRecord(SliceInput bodyInput, List<Integer> varLenArray, List<Boolean> overflowPageArray,
@@ -839,6 +921,46 @@ public class IndexServiceImpl implements IndexService {
           overflowPagePointer, content.length, !blob.hasNext());
     } while (blob.hasNext());
     return buffer;
+  }
+
+  private void skipOverflowPage(SliceInput bodyInput, GenericRecord record, Column column, int varLen) {
+    if (BLOB_TYPES.contains(column.getType())
+        || VARBINARY.equals(column.getType())
+        || TEXT_TYPES.contains(column.getType())
+        || VARCHAR.equals(column.getType())
+        || CHAR.equals(column.getType())) {
+      int varLenWithoutOffPagePointer = varLen - 20;
+      if (varLenWithoutOffPagePointer > 0) {
+        bodyInput.skipBytes(768);
+      }
+      OverflowPagePointer.fromSlice(bodyInput);
+    } else {
+      throw new UnsupportedOperationException("Handle overflow page unsupported for type " + column.getType());
+    }
+  }
+
+  private BitSet transformProjection(Optional<List<String>> projection) {
+    return isOptionalPresent(projection)
+        ? transformProjection(projection.get()) : NOP_PROJECTION;
+  }
+
+  /**
+   * Convert projection list with column names to bitmap with column ordinal.
+   *
+   * @param projection projection list with column names
+   * @return projection bitmap
+   */
+  private BitSet transformProjection(List<String> projection) {
+    checkArgument(CollectionUtils.isNotEmpty(projection), "Projection list should not be empty");
+    BitSet result = tableDef.createBitmapWithPkIncluded();
+    for (String p : projection) {
+      TableDef.Field field = tableDef.getField(p);
+      if (field == null) {
+        throw new ReaderException("Column " + p + " not found in TableDef");
+      }
+      result.set(field.getOrdinal());
+    }
+    return result;
   }
 
   private void checkKey(List<Object> lower, ComparisonOperator lowerOperator,

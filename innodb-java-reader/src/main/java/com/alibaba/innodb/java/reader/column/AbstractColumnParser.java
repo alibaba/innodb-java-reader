@@ -14,11 +14,6 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 public abstract class AbstractColumnParser<V> implements ColumnParser<V> {
 
   @Override
-  public V readFrom(SliceInput input, int len) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public V readFrom(SliceInput input, int len, String charset) {
     throw new UnsupportedOperationException();
   }
@@ -26,6 +21,16 @@ public abstract class AbstractColumnParser<V> implements ColumnParser<V> {
   @Override
   public V readFrom(SliceInput input, Column column) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void skipFrom(SliceInput input, int len, String charset) {
+    readFrom(input, len, charset);
+  }
+
+  @Override
+  public void skipFrom(SliceInput input, Column column) {
+    readFrom(input, column);
   }
 
   @Override

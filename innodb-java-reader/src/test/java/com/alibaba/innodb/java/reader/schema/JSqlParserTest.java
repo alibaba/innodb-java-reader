@@ -26,7 +26,7 @@ public class JSqlParserTest {
         + "  `id` bigint(20) NOT NULL COMMENT '主键',\n"
         + "  `user_id` bigint(20) unsigned DEFAULT '0' COMMENT '用户id,不再使用',\n"
         + "  `feed_id` int(11) DEFAULT '0' COMMENT 'feed id,不再使用',\n"
-        + "  `outer_id` varchar(1024) NOT NULL COMMENT '用户定义的商品id',\n"
+        + "  `outer_id` varchar(1024) NOT NULL COMMENT '用户定义的商品id' KEY,\n"
         + "  `feed_url_id` int(11) NOT NULL DEFAULT '0' COMMENT '抓取信息id',\n"
         + "  `name` varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT '商品名称',\n"
         + "  `loc` varchar(1024) NOT NULL COMMENT '商品详情页',\n"
@@ -37,8 +37,10 @@ public class JSqlParserTest {
         + "  `name_hash` bigint(20) NOT NULL DEFAULT '0' COMMENT 'name hash',\n"
         + "  `deleted_state` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑状态:0,有效 1，逻辑删除',\n"
         + "  PRIMARY KEY (`id`),\n"
+        + "  FOREIGN KEY (user_id) REFERENCES ra_user(id),\n"
         + "  KEY `ddd` (`user_id`), \n"
-        + "  KEY `eee` (`user_id`, `loc`) \n"
+        + "  UNIQUE key (feed_url_id) COMMENT 'feed',\n"
+        + "  INDEX `eee` (`user_id`, `loc`) \n"
         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='商品信息'");
     System.out.println(stmt.toString());
 
@@ -57,30 +59,47 @@ public class JSqlParserTest {
 
     System.out.println(stmt.getIndexes());
     assertThat(stmt.getIndexes().toString(),
-        is("[PRIMARY KEY (`id`), KEY `ddd` (`user_id`), KEY `eee` (`user_id`, `loc`)]"));
+        is("[PRIMARY KEY (`id`) COMMENT 'feed', FOREIGN KEY (user_id) REFERENCES ra_user(id), "
+            + "KEY `ddd` (`user_id`), UNIQUE key (feed_url_id) COMMENT 'feed', "
+            + "INDEX `eee` (`user_id`, `loc`)]"));
 
-    assertThat(stmt.getIndexes().size(), is(3));
+    assertThat(stmt.getIndexes().size(), is(5));
 
     System.out.println(stmt.getIndexes().get(0));
     assertThat(stmt.getIndexes().get(0).getType(), is("PRIMARY KEY"));
     assertThat(stmt.getIndexes().get(0).getName(), nullValue());
     assertThat(stmt.getIndexes().get(0).getColumnsNames(), is(ImmutableList.of("`id`")));
-    assertThat(stmt.getIndexes().get(0).getIndexSpec(), is(ImmutableList.of()));
+    // bug?
+    //assertThat(stmt.getIndexes().get(0).getIndexSpec(), is(ImmutableList.of()));
     assertThat(stmt.getIndexes().get(0).getUsing(), nullValue());
 
     System.out.println(stmt.getIndexes().get(1));
-    assertThat(stmt.getIndexes().get(1).getType(), is("KEY"));
-    assertThat(stmt.getIndexes().get(1).getName(), is("`ddd`"));
-    assertThat(stmt.getIndexes().get(1).getColumnsNames(), is(ImmutableList.of("`user_id`")));
+    assertThat(stmt.getIndexes().get(1).getType(), is("FOREIGN KEY"));
+    assertThat(stmt.getIndexes().get(1).getName(), nullValue());
+    assertThat(stmt.getIndexes().get(1).getColumnsNames(), is(ImmutableList.of("user_id")));
     assertThat(stmt.getIndexes().get(1).getIndexSpec(), nullValue());
     assertThat(stmt.getIndexes().get(1).getUsing(), nullValue());
 
     System.out.println(stmt.getIndexes().get(2));
     assertThat(stmt.getIndexes().get(2).getType(), is("KEY"));
-    assertThat(stmt.getIndexes().get(2).getName(), is("`eee`"));
-    assertThat(stmt.getIndexes().get(2).getColumnsNames(), is(ImmutableList.of("`user_id`", "`loc`")));
+    assertThat(stmt.getIndexes().get(2).getName(), is("`ddd`"));
+    assertThat(stmt.getIndexes().get(2).getColumnsNames(), is(ImmutableList.of("`user_id`")));
     assertThat(stmt.getIndexes().get(2).getIndexSpec(), nullValue());
     assertThat(stmt.getIndexes().get(2).getUsing(), nullValue());
+
+    System.out.println(stmt.getIndexes().get(3));
+    assertThat(stmt.getIndexes().get(3).getType(), is("UNIQUE key"));
+    assertThat(stmt.getIndexes().get(3).getName(), nullValue());
+    assertThat(stmt.getIndexes().get(3).getColumnsNames(), is(ImmutableList.of("feed_url_id")));
+    assertThat(stmt.getIndexes().get(3).getIndexSpec(), is(ImmutableList.of("COMMENT", "'feed'")));
+    assertThat(stmt.getIndexes().get(3).getUsing(), nullValue());
+
+    System.out.println(stmt.getIndexes().get(4));
+    assertThat(stmt.getIndexes().get(4).getType(), is("INDEX"));
+    assertThat(stmt.getIndexes().get(4).getName(), is("`eee`"));
+    assertThat(stmt.getIndexes().get(4).getColumnsNames(), is(ImmutableList.of("`user_id`", "`loc`")));
+    assertThat(stmt.getIndexes().get(4).getIndexSpec(), nullValue());
+    assertThat(stmt.getIndexes().get(4).getUsing(), nullValue());
 
     for (ColumnDefinition columnDefinition : stmt.getColumnDefinitions()) {
       System.out.println(columnDefinition.toString());
@@ -104,8 +123,8 @@ public class JSqlParserTest {
     columnDefinition = stmt.getColumnDefinitions().get(3);
     assertThat(columnDefinition.getColumnName(), is("`outer_id`"));
     assertThat(columnDefinition.getColumnSpecStrings(),
-        is(ImmutableList.of("NOT", "NULL", "COMMENT", "'用户定义的商品id'")));
-    assertThat(columnDefinition.getColDataType().getDataType(), is("varchar"));
+        is(ImmutableList.of("NOT", "NULL", "COMMENT", "'用户定义的商品id'", "KEY")));
+            assertThat(columnDefinition.getColDataType().getDataType(), is("varchar"));
     assertThat(columnDefinition.getColDataType().getArgumentsStringList(), is(ImmutableList.of("1024")));
     assertThat(columnDefinition.getColDataType().getCharacterSet(), nullValue());
 

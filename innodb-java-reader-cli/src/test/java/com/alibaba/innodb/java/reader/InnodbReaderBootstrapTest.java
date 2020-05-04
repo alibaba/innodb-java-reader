@@ -1,6 +1,7 @@
 package com.alibaba.innodb.java.reader;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import com.alibaba.innodb.java.reader.cli.InnodbReaderBootstrap;
@@ -134,6 +135,17 @@ public class InnodbReaderBootstrapTest {
   }
 
   @Test
+  public void testQueryAllWithProjection() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-all", "-projection", "id,a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1000));
+    // pk is included by default
+    check(output, 0, 1000, ImmutableList.of("a"));
+  }
+
+  @Test
   public void testQueryByPageNumberNonLeafPage() {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "query-by-page-number", "-args", "3", "-delimiter", ","};
@@ -161,6 +173,16 @@ public class InnodbReaderBootstrapTest {
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(1));
     check(output, 888, 1);
+  }
+
+  @Test
+  public void testQueryByPrimaryKeyWithProjection() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-projection", "b", "-c", "query-by-pk", "-args", "888"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1));
+    check(output, 888, 1, ImmutableList.of("b"));
   }
 
   @Test
@@ -212,6 +234,17 @@ public class InnodbReaderBootstrapTest {
     assertThat(output.size(), is(300));
     check(output, 700, 300);
   }
+
+  @Test
+  public void testRangeQueryByPrimaryKeyWithProjection() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-projection", "id,a", "-c", "range-query-by-pk", "-args", ">=;700;<;800"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(100));
+    check(output, 700, 100, ImmutableList.of("id", "a"));
+  }
+
 
   @Test
   public void testGenLsnHeatmap() throws IOException {
@@ -318,16 +351,26 @@ public class InnodbReaderBootstrapTest {
   }
 
   private void check(List<String> output, int start, int count) {
-    check(output, start, count, "\t");
+    check(output, start, count, "\t", ImmutableList.of("id", "a", "b", "c"));
   }
 
   private void check(List<String> output, int start, int count, String delimiter) {
+    check(output, start, count, delimiter, ImmutableList.of("id", "a", "b", "c"));
+  }
+
+  private void check(List<String> output, int start, int count, List<String> projection) {
+    check(output, start, count, "\t", projection);
+  }
+
+  private void check(List<String> output, int start, int count, String delimiter, List<String> projection) {
     for (int i = start + 1; i <= count; i++) {
       String[] array = output.get(i - start - 1).split(delimiter);
       assertThat(array[0], is(String.valueOf(i)));
-      assertThat(array[1], is(String.valueOf(i * 2)));
-      assertThat(array[2], is((StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 32))));
-      assertThat(array[3], is((StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 512))));
+      assertThat(array[1], is(projection.contains("a") ? String.valueOf(i * 2) : "null"));
+      assertThat(array[2], is((projection.contains("b")
+          ? StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 32) : "null")));
+      assertThat(array[3], is((projection.contains("c")
+          ? StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 512) : "null")));
     }
   }
 

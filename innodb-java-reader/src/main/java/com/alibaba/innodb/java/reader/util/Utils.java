@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -314,6 +315,10 @@ public class Utils {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  public static <T> boolean isOptionalPresent(Optional<T> optional) {
+    return optional != null && optional.isPresent();
   }
 
 }

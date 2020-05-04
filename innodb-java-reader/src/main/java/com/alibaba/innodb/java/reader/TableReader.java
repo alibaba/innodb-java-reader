@@ -80,7 +80,7 @@ public interface TableReader extends Closeable {
   double getIndexPageFillingRate(int pageNumber);
 
   /**
-   * Query all records by single page.
+   * Query all records by single index page.
    *
    * @param pageNumber page number (int type), can be leaf or non-leaf page
    * @return list of records
@@ -88,7 +88,7 @@ public interface TableReader extends Closeable {
   List<GenericRecord> queryByPageNumber(int pageNumber);
 
   /**
-   * Query all records by single page.
+   * Query all records by single index page.
    *
    * @param pageNumber page number (long type), can be leaf or non-leaf page
    * @return list of records
@@ -97,6 +97,7 @@ public interface TableReader extends Closeable {
 
   /**
    * Query record by primary key in a tablespace.
+   * <p>
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
@@ -104,6 +105,18 @@ public interface TableReader extends Closeable {
    * @return record
    */
   GenericRecord queryByPrimaryKey(List<Object> key);
+
+  /**
+   * Query record by primary key in a tablespace with projection.
+   * <p>
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param key        primary key, single key or a composite key
+   * @param projection projection of selected column names
+   * @return record
+   */
+  GenericRecord queryByPrimaryKey(List<Object> key, List<String> projection);
 
   /**
    * Query all records in a tablespace.
@@ -119,11 +132,34 @@ public interface TableReader extends Closeable {
    * <p>
    * Note this will cause out-of-memory if the table size is too big.
    *
-   * @param recordPredicate optional. evaluating record, if true then it will be
-   *                        added to result set, else skip it
+   * @param recordPredicate optional filtering, if predicate returns true upon
+   *                        record, then it will be added to result set
    * @return all records
    */
   List<GenericRecord> queryAll(Predicate<GenericRecord> recordPredicate);
+
+  /**
+   * Query all records in a tablespace with a filter and projection.
+   * <p>
+   * Note this will cause out-of-memory if the table size is too big.
+   *
+   * @param projection projection of selected column names
+   * @return all records
+   */
+  List<GenericRecord> queryAll(List<String> projection);
+
+  /**
+   * Query all records in a tablespace with a filter and projection.
+   * <p>
+   * Note this will cause out-of-memory if the table size is too big.
+   * Make sure fields are included in projection for predicate to use.
+   *
+   * @param recordPredicate optional filtering, if predicate returns true upon
+   *                        record, then it will be added to result set
+   * @param projection      projection of selected column names
+   * @return all records
+   */
+  List<GenericRecord> queryAll(Predicate<GenericRecord> recordPredicate, List<String> projection);
 
   /**
    * Range query records by primary key in a tablespace.
@@ -148,13 +184,48 @@ public interface TableReader extends Closeable {
    * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
    * @param upper           if rangeQuery is true, then this is the upper bound
    * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
-   * @param recordPredicate optional. evaluating record, if true then it will be added to
-   *                        result set, else skip it
+   * @param recordPredicate optional filtering, if predicate returns true upon
+   *                        record, then it will be added to result set
    * @return list of records
    */
   List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
                                              List<Object> upper, ComparisonOperator upperOperator,
                                              Predicate<GenericRecord> recordPredicate);
+
+  /**
+   * Range query records by primary key in a tablespace with a filter.
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param projection    projection of selected column names
+   * @return list of records
+   */
+  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                             List<Object> upper, ComparisonOperator upperOperator,
+                                             List<String> projection);
+
+  /**
+   * Range query records by primary key in a tablespace with a filter.
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param lower           if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper           if rangeQuery is true, then this is the upper bound
+   * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
+   * @param recordPredicate optional filtering, if predicate returns true upon
+   *                        record, then it will be added to result set
+   * @param projection      projection of selected column names
+   * @return list of records
+   */
+  List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
+                                             List<Object> upper, ComparisonOperator upperOperator,
+                                             Predicate<GenericRecord> recordPredicate,
+                                             List<String> projection);
 
   /**
    * Return an iterator to query all records of a tablespace.
@@ -164,6 +235,16 @@ public interface TableReader extends Closeable {
    * @return record iterator
    */
   Iterator<GenericRecord> getQueryAllIterator();
+
+  /**
+   * Return an iterator to query all records of a tablespace.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   *
+   * @param projection projection of selected column names
+   * @return record iterator
+   */
+  Iterator<GenericRecord> getQueryAllIterator(List<String> projection);
 
   /**
    * Return an iterator to do range query records by primary key in a tablespace.
@@ -181,6 +262,25 @@ public interface TableReader extends Closeable {
    */
   Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
                                                 List<Object> upper, ComparisonOperator upperOperator);
+
+  /**
+   * Return an iterator to do range query records by primary key in a tablespace.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param projection    projection of selected column names
+   * @return record iterator
+   */
+  Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator,
+                                                List<String> projection);
 
   /**
    * Return table definition.

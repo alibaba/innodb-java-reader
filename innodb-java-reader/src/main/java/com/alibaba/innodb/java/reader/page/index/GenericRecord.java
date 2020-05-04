@@ -42,7 +42,7 @@ public class GenericRecord {
   private int primaryKeyPosition;
 
   /**
-   * Table schema.
+   * Table definition.
    */
   @JsonIgnore
   @ToString.Exclude
@@ -62,7 +62,7 @@ public class GenericRecord {
     this.header = header;
     this.tableDef = tableDef;
     this.pageNumber = pageNumber;
-    this.values = new Object[tableDef.getColumnList().size()];
+    this.values = new Object[tableDef.getColumnNum()];
     if (header.getRecordType() == RecordType.INFIMUM) {
       if (this.tableDef.getPrimaryKeyColumnNum() > 0) {
         this.tableDef.getPrimaryKeyColumnNames().forEach(name -> {

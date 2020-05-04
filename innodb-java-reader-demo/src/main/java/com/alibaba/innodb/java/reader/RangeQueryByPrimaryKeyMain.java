@@ -27,6 +27,8 @@ public class RangeQueryByPrimaryKeyMain {
     String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
     try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
       reader.open();
+
+      // ~~~ range query by primary key
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(1), ComparisonOperator.GTE,
           ImmutableList.of(3), ComparisonOperator.LT);
@@ -38,7 +40,7 @@ public class RangeQueryByPrimaryKeyMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // works like query all
+      // range query with no limit, equivalent to query all
       recordList = reader.rangeQueryByPrimaryKey(null, ComparisonOperator.NOP,
           null, ComparisonOperator.NOP);
       for (GenericRecord record : recordList) {
@@ -49,7 +51,7 @@ public class RangeQueryByPrimaryKeyMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // no upper limit
+      // ~~~ range query with no upper limit
       recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(5), ComparisonOperator.GTE,
           ImmutableList.of(), ComparisonOperator.NOP);
@@ -61,12 +63,24 @@ public class RangeQueryByPrimaryKeyMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // You can filter record like below
+      // ~~~ range query with filter
       Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
       List<GenericRecord> recordList2 = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(5), ComparisonOperator.GT,
           ImmutableList.of(8), ComparisonOperator.LT,
           predicate);
+
+      // ~~~ range query with projection
+      List<GenericRecord> recordList3 = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LT,
+          ImmutableList.of("a"));
+
+      // ~~~ range query with filter and projection
+      List<GenericRecord> recordList4 = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LT,
+          predicate, ImmutableList.of("a"));
     }
   }
 

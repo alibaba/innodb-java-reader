@@ -32,9 +32,11 @@ public class TableDefUtilTest {
         + "`h` decimal(16,8),\n"
         + "`i` decimal(12) NOT NULL,\n"
         + "PRIMARY KEY (`id`),\n"
-        + "FOREIGN KEY (e)  REFERENCES employees (emp_no)    ON DELETE CASCADE,"
-        + "KEY `ddd` (`a`))\n"
-        + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
+        + "FOREIGN KEY (c) REFERENCES ra_user(id),\n"
+        + "KEY `ddd` (`d`), \n"
+        + "UNIQUE key (e) COMMENT 'feed',\n"
+        + "INDEX `eee` (`b`, `e`) \n"
+        + ")ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
     assertThat(tableDef.getName(), is("tb01"));
@@ -132,14 +134,68 @@ public class TableDefUtilTest {
     assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
     assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
+    assertThat(tableDef.getPrimaryKeyVarLenColumns(), is(ImmutableList.of()));
+    assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), is(ImmutableList.of()));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(0)), is(true));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
+
+    assertThat(tableDef.getSecondaryKeyMetaList().size(), is(3));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getType(), is(KeyMeta.Type.KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getName(), is("ddd"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getNumOfColumns(), is(1));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyColumns(),
+        is(ImmutableList.of(columnList.get(4))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyColumnNames(),
+        is(ImmutableList.of("d")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyVarLenColumns(),
+        is(ImmutableList.of()));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyVarLenColumnNames(),
+        is(ImmutableList.of()));
+
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getType(), is(KeyMeta.Type.UNIQUE_KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getName(), nullValue());
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getNumOfColumns(), is(1));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyColumns(),
+        is(ImmutableList.of(columnList.get(5))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyColumnNames(),
+        is(ImmutableList.of("e")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLenColumns(),
+        is(ImmutableList.of(columnList.get(5))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLenColumnNames(),
+        is(ImmutableList.of("e")));
+
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getType(), is(KeyMeta.Type.INDEX));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getName(), is("eee"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getNumOfColumns(), is(2));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyColumns(),
+        is(ImmutableList.of(columnList.get(2), columnList.get(5))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyColumnNames(),
+        is(ImmutableList.of("b", "e")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyVarLenColumns(),
+        is(ImmutableList.of(columnList.get(5))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyVarLenColumnNames(),
+        is(ImmutableList.of("e")));
   }
 
   @Test
-  public void testConvertPrimaryKeyOnColumn() {
+  public void testConvertPrimaryKeyOnColumn1() {
     String sql = "CREATE TABLE `tb01`\n"
         + "(`id` int(11) NOT NULL PRIMARY KEY,\n"
         + "`a` bigint(20) unsigneD NOT NULL)\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = latin1;";
+    testConvertPrimaryKeyOnColumn(sql);
+  }
+
+  @Test
+  public void testConvertPrimaryKeyOnColumn2() {
+    String sql = "create table `tb01`\n"
+        + "(`id` int(11) not null key,\n"
+        + "`a` bigint(20) unsigneD not null)\n"
+        + "ENGINE=InnoDB default charset = latin1;";
+    testConvertPrimaryKeyOnColumn(sql);
+  }
+
+  public void testConvertPrimaryKeyOnColumn(String sql) {
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
     assertThat(tableDef.getDefaultCharset(), is("latin1"));
@@ -158,17 +214,23 @@ public class TableDefUtilTest {
     assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
     assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
+    assertThat(tableDef.getPrimaryKeyVarLenColumns(), is(ImmutableList.of()));
+    assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), is(ImmutableList.of()));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(0)), is(true));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
+
+    assertThat(tableDef.getSecondaryKeyMetaList(), nullValue());
   }
 
   @Test
   public void testConvertCompositePrimaryKey() {
     String sql = "CREATE TABLE `tb01`\n"
         + "(`id` int(11) NOT NULL,\n"
-        + "`a` bigint(20) NOT NULL,"
+        + "`a` int(11) NOT NULL,"
         + "`b` bigint(20) NOT NULL,"
-        + "`c` bigint(20) NOT NULL,"
+        + "`c` varchar(20) NOT NULL,"
         + "`d` bigint(20) NOT NULL,"
-        + "`e` bigint(20) NOT NULL,"
+        + "`e` int(11) NOT NULL,"
         + "PRIMARY KEY (`c`, b, e)\n"
         + ")\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = latin1;";
@@ -184,6 +246,41 @@ public class TableDefUtilTest {
     )));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(3));
     assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("c", "b", "e")));
+    assertThat(tableDef.getPrimaryKeyVarLenColumns(),
+        is(ImmutableList.of(tableDef.getField("c").getColumn())));
+    assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), is(ImmutableList.of("c")));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(0)), is(false));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(2)), is(true));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(3)), is(true));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(4)), is(false));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(5)), is(true));
+  }
+
+
+  @Test
+  public void testConvertNoPk() {
+    String sql = "CREATE TABLE `tb01`\n"
+        + "(`id` int(11) NOT NULL ,\n"
+        + "`a` bigint(20) unsigneD NOT NULL,\n"
+        + "b tinyint DEFAULT 0 COMMENT 'comment here',\n"
+        + "c text NOT NULL,\n"
+        + "d datetime NOT NULL,\n"
+        + "`e` varchar(64) NOT NULL,\n"
+        + "`f` varchar(1024) default 'THIS_IS_DEFAULT_VALUE')\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+
+    List<Column> columnList = tableDef.getColumnList();
+    assertThat(columnList.size(), is(7));
+
+    assertThat(tableDef.getPrimaryKeyColumnNum(), is(0));
+    assertThat(tableDef.getPrimaryKeyColumnNames(), nullValue());
+    assertThat(tableDef.getPrimaryKeyVarLenColumns(), nullValue());
+    assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), nullValue());
+    for (int i = 0; i < 7; i++) {
+      assertThat(tableDef.isColumnPrimaryKey(columnList.get(i)), is(false));
+    }
   }
 
   @Test(expected = SqlParseException.class)
@@ -249,20 +346,6 @@ public class TableDefUtilTest {
   public void testConvertNegativeNoColumn() {
     String sql = "CREATE TABLE `tb01`\n"
         + "()\n"
-        + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
-    TableDefUtil.covertToTableDef(sql);
-  }
-
-  @Test
-  public void testConvertNoPk() {
-    String sql = "CREATE TABLE `tb01`\n"
-        + "(`id` int(11) NOT NULL ,\n"
-        + "`a` bigint(20) unsigneD NOT NULL,\n"
-        + "b tinyint DEFAULT 0 COMMENT 'comment here',\n"
-        + "c text NOT NULL,\n"
-        + "d datetime NOT NULL,\n"
-        + "`e` varchar(64) NOT NULL,\n"
-        + "`f` varchar(1024) default 'THIS_IS_DEFAULT_VALUE')\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
     TableDefUtil.covertToTableDef(sql);
   }

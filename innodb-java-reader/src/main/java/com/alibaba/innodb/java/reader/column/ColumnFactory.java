@@ -81,6 +81,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(1);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Integer.class;
     }
@@ -114,6 +119,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(1);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Integer.class;
     }
@@ -124,6 +134,11 @@ public class ColumnFactory {
     @Override
     public Integer readFrom(SliceInput input, Column column) {
       return input.readUnsignedShort();
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(2);
     }
 
     @Override
@@ -140,6 +155,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(2);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Integer.class;
     }
@@ -150,6 +170,11 @@ public class ColumnFactory {
     @Override
     public Integer readFrom(SliceInput input, Column column) {
       return input.readUnsigned3BytesInt();
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(3);
     }
 
     @Override
@@ -192,6 +217,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(3);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Integer.class;
     }
@@ -202,6 +232,11 @@ public class ColumnFactory {
     @Override
     public Long readFrom(SliceInput input, Column column) {
       return input.readUnsignedInt();
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(4);
     }
 
     @Override
@@ -218,6 +253,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(4);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Integer.class;
     }
@@ -231,6 +271,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(8);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return BigInteger.class;
     }
@@ -241,6 +286,11 @@ public class ColumnFactory {
     @Override
     public Long readFrom(SliceInput input, Column column) {
       return input.readLong() ^ (-1L << (SIZE_OF_LONG * 8 - 1));
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(8);
     }
 
     @Override
@@ -272,6 +322,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, int len, String charset) {
+      input.skipBytes(len);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return String.class;
     }
@@ -282,6 +337,11 @@ public class ColumnFactory {
     @Override
     public String readFrom(SliceInput input, int len, String charset) {
       return input.readString(len, charset);
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, int len, String charset) {
+      input.skipBytes(len);
     }
 
     @Override
@@ -299,6 +359,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, int len, String charset) {
+      input.skipBytes(len);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return byte[].class;
     }
@@ -310,6 +375,11 @@ public class ColumnFactory {
     @Override
     public byte[] readFrom(SliceInput input, int len, String charset) {
       return input.readByteArray(len);
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, int len, String charset) {
+      input.skipBytes(len);
     }
 
     @Override
@@ -326,6 +396,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, int len, String charset) {
+      input.skipBytes(len);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return String.class;
     }
@@ -337,6 +412,11 @@ public class ColumnFactory {
     @Override
     public byte[] readFrom(SliceInput input, int len, String charset) {
       return input.readByteArray(len);
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, int len, String charset) {
+      input.skipBytes(len);
     }
 
     @Override
@@ -493,6 +573,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(1);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Short.class;
     }
@@ -523,6 +608,11 @@ public class ColumnFactory {
     }
 
     @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(4);
+    }
+
+    @Override
     public Class<?> typeClass() {
       return Float.class;
     }
@@ -533,6 +623,11 @@ public class ColumnFactory {
     @Override
     public Double readFrom(SliceInput input, Column column) {
       return input.readDouble();
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(8);
     }
 
     @Override
@@ -564,6 +659,11 @@ public class ColumnFactory {
     @Override
     public Boolean readFrom(SliceInput input, Column column) {
       return (input.readByte() & 0x01) == 1;
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(1);
     }
 
     @Override

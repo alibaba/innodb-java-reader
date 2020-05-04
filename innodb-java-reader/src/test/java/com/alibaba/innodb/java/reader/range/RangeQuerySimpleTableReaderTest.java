@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -587,25 +588,8 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
   }
 
   //==========================================================================
-  // others
+  // range query with predicate
   //==========================================================================
-
-  @Test
-  public void testSimpleTableRangeQueryOther() {
-    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
-      reader.open();
-
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(0), ComparisonOperator.GTE,
-          null, ComparisonOperator.NOP);
-      assertThat(recordList.size(), is(10));
-
-      recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(1), ComparisonOperator.GTE,
-          ImmutableList.of(8), ComparisonOperator.LT);
-      assertThat(recordList.size(), is(7));
-    }
-  }
 
   @Test
   public void testSimpleTableRangeQueryWithRecordPredicate() {
@@ -659,4 +643,92 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
       assertThat(recordList.size(), is(0));
     }
   }
+
+  //==========================================================================
+  // range query with projection
+  //==========================================================================
+
+  @Test
+  public void testSimpleTableRangeQueryWithProjection() {
+    String path = IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd";
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("id"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("id", "b"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("id", "b", "a"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("a"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("b"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("c"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("a", "b"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("a", "c"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("b", "c"));
+    doTestSimpleTableRangeQueryWithProjection(path, ImmutableList.of("a", "b", "c"));
+  }
+
+  public void doTestSimpleTableRangeQueryWithProjection(String path, List<String> projection) {
+    try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
+      reader.open();
+
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ComparisonOperator.GT,
+          ImmutableList.of(9), ComparisonOperator.LTE,
+          projection);
+      int index = 0;
+      for (int i = 5; i <= 9; i++) {
+        GenericRecord record = recordList.get(index++);
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        // pk should always present
+        assertThat(record.get("id"), is(i));
+        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
+        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("c"), is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+      }
+    }
+  }
+
+  //==========================================================================
+  // range query with predicate and projection
+  //==========================================================================
+
+  @Test
+  public void testSimpleTableRangeQueryWithPredicateProjection() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+
+      Predicate<GenericRecord> predicate = r -> (long) (r.get("a")) == 12L;
+
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(4), ComparisonOperator.GTE,
+          ImmutableList.of(9), ComparisonOperator.LT,
+          predicate, ImmutableList.of("a"));
+      assertThat(recordList.size(), is(1));
+      assertThat(recordList.get(0).getPrimaryKey(), is(ImmutableList.of(6)));
+      assertThat(recordList.get(0).get("a"), is(12L));
+      assertThat(recordList.get(0).get("b"), nullValue());
+      assertThat(recordList.get(0).get("c"), nullValue());
+    }
+  }
+
+  //==========================================================================
+  // others
+  //==========================================================================
+
+  @Test
+  public void testSimpleTableRangeQueryOther() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", getTableDef())) {
+      reader.open();
+
+      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(0), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
+      assertThat(recordList.size(), is(10));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(1), ComparisonOperator.GTE,
+          ImmutableList.of(8), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(7));
+    }
+  }
+
+
 }

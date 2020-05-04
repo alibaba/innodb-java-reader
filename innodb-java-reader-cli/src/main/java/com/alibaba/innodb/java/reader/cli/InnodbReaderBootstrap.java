@@ -142,6 +142,9 @@ public class InnodbReaderBootstrap {
     options.addOption("delimiter", "delimiter", true,
         "field delimiter, default is tab");
 
+    options.addOption("projection", "projection", true,
+        "projection list with column names delimited by comma");
+
     options.addOption("args", true, "arguments");
 
     String command = null;
@@ -149,6 +152,7 @@ public class InnodbReaderBootstrap {
     String tableName = null;
     String outputFilePath;
     String args = null;
+    List<String> projection = null;
     // show all pages or show one page
     boolean jsonStyle = false;
     boolean jsonPrettyStyle = false;
@@ -209,6 +213,12 @@ public class InnodbReaderBootstrap {
       } else {
         FIELD_DELIMITER = "\t";
       }
+      if (line.hasOption("projection")) {
+        String projectionStr = line.getOptionValue("projection");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(projectionStr),
+            "projection list is empty");
+        projection = Arrays.asList(StringUtils.split(projectionStr, ","));
+      }
 
       if (line.hasOption("json-style")) {
         jsonStyle = true;
@@ -240,7 +250,7 @@ public class InnodbReaderBootstrap {
           showPages(ibdFilePath, writer, tableDefProvider, tableName, pageNumbers, jsonStyle, jsonPrettyStyle);
           break;
         case QUERY_ALL:
-          queryAll(ibdFilePath, writer, tableDefProvider, tableName);
+          queryAll(ibdFilePath, writer, tableDefProvider, tableName, projection);
           break;
         case QUERY_BY_PAGE_NUMBER:
           checkNotNull(args, "args should not be null");
@@ -249,7 +259,7 @@ public class InnodbReaderBootstrap {
           break;
         case QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
-          queryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName, args);
+          queryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName, projection, args);
           break;
         case RANGE_QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
@@ -262,7 +272,7 @@ public class InnodbReaderBootstrap {
               "nop".equalsIgnoreCase(range.get(0)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(0));
           ComparisonOperator upperOperator =
               "nop".equalsIgnoreCase(range.get(2)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(2));
-          rangeQueryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName,
+          rangeQueryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName, projection,
               lower, lowerOperator,
               upper, upperOperator);
           break;
@@ -295,11 +305,12 @@ public class InnodbReaderBootstrap {
   }
 
   private static void queryAll(String ibdFilePath, Writer writer,
-                               TableDefProvider tableDefProvider, String tableName) {
+                               TableDefProvider tableDefProvider, String tableName, List<String> projection) {
     try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
+      Iterator<GenericRecord> iterator = CollectionUtils.isEmpty(projection)
+          ? reader.getQueryAllIterator() : reader.getQueryAllIterator(projection);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
@@ -326,11 +337,13 @@ public class InnodbReaderBootstrap {
 
   private static void queryByPrimaryKey(String ibdFilePath, Writer writer,
                                         TableDefProvider tableDefProvider, String tableName,
-                                        String primaryKey) {
+                                        List<String> projection, String primaryKey) {
     try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      GenericRecord record = reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false));
+      GenericRecord record = CollectionUtils.isEmpty(projection)
+          ? reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false))
+          : reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false), projection);
       StringBuilder b = new StringBuilder();
       if (record != null) {
         writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
@@ -338,16 +351,20 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer,
-                                             TableDefProvider tableDefProvider, String tableName,
+  private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, TableDefProvider tableDefProvider,
+                                             String tableName, List<String> projection,
                                              String lower, ComparisonOperator lowerOperator,
                                              String upper, ComparisonOperator upperOperator) {
     try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
-      Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+      Iterator<GenericRecord> iterator = CollectionUtils.isEmpty(projection)
+          ? reader.getRangeQueryIterator(
           parseStringToKey(reader.getTableDef(), lower, true), lowerOperator,
-          parseStringToKey(reader.getTableDef(), upper, false), upperOperator);
+          parseStringToKey(reader.getTableDef(), upper, false), upperOperator)
+          : reader.getRangeQueryIterator(
+          parseStringToKey(reader.getTableDef(), lower, true), lowerOperator,
+          parseStringToKey(reader.getTableDef(), upper, false), upperOperator, projection);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();

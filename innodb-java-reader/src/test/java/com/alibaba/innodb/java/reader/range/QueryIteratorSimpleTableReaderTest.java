@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.is;
@@ -89,6 +90,87 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
 
         assertThat(record.get(3), is(StringUtils.repeat('C', 8) + (char) (97 + i)));
         assertThat(record.get("c"), is(StringUtils.repeat('C', 8) + (char) (97 + i)));
+
+        i++;
+        count++;
+      }
+      System.out.println(count);
+      assertThat(count, is(10));
+      assertThat(iterator.hasNext(), is(false));
+    };
+  }
+
+  //==========================================================================
+  // queryAllIterator with projection test
+  //==========================================================================
+
+  @Test
+  public void testQueryAllIteratorWithProjectionMysql56() {
+    testQueryAllIteratorWithProjection(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryAllIteratorWithProjectionMysql57() {
+    testQueryAllIteratorWithProjection(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryAllIteratorWithProjectionMysql80() {
+    testQueryAllIteratorWithProjection(a -> a.withMysql80());
+  }
+
+  public void testQueryAllIteratorWithProjection(Consumer<AssertThat> func) {
+    List<List<String>> params = Arrays.asList(
+        ImmutableList.of("id"),
+        ImmutableList.of("id", "b"),
+        ImmutableList.of("id", "b", "a"),
+        ImmutableList.of("a"),
+        ImmutableList.of("b"),
+        ImmutableList.of("c"),
+        ImmutableList.of("a", "b"),
+        ImmutableList.of("a", "c"),
+        ImmutableList.of("b", "c"),
+        ImmutableList.of("a", "b", "c")
+    );
+
+    for (List<String> param : params) {
+      AssertThat assertThat = assertTestOf(this);
+      func.accept(assertThat);
+      assertThat.withTableDef(getTableDef())
+          .checkQueryAllIteratorProjection(testQueryAllIteratorWithProjectionExpected(param), param);
+    }
+  }
+
+  public Consumer<Iterator<GenericRecord>> testQueryAllIteratorWithProjectionExpected(List<String> projection) {
+    return iterator -> {
+
+      int count = 0;
+      int i = 1;
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        assertThat(values[0], is(i));
+        assertThat(values[1], is(projection.contains("a") ? i * 2L : null));
+        assertThat(values[2], is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(values[3], is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+
+        assertThat(record.getPrimaryKey(), is(ImmutableList.of(i)));
+        assertThat(record.get(0), is(i));
+        assertThat(record.get("id"), is(i));
+
+        assertThat(record.get(1), is(projection.contains("a") ? i * 2L : null));
+        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
+
+        assertThat(record.get(2), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+
+        assertThat(record.get(3), is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+        assertThat(record.get("c"), is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
         i++;
         count++;
@@ -324,6 +406,90 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
           null, ComparisonOperator.NOP);
       assertThat(getIteratorSize(iterator), is(10));
     }
+  }
+
+  //==========================================================================
+  // rangeQueryAllIterator with projection test
+  //==========================================================================
+
+  @Test
+  public void testRangeQueryIteratorWithProjectionMysql56() {
+    testRangeQueryIteratorWithProjection(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testRangeQueryIteratorWithProjectionMysql57() {
+    testRangeQueryIteratorWithProjection(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testRangeQueryIteratorWithProjectionMysql80() {
+    testRangeQueryIteratorWithProjection(a -> a.withMysql80());
+  }
+
+  public void testRangeQueryIteratorWithProjection(Consumer<AssertThat> func) {
+    List<List<String>> params = Arrays.asList(
+        ImmutableList.of("id"),
+        ImmutableList.of("id", "b"),
+        ImmutableList.of("id", "b", "a"),
+        ImmutableList.of("a"),
+        ImmutableList.of("b"),
+        ImmutableList.of("c"),
+        ImmutableList.of("a", "b"),
+        ImmutableList.of("a", "c"),
+        ImmutableList.of("b", "c"),
+        ImmutableList.of("a", "b", "c")
+    );
+
+    for (List<String> param : params) {
+      AssertThat assertThat = assertTestOf(this);
+      func.accept(assertThat);
+      assertThat.withTableDef(getTableDef())
+          .checkRangeQueryIteratorProjection(testRangeQueryIteratorWithProjectionExpected(param),
+              ImmutableList.of(5), ComparisonOperator.GTE,
+              ImmutableList.of(8), ComparisonOperator.LT,
+              param);
+    }
+  }
+
+  public Consumer<Iterator<GenericRecord>> testRangeQueryIteratorWithProjectionExpected(List<String> projection) {
+    return iterator -> {
+
+      int count = 0;
+      int i = 5;
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        assertThat(values[0], is(i));
+        assertThat(values[1], is(projection.contains("a") ? i * 2L : null));
+        assertThat(values[2], is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(values[3], is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+
+        assertThat(record.getPrimaryKey(), is(ImmutableList.of(i)));
+        assertThat(record.get(0), is(i));
+        assertThat(record.get("id"), is(i));
+
+        assertThat(record.get(1), is(projection.contains("a") ? i * 2L : null));
+        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
+
+        assertThat(record.get(2), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+
+        assertThat(record.get(3), is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+        assertThat(record.get("c"), is(projection.contains("c")
+            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+
+        i++;
+        count++;
+      }
+      System.out.println(count);
+      assertThat(count, is(3));
+      assertThat(iterator.hasNext(), is(false));
+    };
   }
 
   private int getIteratorSize(Iterator<GenericRecord> iterator) {

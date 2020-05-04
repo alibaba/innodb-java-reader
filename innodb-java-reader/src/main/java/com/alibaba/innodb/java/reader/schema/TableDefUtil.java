@@ -57,6 +57,9 @@ public class TableDefUtil {
     List<?> tableOptions = stmt.getTableOptionsStrings();
     if (CollectionUtils.isNotEmpty(tableOptions)) {
       int indexOfCharset = tableOptions.indexOf("CHARSET");
+      if (indexOfCharset == -1) {
+        indexOfCharset = tableOptions.indexOf("charset");
+      }
       if (indexOfCharset > 0) {
         tableDef.setDefaultCharset((String) tableOptions.get(indexOfCharset + 2));
       }
@@ -67,12 +70,17 @@ public class TableDefUtil {
     List<Index> indices = stmt.getIndexes();
     if (CollectionUtils.isNotEmpty(indices)) {
       for (Index index : indices) {
-        if ("PRIMARY KEY".equals(index.getType().toUpperCase())) {
-          List<String> colNames = index.getColumnsNames();
-          if (CollectionUtils.isEmpty(colNames)) {
-            throw new SqlParseException("No column specified by PRIMARY KEY");
-          }
+        if ("PRIMARY KEY".equalsIgnoreCase(index.getType())) {
+          List<String> colNames = getColumnNames(index);
           tableDef.setPrimaryKeyColumns(colNames);
+        }
+
+        if ("KEY".equalsIgnoreCase(index.getType())
+            || "INDEX".equalsIgnoreCase(index.getType())
+            || "UNIQUE KEY".equalsIgnoreCase(index.getType())
+            || "UNIQUE INDEX".equalsIgnoreCase(index.getType())) {
+          List<String> colNames = getColumnNames(index);
+          tableDef.addSecondaryKeyColumns(index.getType().toUpperCase(), index.getName(), colNames);
         }
       }
     }
@@ -111,12 +119,20 @@ public class TableDefUtil {
         if (specString.contains("NOT NULL")) {
           column.setNullable(false);
         }
-        if (specString.contains("PRIMARY KEY")) {
+        if (specString.contains("PRIMARY KEY") || specString.contains("KEY")) {
           column.setPrimaryKey(true);
         }
       }
       tableDef.addColumn(column);
     }
+  }
+
+  private static List<String> getColumnNames(Index index) {
+    List<String> colNames = index.getColumnsNames();
+    if (CollectionUtils.isEmpty(colNames)) {
+      throw new SqlParseException("No column specified by PRIMARY KEY");
+    }
+    return colNames;
   }
 
 }

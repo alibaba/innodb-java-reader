@@ -129,6 +129,14 @@ public class AbstractTest {
       }, TableReader::queryAll);
     }
 
+    public AssertThat checkAllRecordsIs(Consumer<List<GenericRecord>> fn,
+                                        List<String> projection) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.queryAll(projection));
+    }
+
     public AssertThat checkRangeQueryRecordsIs(Consumer<List<GenericRecord>> fn,
                                                List<Object> start, ComparisonOperator startOperator,
                                                List<Object> end, ComparisonOperator endOperator) {
@@ -145,6 +153,14 @@ public class AbstractTest {
       }, TableReader::getQueryAllIterator);
     }
 
+    public AssertThat checkQueryAllIteratorProjection(Consumer<Iterator<GenericRecord>> fn,
+                                                      List<String> projection) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.getQueryAllIterator(projection));
+    }
+
     public AssertThat checkRangeQueryIterator(Consumer<Iterator<GenericRecord>> fn,
                                               List<Object> start, ComparisonOperator startOperator,
                                               List<Object> end, ComparisonOperator endOperator) {
@@ -152,6 +168,23 @@ public class AbstractTest {
         fn.accept(c);
         return this;
       }, t -> t.getRangeQueryIterator(start, startOperator, end, endOperator));
+    }
+
+    public AssertThat checkRangeQueryIteratorProjection(Consumer<Iterator<GenericRecord>> fn,
+                                                        List<Object> start, ComparisonOperator startOperator,
+                                                        List<Object> end, ComparisonOperator endOperator,
+                                                        List<String> projection) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.getRangeQueryIterator(start, startOperator, end, endOperator, projection));
+    }
+
+    public AssertThat checkQueryByPk(Consumer<GenericRecord> fn, List<Object> key) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.queryByPrimaryKey(key));
     }
   }
 

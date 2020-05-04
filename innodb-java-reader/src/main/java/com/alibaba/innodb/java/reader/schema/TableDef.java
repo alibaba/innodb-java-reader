@@ -13,6 +13,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,13 +53,9 @@ public class TableDef {
 
   private Map<String, Field> nameToFieldMap;
 
-  private List<Column> primaryKeyColumns;
+  private KeyMeta primaryKeyMeta;
 
-  private List<String> primaryKeyColumnNames;
-
-  private List<Column> primaryKeyVarLenColumns;
-
-  private List<String> primaryKeyVarLenColumnNames;
+  private List<KeyMeta> secondaryKeyMetaList;
 
   private int nullableColumnNum = 0;
 
@@ -101,9 +98,6 @@ public class TableDef {
 
   public void validate() {
     checkState(CollectionUtils.isNotEmpty(columnList), "No column is specified");
-    if (CollectionUtils.isEmpty(primaryKeyColumns)) {
-      log.debug("No primary key is specified {}", name);
-    }
   }
 
   public boolean containsVariableLengthColumn() {
@@ -139,19 +133,6 @@ public class TableDef {
     checkArgument(StringUtils.isNotEmpty(column.getName()), "Column name is empty");
     checkArgument(StringUtils.isNotEmpty(column.getType()), "Column type is empty");
     checkArgument(!nameToFieldMap.containsKey(column.getName()), "Duplicate column name");
-    if (column.isPrimaryKey()) {
-      checkState(CollectionUtils.isEmpty(primaryKeyColumns), "Primary key is already defined");
-      checkState(CollectionUtils.isEmpty(primaryKeyColumnNames), "Primary key names is already defined");
-      primaryKeyColumns = ImmutableList.of(column);
-      primaryKeyColumnNames = ImmutableList.of(column.getName());
-      if (isVarLen(column)) {
-        primaryKeyVarLenColumns = ImmutableList.of(column);
-        primaryKeyVarLenColumnNames = ImmutableList.of(column.getName());
-      } else {
-        primaryKeyVarLenColumns = ImmutableList.of();
-        primaryKeyVarLenColumnNames = ImmutableList.of();
-      }
-    }
     if (column.isNullable()) {
       nullableColumnList.add(column);
       nullableColumnNum++;
@@ -170,6 +151,12 @@ public class TableDef {
     columnList.add(column);
     columnNames.add(column.getName());
     nameToFieldMap.put(column.getName(), new Field(column.getOrdinal(), column.getName(), column));
+    if (column.isPrimaryKey()) {
+      checkState(primaryKeyMeta == null, "Primary key is already defined");
+      primaryKeyMeta = createKeyMetaInfo(KeyMeta.Type.PRIMARY_KEY.literal(),
+          KeyMeta.Type.PRIMARY_KEY.literal(),
+          ImmutableList.of(column.getName()));
+    }
     return this;
   }
 
@@ -178,58 +165,93 @@ public class TableDef {
   }
 
   public List<Column> getPrimaryKeyColumns() {
-    return primaryKeyColumns;
+    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyColumns();
   }
 
   public List<String> getPrimaryKeyColumnNames() {
-    return primaryKeyColumnNames;
+    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyColumnNames();
   }
 
   public int getPrimaryKeyColumnNum() {
-    return primaryKeyColumnNames == null ? 0 : primaryKeyColumnNames.size();
+    return primaryKeyMeta == null ? 0 : primaryKeyMeta.getNumOfColumns();
   }
 
   public List<Column> getPrimaryKeyVarLenColumns() {
-    return primaryKeyVarLenColumns;
+    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyVarLenColumns();
   }
 
   public List<String> getPrimaryKeyVarLenColumnNames() {
-    return primaryKeyVarLenColumnNames;
+    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyVarLenColumnNames();
   }
 
   public boolean isColumnPrimaryKey(Column column) {
-    return primaryKeyColumnNames != null && primaryKeyColumnNames.contains(column.getName());
+    return primaryKeyMeta != null && primaryKeyMeta.containsColumn(column.getName());
   }
 
-  public TableDef setPrimaryKeyColumns(List<String> primaryKeyColumnNames) {
-    checkState(CollectionUtils.isEmpty(this.primaryKeyColumns), "Primary key is already defined in column");
+  public List<KeyMeta> getSecondaryKeyMetaList() {
+    return secondaryKeyMetaList;
+  }
 
-    ImmutableList.Builder<Column> pkCols = ImmutableList.builder();
-    ImmutableList.Builder<String> pkColNames = ImmutableList.builder();
-    ImmutableList.Builder<Column> varLenPkCols = ImmutableList.builder();
-    ImmutableList.Builder<String> varLenPkColNames = ImmutableList.builder();
-    for (String colName : primaryKeyColumnNames) {
-      String pkColumnName = colName.replace(Symbol.BACKTICK, Symbol.EMPTY)
+  public TableDef setPrimaryKeyColumns(List<String> pkColumnNames) {
+    checkState(primaryKeyMeta == null, "Primary key is already defined in column");
+    primaryKeyMeta = createKeyMetaInfo(KeyMeta.Type.PRIMARY_KEY.literal(),
+        KeyMeta.Type.PRIMARY_KEY.literal(), pkColumnNames);
+    return this;
+  }
+
+  public TableDef addSecondaryKeyColumns(String type, String keyName, List<String> columnNames) {
+    if (secondaryKeyMetaList == null) {
+      secondaryKeyMetaList = new ArrayList<>();
+    }
+    KeyMeta secondaryKeyMeta = createKeyMetaInfo(type, keyName, columnNames);
+    secondaryKeyMetaList.add(secondaryKeyMeta);
+    return this;
+  }
+
+  /**
+   * Create key metadata.
+   *
+   * @param type           key type like key, index, unique key or primary key
+   * @param keyName        key name
+   *                       for secondary key, the value is arbitrary
+   * @param keyColumnNames key column names
+   * @return key metadata
+   */
+  public KeyMeta createKeyMetaInfo(String type, String keyName, List<String> keyColumnNames) {
+    checkArgument(CollectionUtils.isNotEmpty(keyColumnNames),
+        "Key column names is empty for key = " + keyName);
+
+    ImmutableList.Builder<Column> cols = ImmutableList.builder();
+    ImmutableList.Builder<String> colNames = ImmutableList.builder();
+    ImmutableList.Builder<Column> varLenCols = ImmutableList.builder();
+    ImmutableList.Builder<String> varLenColNames = ImmutableList.builder();
+    for (String colName : keyColumnNames) {
+      String columnName = colName.replace(Symbol.BACKTICK, Symbol.EMPTY)
           .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
-      if (containsColumn(pkColumnName)) {
-        Column pk = getField(pkColumnName).getColumn();
-        pkCols.add(pk);
-        pkColNames.add(pkColumnName);
+      if (containsColumn(columnName)) {
+        Column col = getField(columnName).getColumn();
+        cols.add(col);
+        colNames.add(columnName);
 
-        if (isVarLen(pk)) {
-          varLenPkCols.add(pk);
-          varLenPkColNames.add(pkColumnName);
+        if (isVarLen(col)) {
+          varLenCols.add(col);
+          varLenColNames.add(columnName);
         }
       } else {
-        throw new SqlParseException("Column " + pkColumnName + " is not defined, so it cannot be primary key ");
+        throw new SqlParseException("Column " + columnName + " is not defined for key " + keyName);
       }
     }
 
-    this.primaryKeyColumns = pkCols.build();
-    this.primaryKeyColumnNames = pkColNames.build();
-    this.primaryKeyVarLenColumns = varLenPkCols.build();
-    this.primaryKeyVarLenColumnNames = varLenPkColNames.build();
-    return this;
+    return KeyMeta.builder()
+        .keyColumns(cols.build())
+        .keyColumnNames(colNames.build())
+        .keyVarLenColumns(varLenCols.build())
+        .keyVarLenColumnNames(varLenColNames.build())
+        .numOfColumns(keyColumnNames.size())
+        .type(KeyMeta.Type.parse(type))
+        .name(keyName != null ? keyName.replace(Symbol.BACKTICK, Symbol.EMPTY)
+            .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY) : null)
+        .build();
   }
 
   private boolean isVarLen(Column pk) {
@@ -304,6 +326,21 @@ public class TableDef {
     return nameToFieldMap.containsKey(columnName);
   }
 
+  /**
+   * Create a bitmap with primary columns ordinal set as true.
+   *
+   * @return bitmap
+   */
+  public BitSet createBitmapWithPkIncluded() {
+    BitSet result = new BitSet(getColumnNum());
+    if (primaryKeyMeta != null) {
+      for (Column pk : getPrimaryKeyColumns()) {
+        result.set(pk.getOrdinal());
+      }
+    }
+    return result;
+  }
+
   @Data
   public class Field {
     private int ordinal;
@@ -319,14 +356,14 @@ public class TableDef {
 
   @Override
   public String toString() {
-    return toString(false);
+    return toString(true);
   }
 
   public String toString(boolean multiLine) {
     StringBuilder sb = new StringBuilder();
     sb.append("CREATE TABLE ");
     sb.append(name == null ? "<undefined>" : name);
-    sb.append(" (");
+    sb.append("(");
     for (int i = 0; i < columnList.size(); i++) {
       Column column = columnList.get(i);
       if (multiLine) {
@@ -345,22 +382,40 @@ public class TableDef {
         sb.append(",");
       }
     }
-    if (CollectionUtils.isNotEmpty(primaryKeyColumns)) {
+    if (primaryKeyMeta != null) {
+      sb.append(",");
       if (multiLine) {
         sb.append("\n");
       }
-      sb.append(",");
-      sb.append("PRIMARY KEY")
-          .append("(")
-          .append(primaryKeyColumns.stream()
-              .map(Column::getName).collect(Collectors.joining(",")))
-          .append(")");
+      sb.append("PRIMARY KEY");
+      sb.append(" (");
+      sb.append(primaryKeyMeta.getKeyColumnNames().stream()
+          .collect(Collectors.joining(",")));
+      sb.append(")");
+    }
+    if (secondaryKeyMetaList != null) {
+      for (KeyMeta keyMeta : secondaryKeyMetaList) {
+        sb.append(",");
+        if (multiLine) {
+          sb.append("\n");
+        }
+        sb.append(keyMeta.getType().literal())
+            .append(" ");
+        if (StringUtils.isNotEmpty(keyMeta.getName())) {
+          sb.append(keyMeta.getName())
+              .append(" ");
+        }
+        sb.append("(");
+        sb.append(keyMeta.getKeyColumnNames().stream()
+            .collect(Collectors.joining(",")));
+        sb.append(")");
+      }
     }
 
-    sb.append(")");
     if (multiLine) {
       sb.append("\n");
     }
+    sb.append(")");
     sb.append("ENGINE = InnoDB");
     if (StringUtils.isNotEmpty(defaultCharset)) {
       sb.append(" DEFAULT CHARSET = ").append(defaultCharset);
