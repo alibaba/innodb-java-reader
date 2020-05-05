@@ -747,7 +747,8 @@ Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar
 
 For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysqldump`, please [visit here](docs/benchmark.md).
 
-![](docs/images/benchmark.png)
+TPC-H `LINEITEM` table scan result is as below.
+![](docs/images/tpch_benchmark.png)
 
 ## 9 Future works
 
