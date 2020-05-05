@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -63,6 +64,30 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
         .checkAllRecordsIs(expected());
   }
 
+  @Test
+  public void testNoPkQueryAllIteratorMysql56() {
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkQueryAllIterator(expectedIterator());
+  }
+
+  @Test
+  public void testNoPkQueryAllIteratorMysql57() {
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkQueryAllIterator(expectedIterator());
+  }
+
+  @Test
+  public void testNoPkQueryAllIteratorMysql80() {
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkQueryAllIterator(expectedIterator());
+  }
+
   /**
    * Querying by primary key is not allowed.
    */
@@ -103,6 +128,40 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
       assertThat(r3.get("a"), is(300));
       assertThat(r3.get("b"), is("Tom"));
       assertThat(r3.get("c"), is(StringUtils.repeat("z", 6)));
+    };
+  }
+
+  public Consumer<Iterator<GenericRecord>> expectedIterator() {
+    return iterator -> {
+
+      assertThat(iterator.hasNext(), is(true));
+      GenericRecord r1 = iterator.next();
+      Object[] v1 = r1.getValues();
+      System.out.println(Arrays.asList(v1));
+      assertThat(r1.getPrimaryKey().isEmpty(), is(true));
+      assertThat(r1.get("a"), is(100));
+      assertThat(r1.get("b"), is("Jason"));
+      assertThat(r1.get("c"), is(StringUtils.repeat("x", 8)));
+
+      assertThat(iterator.hasNext(), is(true));
+      GenericRecord r2 = iterator.next();
+      Object[] v2 = r2.getValues();
+      System.out.println(Arrays.asList(v2));
+      assertThat(r2.getPrimaryKey().isEmpty(), is(true));
+      assertThat(r2.get("a"), is(200));
+      assertThat(r2.get("b"), is("Eric"));
+      assertThat(r2.get("c"), is(StringUtils.repeat("y", 7)));
+
+      assertThat(iterator.hasNext(), is(true));
+      GenericRecord r3 = iterator.next();
+      Object[] v3 = r3.getValues();
+      System.out.println(Arrays.asList(v3));
+      assertThat(r3.getPrimaryKey().isEmpty(), is(true));
+      assertThat(r3.get("a"), is(300));
+      assertThat(r3.get("b"), is("Tom"));
+      assertThat(r3.get("c"), is(StringUtils.repeat("z", 6)));
+
+      assertThat(iterator.hasNext(), is(false));
     };
   }
 }

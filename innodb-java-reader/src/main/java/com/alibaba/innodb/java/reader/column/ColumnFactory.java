@@ -22,6 +22,7 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_INT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_LONG;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_MEDIUMINT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
+import static com.alibaba.innodb.java.reader.config.ReaderSystemProperty.ENABLE_TRIM_CHAR;
 
 /**
  * Column parser factory.
@@ -318,7 +319,11 @@ public class ColumnFactory {
 
     @Override
     public String readFrom(SliceInput input, int len, String charset) {
-      return input.readString(len, charset);
+      String result = input.readString(len, charset);
+      if (ENABLE_TRIM_CHAR.value()) {
+        result = result.trim();
+      }
+      return result;
     }
 
     @Override

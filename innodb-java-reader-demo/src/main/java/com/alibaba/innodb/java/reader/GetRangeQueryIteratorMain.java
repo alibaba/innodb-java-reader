@@ -67,7 +67,7 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // range query with no limit, equivalent to query all
+      // ~~~ range query with no limit, equivalent to query all
       iterator = reader.getRangeQueryIterator(
           null, ComparisonOperator.NOP,
           null, ComparisonOperator.NOP);
@@ -80,7 +80,7 @@ public class GetRangeQueryIteratorMain {
         System.out.println("a=" + record.get("a"));
       }
 
-      // range query with projection
+      // ~~~ range query with projection
       iterator = reader.getRangeQueryIterator(
           ImmutableList.of(2), ComparisonOperator.GTE,
           ImmutableList.of(5), ComparisonOperator.LT,

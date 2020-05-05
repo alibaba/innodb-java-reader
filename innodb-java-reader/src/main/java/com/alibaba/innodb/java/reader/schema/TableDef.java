@@ -184,6 +184,14 @@ public class TableDef {
     return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyVarLenColumnNames();
   }
 
+  public int getPrimaryKeyVarLenColumnNum() {
+    return primaryKeyMeta == null ? 0 : primaryKeyMeta.getKeyVarLenColumns().size();
+  }
+
+  public boolean isNoPrimaryKey() {
+    return primaryKeyMeta == null || primaryKeyMeta.getKeyColumns().size() == 0;
+  }
+
   public boolean isColumnPrimaryKey(Column column) {
     return primaryKeyMeta != null && primaryKeyMeta.containsColumn(column.getName());
   }

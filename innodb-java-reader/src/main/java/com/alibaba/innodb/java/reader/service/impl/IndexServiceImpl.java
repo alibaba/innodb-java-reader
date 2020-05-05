@@ -66,7 +66,6 @@ import static com.alibaba.innodb.java.reader.util.Utils.noneEmpty;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkPositionIndex;
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
 import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
@@ -123,6 +122,18 @@ public class IndexServiceImpl implements IndexService {
   private List<GenericRecord> queryWithinIndexPage(Index index) {
     return queryWithinIndexPage(index, false, ImmutableList.of(),
         NOP, ImmutableList.of(), NOP, NOP_PROJECTION);
+  }
+
+  /**
+   * Query all records within one index page with projection.
+   *
+   * @param index      index page
+   * @param projection projection of selected column ordinal in bitmap
+   * @return list of records
+   */
+  private List<GenericRecord> queryWithinIndexPage(Index index, BitSet projection) {
+    return queryWithinIndexPage(index, false, ImmutableList.of(),
+        NOP, ImmutableList.of(), NOP, projection);
   }
 
   /**
@@ -296,13 +307,16 @@ public class IndexServiceImpl implements IndexService {
         };
       }
     }
-    if (isEmpty(lower)) {
-      lower = constructMinRecord(tableDef.getPrimaryKeyColumnNum());
-      lowerOperator = GTE;
-    }
-    if (isEmpty(upper)) {
-      upper = constructMaxRecord(tableDef.getPrimaryKeyColumnNum());
-      upperOperator = LTE;
+    final boolean isNoPk = tableDef.isNoPrimaryKey();
+    if (!isNoPk) {
+      if (isEmpty(lower)) {
+        lower = constructMinRecord(tableDef.getPrimaryKeyColumnNum());
+        lowerOperator = GTE;
+      }
+      if (isEmpty(upper)) {
+        upper = constructMaxRecord(tableDef.getPrimaryKeyColumnNum());
+        upperOperator = LTE;
+      }
     }
     final BitSet projection = transformProjection(recordProjection);
     final List<Object> finalLower = lower;
@@ -314,15 +328,28 @@ public class IndexServiceImpl implements IndexService {
     return new RecordIterator() {
       @Override
       public void init() {
-        Pair<Long, Long> startAndEndPageNumber = queryStartAndEndPageNumber(
-            finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
-        // read from start page
-        currPageNumber = startAndEndPageNumber.getFirst();
-        endPageNumber = startAndEndPageNumber.getSecond();
-        indexPage = loadIndexPage(currPageNumber);
-        curr = queryWithinIndexPage(indexPage, true,
-            finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
-        log.debug("RangeQuery, start page {} records, {}", curr.size(), indexPage.getIndexHeader());
+        // for initialization, we only need to search by pk projection
+        BitSet pkProjection = tableDef.createBitmapWithPkIncluded();
+
+        if (!isNoPk) {
+          Pair<Long, Long> startAndEndPageNumber = queryStartAndEndPageNumber(
+              finalLower, finalLowerOperator, finalUpper, finalUpperOperator, pkProjection);
+          // read from start page
+          currPageNumber = startAndEndPageNumber.getFirst();
+          endPageNumber = startAndEndPageNumber.getSecond();
+          indexPage = loadIndexPage(currPageNumber);
+          curr = queryWithinIndexPage(indexPage, true,
+              finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
+        } else {
+          currPageNumber = queryStartPage(ROOT_PAGE_NUMBER, pkProjection);
+          endPageNumber = queryEndPage(ROOT_PAGE_NUMBER, pkProjection);
+          indexPage = loadIndexPage(currPageNumber);
+          curr = queryWithinIndexPage(indexPage, projection);
+        }
+
+        if (log.isDebugEnabled()) {
+          log.debug("RangeQuery, start page {} records, {}", curr.size(), indexPage.getIndexHeader());
+        }
         initialized = true;
       }
 
@@ -336,9 +363,8 @@ public class IndexServiceImpl implements IndexService {
               log.debug("RangeQuery, load page {} records, {}", nextIndexPage.getIndexHeader());
             }
             this.indexPage = nextIndexPage;
-            if (currPageNumber != endPageNumber) {
-              this.curr = queryWithinIndexPage(nextIndexPage, false, ImmutableList.of(),
-                  NOP, ImmutableList.of(), NOP, projection);
+            if (currPageNumber != endPageNumber || isNoPk) {
+              this.curr = queryWithinIndexPage(nextIndexPage, projection);
             } else {
               this.curr = queryWithinIndexPage(nextIndexPage, true,
                   finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
@@ -365,6 +391,65 @@ public class IndexServiceImpl implements IndexService {
       log.debug("RangeQuery, start record(inc) is {}, end record(exc) is {}", startRecord, endRecord);
     }
     return Pair.of(startRecord.getPageNumber(), endRecord.getPageNumber());
+  }
+
+  /**
+   * Query B+ tree left-most page number
+   *
+   * @param pageNumber root page number
+   * @param projection projetion
+   * @return page number
+   */
+  private long queryStartPage(long pageNumber, BitSet projection) {
+    Index index = loadIndexPage(pageNumber);
+    SliceInput sliceInput = index.getSliceInput();
+    GenericRecord infimum = index.getInfimum();
+    GenericRecord supremum = index.getSupremum();
+    int nextRecPos = infimum.nextRecordPosition();
+    sliceInput.setPosition(nextRecPos);
+
+    if (nextRecPos != supremum.getPrimaryKeyPosition()) {
+      GenericRecord record = readRecord(index.getPageNumber(), sliceInput,
+          index.isLeafPage(), projection);
+      if (record.isLeafRecord()) {
+        return record.getPageNumber();
+      } else {
+        return queryStartPage(record.getChildPageNumber(), projection);
+      }
+    }
+    return pageNumber;
+  }
+
+  /**
+   * Query B+ tree right-most page number
+   *
+   * @param pageNumber root page number
+   * @param projection projetion
+   * @return page number
+   */
+  private long queryEndPage(long pageNumber, BitSet projection) {
+    Index index = loadIndexPage(pageNumber);
+    SliceInput sliceInput = index.getSliceInput();
+    GenericRecord infimum = index.getInfimum();
+    GenericRecord supremum = index.getSupremum();
+    int nextRecPos = infimum.nextRecordPosition();
+    sliceInput.setPosition(nextRecPos);
+
+    GenericRecord lastRecord = null;
+    while (nextRecPos != supremum.getPrimaryKeyPosition()) {
+      lastRecord = readRecord(index.getPageNumber(), sliceInput,
+          index.isLeafPage(), projection);
+      nextRecPos = lastRecord.nextRecordPosition();
+    }
+
+    if (lastRecord == null) {
+      return pageNumber;
+    }
+
+    if (lastRecord.isLeafRecord()) {
+      return lastRecord.getPageNumber();
+    }
+    return queryEndPage(lastRecord.getChildPageNumber(), projection);
   }
 
   /**
@@ -647,7 +732,6 @@ public class IndexServiceImpl implements IndexService {
     if (header.getRecordType() == RecordType.INFIMUM || header.getRecordType() == RecordType.SUPREMUM) {
       GenericRecord mum = new GenericRecord(header, tableDef, pageNumber);
       mum.setPrimaryKeyPosition(primaryKeyPos);
-      log.debug("Read system record recordHeader={}", header);
       return mum;
     }
 
@@ -673,7 +757,7 @@ public class IndexServiceImpl implements IndexService {
         valCols = tableDef.getVariableLengthColumnList();
       } else {
         // for non-leaf page, only pk columns are included
-        varColNum = tableDef.getPrimaryKeyVarLenColumns().size();
+        varColNum = tableDef.getPrimaryKeyVarLenColumnNum();
         valCols = tableDef.getPrimaryKeyVarLenColumns();
       }
       // array list creation with maximum capacity
@@ -765,14 +849,15 @@ public class IndexServiceImpl implements IndexService {
       }
     } else {
       long childPageNumber = bodyInput.readUnsignedInt();
-      log.trace("Read record, pkPos={}, key={}, childPage={}", primaryKeyPos,
-          Arrays.toString(record.getValues()), childPageNumber);
+      if (log.isTraceEnabled()) {
+        log.trace("Read record, pkPos={}, key={}, childPage={}", primaryKeyPos,
+            Arrays.toString(record.getValues()), childPageNumber);
+      }
       record.setChildPageNumber(childPageNumber);
     }
 
     // set to next record position
-    checkPositionIndex(record.nextRecordPosition(), SIZE_OF_BODY,
-        "Next record position is out of bound");
+    checkElementIndex(record.nextRecordPosition(), SIZE_OF_BODY, "Next record position is out of bound");
     bodyInput.setPosition(record.nextRecordPosition());
 
     return record;

@@ -171,6 +171,8 @@ public class InnodbReaderBootstrap {
         ibdFilePath = line.getOptionValue("ibd-file-path");
         Preconditions.checkArgument(StringUtils.isNotEmpty(ibdFilePath),
             "ibd-file-path is empty");
+        Preconditions.checkArgument(ibdFilePath.lastIndexOf(".") > 0,
+            "ibd-file-path is not ended with .");
         int slashIndex = ibdFilePath.lastIndexOf("/");
         if (slashIndex >= 0) {
           tableName = ibdFilePath.substring(slashIndex + 1, ibdFilePath.lastIndexOf("."));

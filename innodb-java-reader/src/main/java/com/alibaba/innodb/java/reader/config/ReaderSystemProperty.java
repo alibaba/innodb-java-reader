@@ -61,6 +61,14 @@ public final class ReaderSystemProperty<T> {
           true);
 
   /**
+   * CHAR type will have \20 padding, but for mysql dump command, the head and tail padding are
+   * disappear, so provide this configuration to handle CHAR like mysql dump.
+   */
+  public static final ReaderSystemProperty<Boolean> ENABLE_TRIM_CHAR =
+      booleanProperty("innodb.java.reader.enable.trim.char",
+          false);
+
+  /**
    * For cli, when parsing string to list of objects to build key, use the delimiter.
    */
   public static final ReaderSystemProperty<String> COMPOSITE_KEY_DELIMITER =

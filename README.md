@@ -37,13 +37,10 @@ To better understand how InnoDB stores data, I introduce the project for prototy
 
 ## 2. Prerequisites
 
-* Java 8 or later version.
 * MySQL 5.6, 5.7 or 8.0 (partially supported).
 * Make sure [InnoDB row format](https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html) is either `COMPACT` or `DYNAMIC`.
 * Enable `innodb_file_per_table` , which will create standalone `*.ibd` file for each table.
 * InnoDB file page size is set to 16K.
-* Be aware that if pages are not flushed from Buffer pool to disk, the result is inconsistent.
-* For tables to read, make sure one and only one column primary key is defined. Multiple columns for primary key and secondary index will be supported in the future.
 
 ## 3. Features
 
@@ -51,13 +48,13 @@ The row format of a table determines how rows are physically stored, which in tu
 
 `innodb-java-reader` supports operations like examining pages' information, looking up record by primary key, range querying by primary key, querying records by page number, dumping table and generating page heatmap & filling rate.
 
-Supported column types are listed below.
+Supported column types are listed below. Java type mapping refer to [docs](docs/mysql_to_java_type.md).
 
 | Type | Support column types |
 | ---- | -------------------- |
 | Numeric | TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL |
 | String and Binary | CHAR, VARCHAR, BINARY, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT |
-| Date and Time | DATETIME, TIMESTAMP, TIME *(support precision)*, YEAR, DATE |
+| Date and Time | DATETIME, TIMESTAMP, TIME, YEAR, DATE (*support precision*) |
 | Other | BOOL, BOOLEAN |
 
 ## 4. Quickstart
@@ -68,9 +65,9 @@ Supported column types are listed below.
 
 ```
 <dependency>
-  <groupId>com.alibaba</groupId>
+  <groupId>com.alibaba.database</groupId>
   <artifactId>innodb-java-reader</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
 </dependency>
 ```
 
@@ -83,11 +80,11 @@ Here's an example to look up record in a table by primary key.
 ```
 String createTableSql = "CREATE TABLE t (id int(11), a bigint(20)) ENGINE=InnoDB;";
 String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
-  GenericRecord record = reader.queryByPrimaryKey(4);
+  GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of(4));
   Object[] values = record.getValues();
-  System.out.println(Arrays.asList(values)); //output will be [4, 8]
+  System.out.println(Arrays.asList(values));
 }
 ```
 
@@ -99,7 +96,7 @@ Here's an example to dump all records with command-line tool.
 
 You can download latest version of `innodb-java-reader-cli.jar` from [release page](https://github.com/alibaba/innodb-java-reader/releases) or [build](#7-building) from source.
 
-`t.ibd` is the InnoDB ibd file path, `t.sql` is where the output of `SHOW CREATE TABLE <table_name>` saved as content. 
+`t.ibd` is the InnoDB ibd file path. `t.sql` is where the output of `SHOW CREATE TABLE <table_name>` saved as content, you can generate table definitions by executing `mysqldump -d -u<username> -p<password> -h <hostname> <dbname>` in command-line.
 
 ```
 java -jar innodb-java-reader-cli.jar \
@@ -174,7 +171,7 @@ mysql> select * from t;
 
 ### 5.1 Setting table definition
 
-Schema must be provided before accessing the table. There are two ways to specify a table schema.
+There are two ways to specify a table definition, or `TableDef` within the library.
 
 #### Using SQL
 
@@ -184,28 +181,41 @@ You can generate all table definitions by executing `mysqldump -d -u<username> -
 
 For example,
 ```
-String createTableSql = "CREATE TABLE `t`\n" +
-        "(`id` int(11) NOT NULL ,\n" +
-        "`a` bigint(20) NOT NULL,\n" +
-        "`b` varchar(64) NOT NULL,\n" +
-        "PRIMARY KEY (`id`))\n" +
-        "ENGINE=InnoDB;";
+String createTableSql = "CREATE TABLE `t`\n"
+        + "(`id` int(11) NOT NULL ,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "`b` varchar(64) NOT NULL,\n"
+        + "PRIMARY KEY (`id`))\n"
+        + "ENGINE=InnoDB;";
 ```
 
 #### Using API
 
-Create a `Schema` instance with all `Column`s. `Column` can be created in fluent style by setting the required column `name`, `type`, while there are optional settings for users to specify if a column is `nullable` or not, is `primary key` or not.
+Create a `TableDef` instance with all `Column`s. `Column` can be created in fluent style by setting the required column `name`, `type`, while there are optional settings to specify nullable, charset or if the column is primary key.
 
 For variable-length or fixed-length column types like` VARCHAR`, `VARBINARY`, `CHAR`, column type can be declared with a length that indicates the maximum length you want to store, just like what you define a DDL in MySQL. For integer types, the display width of the integer column will be ignored.
 
-For example,
+For example, to create table with single primary key.
 ```
-Schema schema = new Schema()
-        .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
-        .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
-        .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
-        .setCharset("utf8mb4");
+TableDef tableDef = new TableDef().setDefaultCharset("utf8mb4")
+    .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
+    .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
+    .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
+    .addColumn(new Column().setName("c").setType("varchar(1024)").setNullable(true));
 ```
+
+To create table with multiple column primary key.
+```
+TableDef tableDef = new TableDef()
+    .setDefaultCharset("utf8mb4")
+    .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
+    .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
+    .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
+    .addColumn(new Column().setName("c").setType("varchar(1024)").setNullable(true))
+    .setPrimaryKeyColumns(ImmutableList.of("a", "b"));
+```
+
+Table without primary key is also supported. By default, a 6 bytes ROW ID will be treated as primary key.
 
 ### 5.2 Creating TableReader
 
@@ -213,35 +223,35 @@ Thread-safe class `TableReader` enables you to call all the useful APIs.
 
 With try-with-resources statement, you can ensure that IO resource used by `TableReader` is closed at the end of all invocations. By default, `TableReader` leverage **buffer IO**, pages are read from page cache into `DirectByteBuffer` and then copy to heap to manage their lifecycle. This framework is also open for extension to use **mmap** or **direct io**.
 
-There are two constructors, one needs to provide tablespace file `*.ibd` file path and *create table* sql, while the other needs the `*.ibd` file path and schema instance.
+There are two constructors, one needs to provide tablespace file `*.ibd` file path and *create table* sql, while the other needs the `*.ibd` file path and `TableDef`.
 
 For example,
 
 ```
-String createTableSql = "CREATE TABLE `t`\n" +
-        "(`id` int(11) NOT NULL ,\n" +
-        "`a` bigint(20) NOT NULL,\n" +
-        "`b` varchar(64) NOT NULL,\n" +
-        "PRIMARY KEY (`id`))\n" +
-        "ENGINE=InnoDB;";
-String ibdFilePath = "/usr/local/mysql/data/mydb/t.ibd";
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+String createTableSql = "CREATE TABLE `tb11`\n"
+        + "(`id` int(11) NOT NULL ,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "`b` varchar(64) NOT NULL,\n"
+        + "PRIMARY KEY (`id`))\n"
+        + "ENGINE=InnoDB;";
+String ibdFilePath = "/usr/local/mysql/data/test/t.ibd";
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
   // API invocation goes here...
 }
 ```
 
-Moreover, there is an useful factory utility which can facilitate the process of creating `TableReader`.
+Moreover, there is a useful factory utility which can facilitate the process of creating `TableReader`. In this case, table definition is no longer needed, so you can skip table definition using SQL or API as section 5.1 describes.
 
 For example,
 
 ```
-String createTableSql = "CREATE TABLE `tb11`\n" +
-        "(`id` int(11) NOT NULL ,\n" +
-        "`a` bigint(20) NOT NULL,\n" +
-        "`b` varchar(64) NOT NULL,\n" +
-        "PRIMARY KEY (`id`))\n" +
-        "ENGINE=InnoDB;";
+String createTableSql = "CREATE TABLE `tb11`\n"
+        + "(`id` int(11) NOT NULL ,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "`b` varchar(64) NOT NULL,\n"
+        + "PRIMARY KEY (`id`))\n"
+        + "ENGINE=InnoDB;";
 
 TableDefProvider tableDefProvider = new SqlTableDefProvider(createTableSql);
 TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
@@ -257,8 +267,8 @@ try {
 }
 ``` 
 
-You can also providing a sql file path, the sql is DDL as SHOW CREATE TABLE <table_name>, the file can 
-contain multiple SQLs, the table name should match the ibd file name, or else the tool is not able to 
+You can also providing a sql file path, the file
+contains multiple SQLs, the table name should match the ibd file name, or else the tool is not able to 
 identify the ibd file to read, you can generate the file by executing `mysqldump -d -u<username> -p<password> -h <hostname> <dbname>` in command-line.
 
 ```
@@ -276,6 +286,8 @@ try {
 }
 ```
 
+The provider is extensible, in the future, we plan to support `MysqlFrmTableDefProvider` as well.
+
 ### 5.3 Examining a tablespace file
 
 #### Listing all pages
@@ -283,7 +295,7 @@ try {
 This will give you a high-level overview about InnoDB file structure, as it results in a list of `AbstractPage`, for example, you can get all contiguous pages of their basic information.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
   long numOfPages = reader.getNumOfPages();
   List<AbstractPage> pages = reader.readAllPages();
@@ -314,7 +326,7 @@ Moreover, `Iterator<AbstractPage> getPageIterator()` is useful to get pages iter
 You can query page one by one. For supported page types, you can check the internal information.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, schema)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
   AbstractPage page = reader.readPage(3);
 }
@@ -327,7 +339,7 @@ try (TableReader reader = new TableReader(ibdFilePath, schema)) {
 This will walk through the B+ tree index in ascending order, you can take it as a full-table scan operation as well. First it locates to the root page of the primary key, and do a depth-first traversal recursively, along the traversal it will collects all the records.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
   List<GenericRecord> recordList = reader.queryAll();
   for (GenericRecord record : recordList) {
@@ -363,7 +375,7 @@ This feature enables you to dump data if data persists in InnoDB file by offload
 This only works for index page type.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
   List<GenericRecord> recordList = reader.queryByPageNumber(3);
 }
@@ -389,10 +401,12 @@ If the page is leaf, then it will do binary search in page directory slots to lo
 
 For non-leaf page, the record is simply the child page number, so `innodb-java-reader` will go deeper in the multiple-level B+ tree to the child page and run recursively.
 
+Primary key parameter is a list of objects, single column primary key (list size will be 1) and multiple column primary key are supported.
+
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
-  GenericRecord record = reader.queryByPrimaryKey(4);
+  GenericRecord record = reader.queryByPrimaryKey(ImmutableList.of(4));
   Object[] values = record.getValues();
   System.out.println(Arrays.asList(values));
   assert record.getPrimaryKey() == record.get("id");
@@ -405,7 +419,7 @@ Note that in MySQL 5.7 or earlier version, usually page 3 will be the root page 
 
 #### Range query by primary key
 
-`rangeQueryByPrimaryKey` method requires 2 arguments, the left is the lower bound target key (inclusive), the right is the upper bound target key (exclusive).
+`rangeQueryByPrimaryKey` method requires at least 4 arguments: lower key, lower operator, upper key and upper operator. Operators include `>`, `>=`, `<`, `<=` and `nop` (works on unlimited bound).
 
 MySQL InnoDB engine will have its own way to execute a range query, here in innodb-java-reader, it will use a naive and simple way: go deep into the leaf node of B+ tree index, and visit page by page, record by record, the algorithm looks like below:
 
@@ -414,18 +428,20 @@ MySQL InnoDB engine will have its own way to execute a range query, here in inno
 3. Start from the record found in step 1, go ahead by the singly linked record pointer to visit each record next until `SUPREMUM` record found, which mean the end of the page has met.
 4. There are pointers stored in the `FilHeader`, point to the logical previous and next page. Go to the next page and query all records from the `INFINIMUM` record. Repeat the process in step 3. If the page is where the record smaller than the upper bound target key resides, then it will compare record read with the target end key, so that we can exit nicely.
 
-For example, the lower and upper bound target key can be `null`, which means the limit is not specified in this direction.
+For example, the lower and upper bound target key can be empty list, which means no limit is specified.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
-  List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(0, 5);
+  List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(5), ComparisonOperator.GT,
+          ImmutableList.of(8), ComparisonOperator.LT);
   recordList = reader.rangeQueryByPrimaryKey(null, null);
   recordList = reader.rangeQueryByPrimaryKey(5, null);
 }
 ```
 
-`rangeQueryByPrimaryKey` accepts an optional argument `Predicate<Record> ` to filter.
+`rangeQueryByPrimaryKey` accepts an optional argument `Predicate<Record> ` to filter and `List<String>` to project selected columns.
 
 #### Iterator pattern
 
@@ -434,7 +450,7 @@ For extremely large tablespace, querying like `queryAll` or `rangeQueryByPrimary
 For example, `getQueryAllIterator` will return an iterator to visit all records.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
   Iterator<GenericRecord> iterator = reader.getQueryAllIterator();
   int count = 0;
@@ -448,18 +464,40 @@ try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
 }
 ```
 
-For example, `getRangeQueryIterator` will return an iterator to visit targeted records based on the lower and upper bound just like what ``rangeQueryByPrimaryKey`` does.
+For example, `getRangeQueryIterator` will return an iterator to visit targeted records based on the lower and upper bound just like what `rangeQueryByPrimaryKey` does.
 
 ```
-try (TableReader reader = new TableReader(ibdFilePath, createTableSql)) {
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
   reader.open();
-  Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(1, 10);
+  Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(5), ComparisonOperator.GTE,
+          ImmutableList.of(8), ComparisonOperator.LTE);
   while (iterator.hasNext()) {
     GenericRecord record = iterator.next();
     Object[] values = record.getValues();
     System.out.println(Arrays.asList(values));
   }
 }
+```
+
+#### Filtering and projection
+
+Filtering works on `queryAll` and `rangeQueryByPrimaryKey`, this is more likely index condition pushdown.
+
+Projection works for almost all APIs, for example.
+
+```
+// range query with projection
+List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+    ImmutableList.of(5), ComparisonOperator.GT,
+    ImmutableList.of(8), ComparisonOperator.LT,
+    ImmutableList.of("a"));
+
+// range query with no limit, equivalent to query all, with projection
+Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
+          null, ComparisonOperator.NOP,
+          ImmutableList.of("a"));
 ```
 
 ## 6 Command-line tool
@@ -473,7 +511,8 @@ Usage shows as below.
 ````
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
        [-delimiter <arg>] [-h] [-i <arg>] [-iomode <arg>] [-json]
-       [-jsonpretty] [-o <arg>] [-s <arg>] [-showheader]
+       [-jsonpretty] [-o <arg>] [-projection <arg>] [-s <arg>]
+       [-showheader]
  -args <arg>                             arguments
  -c,--command <arg>                      mandatory. command to run, valid
                                          commands are:
@@ -497,9 +536,20 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
  -o,--output <arg>                       save result to file instead of
                                          console, the argument is the file
                                          path
- -s,--create-table-sql-file-path <arg>   create table sql file path by
-                                         running SHOW CREATE TABLE
-                                         <table_name>
+ -projection,--projection <arg>          projection list with column names
+                                         delimited by comma
+ -s,--create-table-sql-file-path <arg>   create table sql file path, the
+                                         sql is DDL as SHOW CREATE TABLE
+                                         <table_name>, the file can
+                                         contain multiple SQLs, the table
+                                         name should match the ibd file
+                                         name, or else the tool is not
+                                         able to identify the ibd file to
+                                         read, you can generate the file
+                                         by executing mysqldump -d
+                                         -u<username> -p<password> -h
+                                         <hostname> <dbname>` in
+                                         command-line.
  -showheader,--show-header               set to true if you want to show
                                          table header when dumping table
 ````
@@ -702,7 +752,5 @@ For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysql
 ## 9 Future works
 
 * Support MySQL 8.0 newly introduced LOB page.
-* Support multiple columns primary key and default 6 bytes ROW ID if no primary key is defined by user.
 * Look up and range query by secondary key.
 * Load table metadata from system tablespace.
-* Make innodb-java-reader more SQL-like, in other words, DML operations can be expressed in SQL language, the library can work as a prototype to do some simple optimization and generate the physical execution plan, then it will leverage the reader APIs to read tablespace.
