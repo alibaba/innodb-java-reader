@@ -58,4 +58,9 @@ public interface Constants {
 
   String DEFAULT_DATA_FILE_SUFFIX = ".ibd";
 
+  int INT_10000 = 10000;
+  int INT_1000 = 1000;
+  int INT_100 = 100;
+  int INT_10 = 10;
+
 }

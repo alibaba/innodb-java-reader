@@ -8,6 +8,7 @@ import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.MysqlDecimal;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Symbol;
+import com.alibaba.innodb.java.reader.util.Utils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -23,6 +24,7 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_LONG;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_MEDIUMINT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
 import static com.alibaba.innodb.java.reader.config.ReaderSystemProperty.ENABLE_TRIM_CHAR;
+import static com.alibaba.innodb.java.reader.util.Utils.formatDate;
 
 /**
  * Column parser factory.
@@ -321,7 +323,7 @@ public class ColumnFactory {
     public String readFrom(SliceInput input, int len, String charset) {
       String result = input.readString(len, charset);
       if (ENABLE_TRIM_CHAR.value()) {
-        result = result.trim();
+        return Utils.tailTrim(result);
       }
       return result;
     }
@@ -596,7 +598,7 @@ public class ColumnFactory {
       int day = (encodedDate & 31);
       int month = (encodedDate >> 5 & 15);
       int year = (encodedDate >> 9);
-      return String.format("%04d-%02d-%02d", year, month, day);
+      return formatDate(year, month, day);
     }
 
     @Override

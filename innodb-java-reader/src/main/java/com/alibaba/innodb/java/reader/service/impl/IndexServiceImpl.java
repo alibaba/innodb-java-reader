@@ -167,9 +167,16 @@ public class IndexServiceImpl implements IndexService {
     int recCounter = 0;
     sliceInput.setPosition(nextRecPos);
 
-    boolean noneEmpty = noneEmpty(lower, upper);
-    boolean lowerNotEmpty = isNotEmpty(lower);
-    boolean upperNotEmpty = isNotEmpty(upper);
+    // only range query needed
+    boolean noneEmpty = false;
+    boolean lowerNotEmpty = false;
+    boolean upperNotEmpty = false;
+
+    if (rangeQuery) {
+      noneEmpty = noneEmpty(lower, upper);
+      lowerNotEmpty = isNotEmpty(lower);
+      upperNotEmpty = isNotEmpty(upper);
+    }
 
     while (nextRecPos != supremum.getPrimaryKeyPosition()) {
       GenericRecord record = readRecord(index.getPageNumber(), sliceInput, index.isLeafPage(), projection);
@@ -683,10 +690,10 @@ public class IndexServiceImpl implements IndexService {
           + page.getPageNumber() + " since version is >= Mysql8");
       page = storageService.loadPage(++pageNumber);
     }
-    checkState(page.getFilHeader().getPageType() == PageType.INDEX,
-        "Page " + pageNumber + " is not index page, actual page type is " + page.getFilHeader().getPageType());
     Index index = new Index(page, tableDef);
     if (log.isDebugEnabled()) {
+      checkState(page.getFilHeader().getPageType() == PageType.INDEX,
+          "Page " + pageNumber + " is not index page, actual page type is " + page.getFilHeader().getPageType());
       log.debug("Load {} page {}, {} records", index.isLeafPage()
           ? "leaf" : "non-leaf", pageNumber, index.getIndexHeader().getNumOfRecs());
     }

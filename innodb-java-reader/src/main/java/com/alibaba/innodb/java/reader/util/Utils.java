@@ -20,6 +20,10 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.alibaba.innodb.java.reader.Constants.INT_10;
+import static com.alibaba.innodb.java.reader.Constants.INT_100;
+import static com.alibaba.innodb.java.reader.Constants.INT_1000;
+import static com.alibaba.innodb.java.reader.Constants.INT_10000;
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_1;
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_2;
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_3;
@@ -261,7 +265,7 @@ public class Utils {
     // clean StringBuilder
     b.delete(0, b.length());
     for (int i = 0; i < a.length; i++) {
-      b.append(String.valueOf(a[i]));
+      b.append(a[i]);
       b.append(delimiter);
     }
     if (b.length() > 0) {
@@ -319,6 +323,44 @@ public class Utils {
 
   public static <T> boolean isOptionalPresent(Optional<T> optional) {
     return optional != null && optional.isPresent();
+  }
+
+  public static String tailTrim(String value) {
+    int len = value.length();
+    int st = 0;
+
+    while ((st < len) && (value.charAt(len - 1) <= Symbol.SPACE_CHAR)) {
+      len--;
+    }
+    return (len < value.length()) ? value.substring(0, len) : value;
+  }
+
+  public static String formatDate(int year, int month, int day) {
+    return formatIntLessThan10000(year) + "-"
+        + formatIntLessThan100(month) + "-"
+        + formatIntLessThan100(day);
+  }
+
+  public static String formatIntLessThan10000(int val) {
+    if (val >= INT_1000 && val < INT_10000) {
+      return String.valueOf(val);
+    } else if (val >= INT_100 && val < INT_1000) {
+      return "0" + val;
+    } else if (val >= INT_10 && val < INT_100) {
+      return "00" + val;
+    } else if (val >= 0 && val < INT_10) {
+      return "000" + val;
+    }
+    throw new IllegalArgumentException("not possible");
+  }
+
+  public static String formatIntLessThan100(int val) {
+    if (val >= INT_10 && val < INT_100) {
+      return String.valueOf(val);
+    } else if (val >= 0 && val < INT_10) {
+      return "0" + val;
+    }
+    throw new IllegalArgumentException("not possible");
   }
 
 }

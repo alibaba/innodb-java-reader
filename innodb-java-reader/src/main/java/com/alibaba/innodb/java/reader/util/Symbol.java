@@ -12,6 +12,7 @@ public interface Symbol {
 
   String EMPTY = "";
   String SPACE = " ";
+  char SPACE_CHAR = ' ';
   String COMMA = ",";
   String LEFT_PARENTHESES = "(";
   String RIGHT_PARENTHESES = ")";
