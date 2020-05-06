@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.alibaba.database</groupId>
     <artifactId>innodb-java-reader-parent</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>innodb-java-reader-parent</name>
     <packaging>pom</packaging>
     <description>A library and command-line tool to access MySQL InnoDB data file directly in Java</description>
