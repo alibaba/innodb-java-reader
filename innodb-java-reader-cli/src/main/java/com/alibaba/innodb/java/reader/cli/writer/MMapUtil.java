@@ -19,11 +19,6 @@ public class MMapUtil {
     throw new AssertionError();
   }
 
-  /**
-   * See <a href="http://svn.apache.org/repos/asf/lucene/dev/trunk/lucene/src/java/org/
-   * apache/lucene/store/MMapDirectory.java">MMapDirectory.java</a>.
-   * Set to <code>true</code> if this platform supports unmapping mmapped files.
-   */
   public static final boolean UNMAP_SUPPORTED;
 
   static {

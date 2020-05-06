@@ -40,7 +40,6 @@ public interface ColumnParser<V> {
    * @param input   slice input
    * @param len     length
    * @param charset charset
-   * @return value
    */
   void skipFrom(SliceInput input, int len, String charset);
 
@@ -50,7 +49,6 @@ public interface ColumnParser<V> {
    *
    * @param input  slice input
    * @param column column
-   * @return value
    */
   void skipFrom(SliceInput input, Column column);
 

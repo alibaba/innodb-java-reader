@@ -191,6 +191,8 @@ public class Column {
   /**
    * Get java encoding charset for column.
    * If charset is defined in column, use it, or else use table java charset.
+   *
+   * @return column java charset
    */
   public String getJavaCharset() {
     if (javaCharset != null) {
@@ -205,6 +207,8 @@ public class Column {
   /**
    * Get charset for column.
    * If charset is defined in column, use it, or else use table charset.
+   *
+   * @return table or column charset
    */
   public String getCharset() {
     if (charset != null) {

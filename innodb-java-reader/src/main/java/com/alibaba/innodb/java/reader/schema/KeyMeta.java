@@ -14,7 +14,7 @@ import lombok.Data;
 /**
  * Key metadata information including name, number of columns and page number, etc.
  * <pre>
- * >select * from INNODB_SYS_INDEXES;
+ * select * from INNODB_SYS_INDEXES;
  * +----------+----------+----------+------+----------+---------+-------+
  * | INDEX_ID | NAME     | TABLE_ID | TYPE | N_FIELDS | PAGE_NO | SPACE |
  * +----------+----------+----------+------+----------+---------+-------+
