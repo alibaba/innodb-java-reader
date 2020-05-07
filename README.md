@@ -208,7 +208,7 @@ To create table with multiple column primary key.
 ```
 TableDef tableDef = new TableDef()
     .setDefaultCharset("utf8mb4")
-    .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
+    .addColumn(new Column().setName("id").setType("int(11)").setNullable(false)
     .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
     .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
     .addColumn(new Column().setName("c").setType("varchar(1024)").setNullable(true))
