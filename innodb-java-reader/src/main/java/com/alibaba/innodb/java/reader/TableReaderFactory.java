@@ -38,9 +38,9 @@ public class TableReaderFactory {
   private List<TableDefProvider> tableDefProviderList;
 
   /**
-   * Table identity to table definition map.
+   * Table name to table definition map.
    */
-  private Map<String, TableDef> identityTableDefMap;
+  private Map<String, TableDef> tableNameToDefMap;
 
   /**
    * ibd data file base path.
@@ -80,7 +80,7 @@ public class TableReaderFactory {
       }
       builder.putAll(map);
     }
-    identityTableDefMap = builder.build();
+    tableNameToDefMap = builder.build();
   }
 
   /**
@@ -88,23 +88,31 @@ public class TableReaderFactory {
    * <p>
    * Data file path will concat {@link #dataFileBasePath}, table def name and file suffix.
    *
-   * @param identity identity can be table name or full qualified name.
+   * @param tableName table name or full qualified name
    * @return table reader
    */
-  public TableReader createTableReader(String identity) {
-    checkArgument(StringUtils.isNotEmpty(identity));
-    if (!identityTableDefMap.containsKey(identity)) {
-      throw new ReaderException("Table definition not found for table " + identity);
+  public TableReader createTableReader(String tableName) {
+    checkArgument(StringUtils.isNotEmpty(tableName));
+    if (!tableNameToDefMap.containsKey(tableName)) {
+      throw new ReaderException("Table definition not found for table " + tableName);
     }
-    TableDef tableDef = identityTableDefMap.get(identity);
+    TableDef tableDef = tableNameToDefMap.get(tableName);
     String filePath = StringUtils.isEmpty(dataFileBasePath)
         ? dataFilePath : dataFileBasePath + tableDef.getName() + dataFileSuffix;
     return new TableReaderImpl(filePath,
-        identityTableDefMap.get(identity));
+        tableNameToDefMap.get(tableName));
   }
 
-  public Map<String, TableDef> getIdentityTableDefMap() {
-    return identityTableDefMap;
+  public Map<String, TableDef> getTableNameToDefMap() {
+    return tableNameToDefMap;
+  }
+
+  public TableDef getTableDef(String tableName) {
+    return tableNameToDefMap == null ? null : tableNameToDefMap.get(tableName);
+  }
+
+  public boolean existTableDef(String tableName) {
+    return tableNameToDefMap != null && tableNameToDefMap.containsKey(tableName);
   }
 
   public static Builder builder() {
@@ -125,6 +133,14 @@ public class TableReaderFactory {
       checkNotNull(tableDefProvider);
       if (!tableDefProviderList.contains(tableDefProvider)) {
         this.tableDefProviderList.add(tableDefProvider);
+      }
+      return this;
+    }
+
+    public Builder withProviders(List<TableDefProvider> tableDefProviderList) {
+      checkNotNull(tableDefProviderList);
+      for (TableDefProvider tableDefProvider : tableDefProviderList) {
+        withProvider(tableDefProvider);
       }
       return this;
     }

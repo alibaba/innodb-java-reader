@@ -52,7 +52,7 @@ public class SqlFileTableDefProvider implements TableDefProvider {
       if (content.length() > CREATE_TABLE_LITERAL_LENGTH) {
         if (content.substring(0, CREATE_TABLE_LITERAL_LENGTH).equalsIgnoreCase(CREATE_TABLE_LITERAL)) {
           TableDef tableDef = TableDefUtil.covertToTableDef(content);
-          builder.put(tableDef.getFullyQualifiedName(), tableDef);
+          builder.put(tableDef.getName(), tableDef);
         }
       }
     }, ";");
@@ -60,7 +60,7 @@ public class SqlFileTableDefProvider implements TableDefProvider {
     // no semi-colon found
     if (result.getFirst() == 0) {
       TableDef tableDef = TableDefUtil.covertToTableDef(result.getSecond());
-      builder.put(tableDef.getFullyQualifiedName(), tableDef);
+      builder.put(tableDef.getName(), tableDef);
     }
 
     return builder.build();

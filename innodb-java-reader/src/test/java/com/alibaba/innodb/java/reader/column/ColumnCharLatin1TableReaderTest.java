@@ -103,11 +103,15 @@ public class ColumnCharLatin1TableReaderTest extends AbstractTest {
             assertThat(record.get("g"), is(((char) (97 + i % 26)) + StringUtils.repeat('g', 10000)));
             assertThat(record.get("h"), is(((char) (97 + i % 26)) + StringUtils.repeat('h', 40000)));
           }
-          assertThat(record.get("i"), is(" "));
-          assertThat(record.get("j"), is(((char) (97 + i % 26)) + StringUtils.repeat('j', 8)
-              + StringUtils.repeat(' ', 32 - 8 - 1)));
-          assertThat(record.get("k"), is(((char) (97 + i % 26)) + StringUtils.repeat('k', 10)
-              + StringUtils.repeat(' ', 255 - 10 - 1)));
+          assertThat(record.get("i"), is(""));
+          // If innodb.java.reader.enable.trim.char set to false, change to
+          // assertThat(record.get("i"), is(" "));;
+          assertThat(record.get("j"), is(((char) (97 + i % 26)) + StringUtils.repeat('j', 8)));
+          // If innodb.java.reader.enable.trim.char set to false, add
+          // + StringUtils.repeat(' ', 32 - 8 - 1)));
+          assertThat(record.get("k"), is(((char) (97 + i % 26)) + StringUtils.repeat('k', 10)));
+          // If innodb.java.reader.enable.trim.char set to false, add
+          // + StringUtils.repeat(' ', 255 - 10 - 1)));
         }
       }
     };

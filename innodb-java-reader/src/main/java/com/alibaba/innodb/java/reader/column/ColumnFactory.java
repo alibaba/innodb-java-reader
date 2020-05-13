@@ -10,9 +10,12 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Symbol;
 import com.alibaba.innodb.java.reader.util.Utils;
 
+import org.apache.commons.lang3.time.FastDateFormat;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -39,6 +42,9 @@ public class ColumnFactory {
    * This map should be immutable and initialized when program starts.
    */
   private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP;
+
+  private static final FastDateFormat DATETIME_FORMAT
+      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
 
   /**
    * Prevent instantiation.
@@ -513,7 +519,8 @@ public class ColumnFactory {
     public String readFrom(SliceInput input, Column column) {
       long packedValue = input.unpackBigendian(4);
       String fractionStr = getFractionString(input, column);
-      return String.format("%d%s", packedValue, fractionStr);
+      return String.format("%s%s", DATETIME_FORMAT.format(new Date(packedValue * 1000L)),
+          fractionStr);
     }
 
     @Override

@@ -298,7 +298,7 @@ public class IndexServiceImpl implements IndexService {
 
     if (noneEmpty(lower, upper)) {
       if (keyComparator.compare(lower, upper) > 0) {
-        throw new IllegalArgumentException("Lower is greater than upper");
+        return new RecordIterator(ImmutableList.of());
       }
       if (keyComparator.compare(lower, upper) == 0) {
         if (lowerOperator == GT && upperOperator == LT) {

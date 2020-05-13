@@ -6,12 +6,16 @@ package com.alibaba.innodb.java.reader.util;
 import com.google.common.collect.ImmutableList;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +28,7 @@ import static com.alibaba.innodb.java.reader.Constants.INT_10;
 import static com.alibaba.innodb.java.reader.Constants.INT_100;
 import static com.alibaba.innodb.java.reader.Constants.INT_1000;
 import static com.alibaba.innodb.java.reader.Constants.INT_10000;
+import static com.alibaba.innodb.java.reader.Constants.MAX_PRECISION;
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_1;
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_2;
 import static com.alibaba.innodb.java.reader.Constants.MAX_RECORD_3;
@@ -44,6 +49,25 @@ import static com.google.common.base.Preconditions.checkArgument;
  * @author xu.zx
  */
 public class Utils {
+
+  public static final DateTimeFormatter[] TIME_FORMAT_TIMESTAMP;
+  public static final DateTimeFormatter[] TIME_FORMAT_TIME;
+
+  static {
+    TIME_FORMAT_TIMESTAMP = new DateTimeFormatter[MAX_PRECISION + 1];
+    TIME_FORMAT_TIMESTAMP[0] = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    for (int i = 1; i <= MAX_PRECISION; i++) {
+      TIME_FORMAT_TIMESTAMP[i] = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss."
+          + StringUtils.repeat('S', i));
+    }
+
+    TIME_FORMAT_TIME = new DateTimeFormatter[MAX_PRECISION + 1];
+    TIME_FORMAT_TIME[0] = DateTimeFormatter.ofPattern("HH:mm:ss");
+    for (int i = 1; i <= MAX_PRECISION; i++) {
+      TIME_FORMAT_TIME[i] = DateTimeFormatter.ofPattern("HH:mm:ss."
+          + StringUtils.repeat('S', i));
+    }
+  }
 
   public static <O> O cast(Object object) {
     @SuppressWarnings("unchecked")
@@ -351,7 +375,7 @@ public class Utils {
     } else if (val >= 0 && val < INT_10) {
       return "000" + val;
     }
-    throw new IllegalArgumentException("not possible");
+    throw new IllegalArgumentException("Not possible");
   }
 
   public static String formatIntLessThan100(int val) {
@@ -361,6 +385,28 @@ public class Utils {
       return "0" + val;
     }
     throw new IllegalArgumentException("not possible");
+  }
+
+  public static LocalDateTime parseDateTimeText(String s) {
+    return parseDateTimeText(s, 0);
+  }
+
+  public static LocalDateTime parseDateTimeText(String s, int precision) {
+    if (precision < 0 || precision > MAX_PRECISION) {
+      throw new IllegalArgumentException("Precision is out of bound");
+    }
+    return LocalDateTime.parse(s, TIME_FORMAT_TIMESTAMP[precision]);
+  }
+
+  public static LocalTime parseTimeText(String s) {
+    return parseTimeText(s, 0);
+  }
+
+  public static LocalTime parseTimeText(String s, int precision) {
+    if (precision < 0 || precision > MAX_PRECISION) {
+      throw new IllegalArgumentException("Precision is out of bound");
+    }
+    return LocalTime.parse(s, TIME_FORMAT_TIME[precision]);
   }
 
 }

@@ -257,7 +257,6 @@ public class TableDefUtilTest {
     assertThat(tableDef.isColumnPrimaryKey(columnList.get(5)), is(true));
   }
 
-
   @Test
   public void testConvertNoPk() {
     String sql = "CREATE TABLE `tb01`\n"
@@ -275,9 +274,9 @@ public class TableDefUtilTest {
     assertThat(columnList.size(), is(7));
 
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(0));
-    assertThat(tableDef.getPrimaryKeyColumnNames(), nullValue());
-    assertThat(tableDef.getPrimaryKeyVarLenColumns(), nullValue());
-    assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), nullValue());
+    assertThat(tableDef.getPrimaryKeyColumnNames().isEmpty(), is(true));
+    assertThat(tableDef.getPrimaryKeyVarLenColumns().isEmpty(), is(true));
+    assertThat(tableDef.getPrimaryKeyVarLenColumnNames().isEmpty(), is(true));
     for (int i = 0; i < 7; i++) {
       assertThat(tableDef.isColumnPrimaryKey(columnList.get(i)), is(false));
     }
@@ -311,7 +310,7 @@ public class TableDefUtilTest {
     // by default set to utf8
     assertThat(tableDef.getDefaultCharset(), is("utf8"));
 
-    assertThat(tableDef.getPrimaryKeyColumns(), nullValue());
+    assertThat(tableDef.getPrimaryKeyColumns().isEmpty(), is(true));
 
     List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(1));
@@ -348,6 +347,39 @@ public class TableDefUtilTest {
         + "()\n"
         + "ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
     TableDefUtil.covertToTableDef(sql);
+  }
+
+  @Test
+  public void testTableName() {
+    String sql = "CREATE TABLE `tb01`\n"
+        + "(`id` int(11) NOT NULL,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "PRIMARY KEY (a))\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = utf8;";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    assertThat(tableDef.getName(), is("tb01"));
+    assertThat(tableDef.getFullyQualifiedName(), is("tb01"));
+  }
+
+  @Test
+  public void testTableFullyQualifiedName() {
+    String sql = "CREATE TABLE `db`.`tb01`\n"
+        + "(`id` int(11) NOT NULL,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "PRIMARY KEY (a))\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = utf8;";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    assertThat(tableDef.getName(), is("tb01"));
+    assertThat(tableDef.getFullyQualifiedName(), is("db.tb01"));
+
+    sql = "CREATE TABLE test.tb02\n"
+        + "(`id` int(11) NOT NULL,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "PRIMARY KEY (a))\n"
+        + "ENGINE=InnoDB DEFAULT CHARSET = utf8;";
+    tableDef = TableDefUtil.covertToTableDef(sql);
+    assertThat(tableDef.getName(), is("tb02"));
+    assertThat(tableDef.getFullyQualifiedName(), is("test.tb02"));
   }
 
 }

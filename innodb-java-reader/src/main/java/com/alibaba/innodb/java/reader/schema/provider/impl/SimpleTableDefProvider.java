@@ -43,10 +43,10 @@ public class SimpleTableDefProvider implements TableDefProvider {
     ImmutableMap.Builder<String, TableDef> builder = new ImmutableMap.Builder<>();
     if (CollectionUtils.isNotEmpty(tableDefList)) {
       for (TableDef tableDef : tableDefList) {
-        if (StringUtils.isEmpty(tableDef.getFullyQualifiedName())) {
+        if (StringUtils.isEmpty(tableDef.getName())) {
           throw new IllegalArgumentException("TableDef should have full qualified name (table name)");
         }
-        builder.put(tableDef.getFullyQualifiedName(), tableDef);
+        builder.put(tableDef.getName(), tableDef);
       }
     }
     return builder.build();

@@ -50,4 +50,5 @@ public interface StorageService extends Closeable {
    * @return Number of pages
    */
   long numOfPages();
+
 }

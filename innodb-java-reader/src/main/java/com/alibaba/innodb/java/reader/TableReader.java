@@ -294,4 +294,5 @@ public interface TableReader extends Closeable {
    */
   @Override
   void close();
+
 }

@@ -48,4 +48,5 @@ public enum ComparisonOperator {
   public static ComparisonOperator parse(String op) {
     return KVS.get(op);
   }
+
 }

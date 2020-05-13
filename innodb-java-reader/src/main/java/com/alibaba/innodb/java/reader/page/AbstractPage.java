@@ -60,4 +60,5 @@ public abstract class AbstractPage {
   public SliceInput getSliceInput() {
     return sliceInput;
   }
+
 }

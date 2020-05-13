@@ -48,7 +48,7 @@ public class SqlTableDefProvider implements TableDefProvider {
           continue;
         }
         TableDef tableDef = TableDefUtil.covertToTableDef(createTableSql);
-        builder.put(tableDef.getFullyQualifiedName(), tableDef);
+        builder.put(tableDef.getName(), tableDef);
       }
     }
     return builder.build();

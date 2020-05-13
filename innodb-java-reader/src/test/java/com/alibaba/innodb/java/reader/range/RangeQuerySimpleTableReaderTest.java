@@ -254,47 +254,44 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
     }
   }
 
-  //==========================================================================
-  // range query illegal argument
-  //==========================================================================
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableRangeQueryLowerUpperNotValid() {
+  @Test
+  public void testSimpleTableRangeQueryLowerUpperCornerCase() {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(12), ComparisonOperator.GTE,
-          ImmutableList.of(5), ComparisonOperator.LT);
-    }
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableRangeQueryLowerUpperNotValid2() {
-    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
-      reader.open();
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-          ImmutableList.of(12), ComparisonOperator.GTE,
+          ImmutableList.of(6), ComparisonOperator.GTE,
           Utils.constructMinRecord(1), ComparisonOperator.LT);
-    }
-  }
+      assertThat(recordList.isEmpty(), is(true));
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableRangeQueryLowerUpperNotValid3() {
-    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
-      reader.open();
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(6), ComparisonOperator.GTE,
+          Utils.constructMinRecord(1), ComparisonOperator.LTE);
+      assertThat(recordList.isEmpty(), is(true));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(6), ComparisonOperator.GT,
+          Utils.constructMinRecord(1), ComparisonOperator.LT);
+      assertThat(recordList.isEmpty(), is(true));
+
+      recordList = reader.rangeQueryByPrimaryKey(
           Utils.constructMaxRecord(1), ComparisonOperator.GTE,
           ImmutableList.of(Integer.MIN_VALUE), ComparisonOperator.LT);
-    }
-  }
+      assertThat(recordList.isEmpty(), is(true));
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableRangeQueryLowerUpperNotValid4() {
-    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
-      reader.open();
-      List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
+      recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(2), ComparisonOperator.GT,
-          ImmutableList.of(1), ComparisonOperator.LT);
+          ImmutableList.of(1), ComparisonOperator.LTE);
+      assertThat(recordList.isEmpty(), is(true));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(6), ComparisonOperator.GT,
+          ImmutableList.of(6), ComparisonOperator.LT);
+      assertThat(recordList.isEmpty(), is(true));
+
+      recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of(6), ComparisonOperator.GTE,
+          ImmutableList.of(6), ComparisonOperator.LTE);
+      assertThat(recordList.size(), is(1));
     }
   }
 

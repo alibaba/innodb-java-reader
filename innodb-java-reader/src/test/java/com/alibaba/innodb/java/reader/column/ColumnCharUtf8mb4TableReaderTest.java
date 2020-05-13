@@ -105,11 +105,15 @@ public class ColumnCharUtf8mb4TableReaderTest extends AbstractTest {
           if (!isMysql8Flag.get()) {
             assertThat(record.get("h"), is(((char) (97 + i % 26)) + StringUtils.repeat('业', 10000)));
           }
-          assertThat(record.get("i"), is(" "));
-          assertThat(record.get("j"), is(((char) (97 + i % 26)) + StringUtils.repeat('辰', 10)
-              + StringUtils.repeat(' ', 32 - 10 * 3 - 1)));
-          assertThat(record.get("k"), is(((char) (97 + i % 26)) + StringUtils.repeat('x', 100)
-              + StringUtils.repeat(' ', 255 - 100 - 1)));
+          assertThat(record.get("i"), is(""));
+          // If innodb.java.reader.enable.trim.char set to false, change to
+          // assertThat(record.get("i"), is(" "));;
+          assertThat(record.get("j"), is(((char) (97 + i % 26)) + StringUtils.repeat('辰', 10)));
+          // If innodb.java.reader.enable.trim.char set to false, add
+          // + StringUtils.repeat(' ', 32 - 10 * 3 - 1)));
+          assertThat(record.get("k"), is(((char) (97 + i % 26)) + StringUtils.repeat('x', 100)));
+          // If innodb.java.reader.enable.trim.char set to false, add
+          // + StringUtils.repeat(' ', 255 - 100 - 1)));
         }
       }
     };

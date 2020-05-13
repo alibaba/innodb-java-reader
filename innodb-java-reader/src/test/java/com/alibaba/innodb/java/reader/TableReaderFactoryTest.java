@@ -13,6 +13,7 @@ import com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider;
 
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
@@ -32,6 +33,14 @@ public class TableReaderFactoryTest extends AbstractTest {
       + "ENGINE=InnoDB;";
 
   private String createSql2 = "CREATE TABLE `test`.`tb01`\n"
+      + "(`id` int(11) NOT NULL ,\n"
+      + "`a` bigint(20) NOT NULL,\n"
+      + "`b` varchar(64) NOT NULL,\n"
+      + "`c` varchar(1024) default 'THIS_IS_DEFAULT_VALUE',\n"
+      + "PRIMARY KEY (`id`))\n"
+      + "ENGINE=InnoDB;";
+
+  private String createSql3 = "CREATE TABLE `test`.`tb001`\n"
       + "(`id` int(11) NOT NULL ,\n"
       + "`a` bigint(20) NOT NULL,\n"
       + "`b` varchar(64) NOT NULL,\n"
@@ -73,23 +82,6 @@ public class TableReaderFactoryTest extends AbstractTest {
   }
 
   @Test
-  public void testSimpleTableDefProviderNoSetFullQualifiedName2() {
-    TableDefProvider tableDefProvider = new SimpleTableDefProvider(tableDef2);
-    TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
-        .withProvider(tableDefProvider)
-        .withDataFileBasePath(IBD_FILE_BASE_PATH_MYSQL56 + "simple")
-        .build();
-    TableReader reader = tableReaderFactory.createTableReader("db.tb01");
-    try {
-      reader.open();
-      List<GenericRecord> recordList = reader.queryAll();
-      assertThat(recordList.size(), is(10));
-    } finally {
-      reader.close();
-    }
-  }
-
-  @Test
   public void testSqlTableDefProviderNoSetFullQualifiedName1() {
     TableDefProvider tableDefProvider = new SqlTableDefProvider(createSql);
     TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
@@ -106,21 +98,15 @@ public class TableReaderFactoryTest extends AbstractTest {
     }
   }
 
-  @Test
+  @Test(expected = ReaderException.class)
   public void testSqlTableDefProviderNoSetFullQualifiedName2() {
     TableDefProvider tableDefProvider = new SqlTableDefProvider(createSql2);
     TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
         .withProvider(tableDefProvider)
         .withDataFileBasePath(IBD_FILE_BASE_PATH_MYSQL56 + "simple")
         .build();
+    // you can not search by full qualified name
     TableReader reader = tableReaderFactory.createTableReader("test.tb01");
-    try {
-      reader.open();
-      List<GenericRecord> recordList = reader.queryAll();
-      assertThat(recordList.size(), is(10));
-    } finally {
-      reader.close();
-    }
   }
 
   @Test
@@ -159,8 +145,8 @@ public class TableReaderFactoryTest extends AbstractTest {
     }
   }
 
-  @Test
-  public void testMultipleTableDefProviderTable() {
+  @Test(expected = IllegalArgumentException.class)
+  public void testMultipleTableDefProviderTableNegate() {
     TableDefProvider tableDefProvider = new SqlFileTableDefProvider(
         "src/test/resources/test.sql");
     TableDefProvider tableDefProvider2 = new SqlTableDefProvider(createSql2);
@@ -169,7 +155,40 @@ public class TableReaderFactoryTest extends AbstractTest {
         .withProvider(tableDefProvider2)
         .withDataFileBasePath(IBD_FILE_BASE_PATH_MYSQL80 + "simple")
         .build();
-    TableReader reader = tableReaderFactory.createTableReader("test.tb01");
+    // tb01 exist in more than one TableDefProvider
+    TableReader reader = tableReaderFactory.createTableReader("tb01");
+  }
+
+  @Test
+  public void testMultipleTableDefProviderTable() {
+    TableDefProvider tableDefProvider = new SqlFileTableDefProvider(
+        "src/test/resources/test.sql");
+    TableDefProvider tableDefProvider2 = new SqlTableDefProvider(createSql3);
+    TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+        .withProvider(tableDefProvider)
+        .withProvider(tableDefProvider2)
+        .withDataFileBasePath(IBD_FILE_BASE_PATH_MYSQL80 + "simple")
+        .build();
+    TableReader reader = tableReaderFactory.createTableReader("tb01");
+    try {
+      reader.open();
+      List<GenericRecord> recordList = reader.queryAll();
+      assertThat(recordList.size(), is(10));
+    } finally {
+      reader.close();
+    }
+  }
+
+  @Test
+  public void testMultipleTableDefProviderTable2() {
+    TableDefProvider tableDefProvider = new SqlFileTableDefProvider(
+        "src/test/resources/test.sql");
+    TableDefProvider tableDefProvider2 = new SqlTableDefProvider(createSql3);
+    TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+        .withProviders(Arrays.asList(tableDefProvider, tableDefProvider2))
+        .withDataFileBasePath(IBD_FILE_BASE_PATH_MYSQL80 + "simple")
+        .build();
+    TableReader reader = tableReaderFactory.createTableReader("tb01");
     try {
       reader.open();
       List<GenericRecord> recordList = reader.queryAll();
@@ -206,7 +225,8 @@ public class TableReaderFactoryTest extends AbstractTest {
         .withProvider(tableDefProvider)
         .withDataFileBasePath(IBD_FILE_BASE_PATH_MYSQL80 + "simple")
         .build();
-    assertThat(tableReaderFactory.getIdentityTableDefMap().size(), is(42));
+    assertThat(tableReaderFactory.getTableNameToDefMap().size(), is(42));
+    assertThat(tableReaderFactory.getTableDef("tb03").getName(), is("tb03"));
   }
 
   @Test(expected = IllegalArgumentException.class)

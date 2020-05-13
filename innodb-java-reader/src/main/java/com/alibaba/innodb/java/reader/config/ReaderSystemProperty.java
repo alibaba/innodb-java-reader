@@ -66,7 +66,7 @@ public final class ReaderSystemProperty<T> {
    */
   public static final ReaderSystemProperty<Boolean> ENABLE_TRIM_CHAR =
       booleanProperty("innodb.java.reader.enable.trim.char",
-          false);
+          true);
 
   /**
    * For cli, when parsing string to list of objects to build key, use the delimiter.
@@ -177,4 +177,5 @@ public final class ReaderSystemProperty<T> {
   public T value() {
     return value;
   }
+
 }

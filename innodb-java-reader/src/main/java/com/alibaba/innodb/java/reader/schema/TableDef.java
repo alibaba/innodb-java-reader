@@ -165,11 +165,11 @@ public class TableDef {
   }
 
   public List<Column> getPrimaryKeyColumns() {
-    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyColumns();
+    return primaryKeyMeta == null ? ImmutableList.of() : primaryKeyMeta.getKeyColumns();
   }
 
   public List<String> getPrimaryKeyColumnNames() {
-    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyColumnNames();
+    return primaryKeyMeta == null ? ImmutableList.of() : primaryKeyMeta.getKeyColumnNames();
   }
 
   public int getPrimaryKeyColumnNum() {
@@ -177,11 +177,11 @@ public class TableDef {
   }
 
   public List<Column> getPrimaryKeyVarLenColumns() {
-    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyVarLenColumns();
+    return primaryKeyMeta == null ? ImmutableList.of() : primaryKeyMeta.getKeyVarLenColumns();
   }
 
   public List<String> getPrimaryKeyVarLenColumnNames() {
-    return primaryKeyMeta == null ? null : primaryKeyMeta.getKeyVarLenColumnNames();
+    return primaryKeyMeta == null ? ImmutableList.of() : primaryKeyMeta.getKeyVarLenColumnNames();
   }
 
   public int getPrimaryKeyVarLenColumnNum() {
@@ -189,7 +189,7 @@ public class TableDef {
   }
 
   public boolean isNoPrimaryKey() {
-    return primaryKeyMeta == null || primaryKeyMeta.getKeyColumns().size() == 0;
+    return primaryKeyMeta == null || CollectionUtils.isEmpty(primaryKeyMeta.getKeyColumns());
   }
 
   public boolean isColumnPrimaryKey(Column column) {
@@ -431,4 +431,5 @@ public class TableDef {
     sb.append(";");
     return sb.toString();
   }
+
 }

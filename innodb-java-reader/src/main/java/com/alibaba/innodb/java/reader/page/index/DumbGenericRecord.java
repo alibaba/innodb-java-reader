@@ -26,4 +26,5 @@ public class DumbGenericRecord extends GenericRecord {
   public GenericRecord getDelegate() {
     return delegate;
   }
+
 }

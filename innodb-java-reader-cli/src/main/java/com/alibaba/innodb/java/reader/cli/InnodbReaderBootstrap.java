@@ -407,11 +407,11 @@ public class InnodbReaderBootstrap {
         .withProvider(tableDefProvider)
         .withDataFilePath(ibdFilePath)
         .build();
-    if (!tableReaderFactory.getIdentityTableDefMap().containsKey(tableName)) {
+    if (!tableReaderFactory.existTableDef(tableName)) {
       throw new IllegalArgumentException("table name " + tableName + " not found in sql file");
     }
     GenLsnHeatmapUtil.dump(ibdFilePath, destHtmlPath,
-        tableReaderFactory.getIdentityTableDefMap().get(tableName),
+        tableReaderFactory.getTableDef(tableName),
         64, widthAndHeight);
   }
 
@@ -422,11 +422,11 @@ public class InnodbReaderBootstrap {
         .withProvider(tableDefProvider)
         .withDataFilePath(ibdFilePath)
         .build();
-    if (!tableReaderFactory.getIdentityTableDefMap().containsKey(tableName)) {
+    if (!tableReaderFactory.existTableDef(tableName)) {
       throw new IllegalArgumentException("table name " + tableName + " not found in sql file");
     }
     GenFillingRateHeatmapUtil.dump(ibdFilePath, destHtmlPath,
-        tableReaderFactory.getIdentityTableDefMap().get(tableName),
+        tableReaderFactory.getTableDef(tableName),
         64, widthAndHeight);
   }
 

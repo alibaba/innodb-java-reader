@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -323,6 +325,92 @@ public class UtilsTest {
       assertThat(s.startsWith("CREATE TABLE"), is(true));
       assertThat(s.endsWith(";"), is(true));
     }
+  }
+
+  @Test
+  public void testParseDateTimeText() {
+    String s = "2020-05-01 12:15:59";
+    LocalDateTime dt = Utils.parseDateTimeText(s);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59"));
+
+    s = "2020-05-01 12:15:59.5";
+    dt = Utils.parseDateTimeText(s, 1);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.500"));
+
+    s = "2020-05-01 12:15:59.50";
+    dt = Utils.parseDateTimeText(s, 2);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.500"));
+
+    s = "2020-05-01 12:15:59.25";
+    dt = Utils.parseDateTimeText(s, 2);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.250"));
+
+    s = "2020-05-01 12:15:59.000";
+    dt = Utils.parseDateTimeText(s, 3);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59"));
+
+    s = "2020-05-01 12:15:59.001";
+    dt = Utils.parseDateTimeText(s, 3);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.001"));
+
+    s = "2020-05-01 12:15:59.091";
+    dt = Utils.parseDateTimeText(s, 3);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.091"));
+
+    s = "2020-05-01 12:15:59.500";
+    dt = Utils.parseDateTimeText(s, 3);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.500"));
+
+    s = "2020-05-01 12:15:59.2500";
+    dt = Utils.parseDateTimeText(s, 4);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.250"));
+
+    s = "2020-05-01 12:15:59.25000";
+    dt = Utils.parseDateTimeText(s, 5);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.250"));
+
+    s = "2020-05-01 12:15:59.250000";
+    dt = Utils.parseDateTimeText(s, 6);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.250"));
+
+    s = "2020-05-01 12:15:59.250001";
+    dt = Utils.parseDateTimeText(s, 6);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.250001"));
+
+    s = "2020-05-01 12:15:59.050001";
+    dt = Utils.parseDateTimeText(s, 6);
+    assertThat(dt.toString(), is("2020-05-01T12:15:59.050001"));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testParseDateTimeTextNegate2() {
+    String s = "2020-05-01 12:15:59.456789";
+    Utils.parseDateTimeText(s, 9);
+  }
+
+  @Test
+  public void testParseTimeText() {
+    String s = "12:15:59";
+    LocalTime time = Utils.parseTimeText(s);
+    assertThat(time.toString(), is("12:15:59"));
+
+    s = "12:15:59.5";
+    time = Utils.parseTimeText(s, 1);
+    assertThat(time.toString(), is("12:15:59.500"));
+
+    s = "12:15:59.50";
+    time = Utils.parseTimeText(s, 2);
+    assertThat(time.toString(), is("12:15:59.500"));
+
+    s = "12:15:59.500";
+    time = Utils.parseTimeText(s, 3);
+    assertThat(time.toString(), is("12:15:59.500"));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testParseTimeTextNegate2() {
+    String s = "12:15:59.456789";
+    Utils.parseTimeText(s, 9);
   }
 
 }

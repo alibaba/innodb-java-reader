@@ -63,4 +63,6 @@ public interface Constants {
   int INT_100 = 100;
   int INT_10 = 10;
 
+  int MAX_PRECISION = 6;
+
 }

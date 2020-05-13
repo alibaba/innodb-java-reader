@@ -374,7 +374,7 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
             assertThat(r.get("c4"), is(StringUtils.repeat((char) (97 + i % 26), i % 4 + 1)));
             assertThat(r.get("c5"), is(i + StringUtils.repeat((char) (97 + i % 26), i % 10 + 1)));
             assertThat(r.get("c6"), is(k + StringUtils.repeat((char) (97 + i % 26), i % 5 + 1)));
-            assertThat(r.get("c7"), is("1569985199"));
+            assertThat(r.get("c7"), is("2019-10-02 10:59:59"));
             assertThat(r.get("c8").getClass().isAssignableFrom(String.class),
                 is(true));
             assertThat(StringUtils.isAlpha(r.get("c8").toString()),

@@ -45,4 +45,5 @@ public class Blob extends AbstractPage {
   public boolean hasNext() {
     return nextPageNumber != null;
   }
+
 }

@@ -137,4 +137,5 @@ public class GenericRecord {
   public long getChildPageNumber() {
     return childPageNumber;
   }
+
 }

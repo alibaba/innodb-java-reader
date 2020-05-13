@@ -165,6 +165,11 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
       rangeQuery2(reader, 42000, 47653);
       rangeQuery3(reader, 42000, 47653);
       rangeQuery4(reader, 42000, 47653);
+
+      rangeQuery(reader, 42000, 42000);
+
+      rangeQuery(reader, 42000, 41999);
+      rangeQuery(reader, 42000, 0);
     }
   }
 
@@ -174,6 +179,10 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
         ImmutableList.of(end), ComparisonOperator.LT);
     if (end == start) {
       end++;
+    }
+    if (end < start) {
+      assertThat(recordList.size(), is(0));
+      return;
     }
     assertThat(recordList.size(), is(end - start));
     int index = 0;
