@@ -8,6 +8,7 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -38,6 +39,16 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
         + "c8 VARCHAR(100) NOT NULL,\n"
         + "PRIMARY KEY (c5, c2, c6)\n"
         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+  }
+
+  @Before
+  public void before() {
+    System.setProperty("user.timezone", "Asia/Shanghai");
+  }
+
+  @Before
+  public void after() {
+    System.clearProperty("user.timezone");
   }
 
   //==========================================================================

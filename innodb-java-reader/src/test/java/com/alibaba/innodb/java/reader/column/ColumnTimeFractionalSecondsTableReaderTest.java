@@ -7,6 +7,7 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -38,6 +39,16 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("c").setType("timestamp(6)").setNullable(false))
         .addColumn(new Column().setName("d").setType("time(5)").setNullable(false))
         .addColumn(new Column().setName("e").setType("datetime(0)").setNullable(false));
+  }
+
+  @Before
+  public void before() {
+    System.setProperty("user.timezone", "Asia/Shanghai");
+  }
+
+  @Before
+  public void after() {
+    System.clearProperty("user.timezone");
   }
 
   @Test

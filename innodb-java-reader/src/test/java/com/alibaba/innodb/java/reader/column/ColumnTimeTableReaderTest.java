@@ -7,6 +7,7 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -50,6 +51,16 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("b").setType("datetime").setNullable(false))
         .addColumn(new Column().setName("c").setType("timestamp").setNullable(false))
         .addColumn(new Column().setName("d").setType("time").setNullable(false));
+  }
+
+  @Before
+  public void before() {
+    System.setProperty("user.timezone", "Asia/Shanghai");
+  }
+
+  @Before
+  public void after() {
+    System.clearProperty("user.timezone");
   }
 
   @Test
