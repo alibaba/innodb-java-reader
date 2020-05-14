@@ -8,8 +8,6 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,7 +15,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -41,16 +38,6 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
         + "c8 VARCHAR(100) NOT NULL,\n"
         + "PRIMARY KEY (c5, c2, c6)\n"
         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-  }
-
-  @Before
-  public void before() {
-    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
-  }
-
-  @After
-  public void after() {
-    TimeZone.setDefault(DEFAULT_TIMEZONE);
   }
 
   //==========================================================================
@@ -387,7 +374,7 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
             assertThat(r.get("c4"), is(StringUtils.repeat((char) (97 + i % 26), i % 4 + 1)));
             assertThat(r.get("c5"), is(i + StringUtils.repeat((char) (97 + i % 26), i % 10 + 1)));
             assertThat(r.get("c6"), is(k + StringUtils.repeat((char) (97 + i % 26), i % 5 + 1)));
-            assertThat(r.get("c7"), is("2019-10-02 10:59:59"));
+            assertThat(r.get("c7"), is(expectedLocalTime("2019-10-02 02:59:59")));
             assertThat(r.get("c8").getClass().isAssignableFrom(String.class),
                 is(true));
             assertThat(StringUtils.isAlpha(r.get("c8").toString()),

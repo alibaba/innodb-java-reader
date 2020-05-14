@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Function;
 
 import static com.alibaba.innodb.java.reader.Constants.PRECISION_LIMIT;
@@ -43,8 +44,13 @@ public class ColumnFactory {
    */
   private static final Map<String, ColumnParser<?>> TYPE_TO_COLUMN_PARSER_MAP;
 
-  private static final FastDateFormat DATETIME_FORMAT
-      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
+  /**
+   * MySQL converts TIMESTAMP values from the current time zone to UTC for storage,
+   * and back from UTC to the current time zone for retrieval.
+   * (This does not occur for other types such as DATETIME.)
+   */
+  private static final FastDateFormat TIMESTAMP_FORMAT
+      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss", TimeZone.getDefault());
 
   /**
    * Prevent instantiation.
@@ -519,7 +525,7 @@ public class ColumnFactory {
     public String readFrom(SliceInput input, Column column) {
       long packedValue = input.unpackBigendian(4);
       String fractionStr = getFractionString(input, column);
-      return String.format("%s%s", DATETIME_FORMAT.format(new Date(packedValue * 1000L)),
+      return String.format("%s%s", TIMESTAMP_FORMAT.format(new Date(packedValue * 1000L)),
           fractionStr);
     }
 

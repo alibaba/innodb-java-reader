@@ -7,13 +7,10 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
@@ -55,16 +52,6 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("d").setType("time").setNullable(false));
   }
 
-  @Before
-  public void before() {
-    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
-  }
-
-  @After
-  public void after() {
-    TimeZone.setDefault(DEFAULT_TIMEZONE);
-  }
-
   @Test
   public void testTimeColumnMysql56() {
     assertTestOf(this)
@@ -102,7 +89,7 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       // MySQL treats DATETIME with no timezone,
       // but for TIMESTAMP it will be in local time zone,
       assertThat(r1.get("b"), is("2019-10-02 10:59:59"));
-      assertThat(r1.get("c"), is("2019-10-02 13:59:59"));
+      assertThat(r1.get("c"), is(expectedLocalTime("2019-10-02 05:59:59")));
       assertThat(r1.get("d"), is("10:59:59"));
 
       GenericRecord r2 = recordList.get(1);
@@ -111,7 +98,7 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
       assertThat(r2.get("a"), is(101));
       assertThat(r2.get("b"), is("1970-01-01 08:00:01"));
-      assertThat(r2.get("c"), is("1970-01-01 11:00:01"));
+      assertThat(r2.get("c"), is(expectedLocalTime("1970-01-01 03:00:01")));
       assertThat(r2.get("d"), is("08:00:01"));
 
       GenericRecord r3 = recordList.get(2);
@@ -120,7 +107,7 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3)));
       assertThat(r3.get("a"), is(102));
       assertThat(r3.get("b"), is("2008-11-23 09:23:00"));
-      assertThat(r3.get("c"), is("2008-11-23 12:23:00"));
+      assertThat(r3.get("c"), is(expectedLocalTime("2008-11-23 04:23:00")));
       assertThat(r3.get("d"), is("09:23:00"));
 
       GenericRecord r4 = recordList.get(3);
@@ -129,7 +116,7 @@ public class ColumnTimeTableReaderTest extends AbstractTest {
       assertThat(r4.getPrimaryKey(), is(ImmutableList.of(4)));
       assertThat(r4.get("a"), is(103));
       assertThat(r4.get("b"), is("2019-12-31 22:00:28"));
-      assertThat(r4.get("c"), is("2020-01-01 01:00:28"));
+      assertThat(r4.get("c"), is(expectedLocalTime("2019-12-31 17:00:28")));
       assertThat(r4.get("d"), is("22:00:28"));
     };
   }

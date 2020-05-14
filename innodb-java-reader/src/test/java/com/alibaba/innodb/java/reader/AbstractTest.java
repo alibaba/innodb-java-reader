@@ -5,16 +5,21 @@ import com.google.common.base.MoreObjects;
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -22,8 +27,6 @@ import java.util.function.Function;
  * @author xu.zx
  */
 public class AbstractTest {
-
-  protected static final TimeZone DEFAULT_TIMEZONE = TimeZone.getDefault();
 
   /**
    * Holds a mapping of test case to Innodb file which will used when testing.
@@ -222,6 +225,14 @@ public class AbstractTest {
       throw new RuntimeException("while reading from testcase.properties file", e);
     }
     return testCaseProperties;
+  }
+
+  protected String expectedLocalTime(String dateTime) {
+    ZoneOffset zoneOffset = ZonedDateTime.now().getOffset();
+    LocalDateTime ldt = Utils.parseDateTimeText(dateTime);
+    Instant instant = Instant.ofEpochSecond(ldt.toEpochSecond(ZoneOffset.of("+00:00")));
+    OffsetDateTime odt = instant.atOffset(zoneOffset);
+    return odt.format(Utils.TIME_FORMAT_TIMESTAMP[0]);
   }
 
 }

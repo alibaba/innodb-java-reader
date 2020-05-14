@@ -7,13 +7,10 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
@@ -41,16 +38,6 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("c").setType("timestamp(6)").setNullable(false))
         .addColumn(new Column().setName("d").setType("time(5)").setNullable(false))
         .addColumn(new Column().setName("e").setType("datetime(0)").setNullable(false));
-  }
-
-  @Before
-  public void before() {
-    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
-  }
-
-  @After
-  public void after() {
-    TimeZone.setDefault(DEFAULT_TIMEZONE);
   }
 
   @Test
@@ -88,7 +75,8 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1)));
       assertThat(r1.get("a"), is(100));
       assertThat(r1.get("b"), is("2019-10-02 10:59:59.123"));
-      assertThat(r1.get("c"), is("2019-10-02 10:59:59.456389"));
+      assertThat(r1.get("c"), is(expectedLocalTime("2019-10-02 02:59:59")
+          + ".456389"));
       assertThat(r1.get("d"), is("10:59:59.45638"));
       assertThat(r1.get("e"), is("2019-10-02 10:59:59"));
 
@@ -108,7 +96,8 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3)));
       assertThat(r3.get("a"), is(102));
       assertThat(r3.get("b"), is("2008-11-23 09:23:00.808"));
-      assertThat(r3.get("c"), is("2008-11-23 09:23:00.294000"));
+      assertThat(r3.get("c"), is(expectedLocalTime("2008-11-23 01:23:00")
+          + ".294000"));
       assertThat(r3.get("d"), is("09:23:00.29400"));
       assertThat(r3.get("e"), is("2008-11-23 09:23:00"));
     };
