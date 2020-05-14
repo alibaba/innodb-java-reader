@@ -86,7 +86,8 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
       assertThat(r2.get("a"), is(101));
       assertThat(r2.get("b"), is("1970-01-01 08:00:01.550"));
-      assertThat(r2.get("c"), is("1970-01-01 08:00:01.000001"));
+      assertThat(r2.get("c"), is(expectedLocalTime("1970-01-01 00:00:01")
+          + ".000001"));
       assertThat(r2.get("d"), is("08:00:01.00000"));
       assertThat(r2.get("e"), is("1970-01-01 08:00:01"));
 
