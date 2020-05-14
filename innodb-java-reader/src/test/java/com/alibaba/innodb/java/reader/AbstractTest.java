@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -21,6 +22,8 @@ import java.util.function.Function;
  * @author xu.zx
  */
 public class AbstractTest {
+
+  protected static final TimeZone DEFAULT_TIMEZONE = TimeZone.getDefault();
 
   /**
    * Holds a mapping of test case to Innodb file which will used when testing.

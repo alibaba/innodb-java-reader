@@ -7,11 +7,13 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
@@ -43,12 +45,12 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
 
   @Before
   public void before() {
-    System.setProperty("user.timezone", "Asia/Shanghai");
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
   }
 
-  @Before
+  @After
   public void after() {
-    System.clearProperty("user.timezone");
+    TimeZone.setDefault(DEFAULT_TIMEZONE);
   }
 
   @Test

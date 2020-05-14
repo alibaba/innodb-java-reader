@@ -8,6 +8,7 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -43,12 +45,12 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
 
   @Before
   public void before() {
-    System.setProperty("user.timezone", "Asia/Shanghai");
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
   }
 
-  @Before
+  @After
   public void after() {
-    System.clearProperty("user.timezone");
+    TimeZone.setDefault(DEFAULT_TIMEZONE);
   }
 
   //==========================================================================
