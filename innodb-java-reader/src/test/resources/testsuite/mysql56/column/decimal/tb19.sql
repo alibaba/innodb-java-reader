@@ -4,10 +4,11 @@ CREATE TABLE `tb19`
 `a` DECIMAL(6) NOT NULL,
 `b` DECIMAL(10, 5) NOT NULL,
 `c` DECIMAL(12, 0) NOT NULL,
-`d` DECIMAL NOT NULL,
+`d` NUMERIC(6, 2) NOT NULL,
+`e` DECIMAL NOT NULL,
 PRIMARY KEY (`id`))
 ENGINE=InnoDB;
 
-insert into tb19 values(null, 0.0, 0.0, 0, 0.0);
-insert into tb19 values(null, 123456.123456789, 12345.67890, 12345678901, 12345.678);
-insert into tb19 values(null, -123456.123456789, -12345.67890, -12345678901, -12345.678);
+insert into tb19 values(null, 0.0, 0.0, 0, 0, 0.0);
+insert into tb19 values(null, 123456.123456789, 12345.67890, 12345678901, 1234.10, 12345.678);
+insert into tb19 values(null, -123456.123456789, -12345.67890, -12345678901, 3.14159, -12345.678);

@@ -17,6 +17,7 @@ import static com.alibaba.innodb.java.reader.Constants.CONST_UNSIGNED;
 import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DATETIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DECIMAL;
+import static com.alibaba.innodb.java.reader.column.ColumnType.NUMERIC;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIMESTAMP;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -248,6 +249,7 @@ public class Column {
       checkState(StringUtils.isNotEmpty(wrappedString), "String cannot be empty between ( and ), for example int(10)");
       switch (this.type) {
         case DECIMAL:
+        case NUMERIC:
           handleDecimal(wrappedString);
           break;
         case DATETIME:

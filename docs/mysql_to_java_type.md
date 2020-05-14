@@ -9,7 +9,7 @@
 | BINARY, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB | byte[]     |
 | DATETIME, TIMESTAMP, TIME, DATE                         | String     |
 | YEAR                                                    | Short      |
-| FLOAT                                                   | Float      |
+| FLOAT, REAL                                             | Float      |
 | DOUBLE                                                  | Double     |
-| DECIMAL                                                 | BigDecimal |
+| DECIMAL, NUMERIC                                        | BigDecimal |
 | BOOL, BOOLEAN                                           | Boolean    |

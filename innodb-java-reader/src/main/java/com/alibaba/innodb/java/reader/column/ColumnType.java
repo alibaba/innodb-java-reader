@@ -32,6 +32,7 @@ public final class ColumnType {
   public static final String BIGINT = "BIGINT";
 
   public static final String FLOAT = "FLOAT";
+  public static final String REAL = "REAL";
   public static final String DOUBLE = "DOUBLE";
   public static final String DECIMAL = "DECIMAL";
   public static final String NUMERIC = "NUMERIC";

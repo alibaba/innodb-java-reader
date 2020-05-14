@@ -780,8 +780,10 @@ public class ColumnFactory {
     typeToColumnParserMap.put(ColumnType.YEAR, YEAR);
     typeToColumnParserMap.put(ColumnType.DATE, DATE);
     typeToColumnParserMap.put(ColumnType.FLOAT, FLOAT);
+    typeToColumnParserMap.put(ColumnType.REAL, FLOAT);
     typeToColumnParserMap.put(ColumnType.DOUBLE, DOUBLE);
     typeToColumnParserMap.put(ColumnType.DECIMAL, DECIMAL);
+    typeToColumnParserMap.put(ColumnType.NUMERIC, DECIMAL);
     typeToColumnParserMap.put(ColumnType.BOOL, BOOLEAN);
     typeToColumnParserMap.put(ColumnType.BOOLEAN, BOOLEAN);
     TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);

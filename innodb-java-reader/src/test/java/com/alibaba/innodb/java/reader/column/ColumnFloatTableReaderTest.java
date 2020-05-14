@@ -17,30 +17,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * <pre>
- * mysql> select * from tb15\G;
- * *************************** 1. row ***************************
- *       id: 1
- *  c_float: 0
- * c_double: 0
- * *************************** 2. row ***************************
- *       id: 2
- *  c_float: 1
- * c_double: -1
- * *************************** 3. row ***************************
- *       id: 3
- *  c_float: 222.22
- * c_double: 3333.333
- * *************************** 4. row ***************************
- *       id: 4
- *  c_float: 12345700
- * c_double: 1234567890.123456
- * *************************** 5. row ***************************
- *       id: 5
- *  c_float: -12345700
- * c_double: -1234567890.123456
- * </pre>
- *
  * @author xu.zx
  */
 public class ColumnFloatTableReaderTest extends AbstractTest {
@@ -49,6 +25,7 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
     return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11) unsigned").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("c_float").setType("float").setNullable(false))
+        .addColumn(new Column().setName("c_real").setType("real").setNullable(false))
         .addColumn(new Column().setName("c_double").setType("double").setNullable(false));
   }
 
@@ -79,37 +56,49 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
   public Consumer<List<GenericRecord>> expected() {
     return recordList -> {
 
-      assertThat(recordList.size(), is(5));
+      assertThat(recordList.size(), is(6));
 
       GenericRecord r1 = recordList.get(0);
       System.out.println(Arrays.asList(r1.getValues()));
       assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1L)));
       assertThat(r1.get("c_float"), is(0.0F));
+      assertThat(r1.get("c_real"), is(0.0F));
       assertThat(r1.get("c_double"), is(0.0D));
 
       GenericRecord r2 = recordList.get(1);
       System.out.println(Arrays.asList(r2.getValues()));
       assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2L)));
-      assertThat(r2.get("c_float"), is(1.0F));
-      assertThat(r2.get("c_double"), is(-1.0D));
+      assertThat(r2.get("c_float"), is(0.56789F));
+      assertThat(r2.get("c_real"), is(0.12345F));
+      assertThat(r2.get("c_double"), is(0.987654321D));
 
       GenericRecord r3 = recordList.get(2);
-      System.out.println(Arrays.asList(r3.getValues()));
+      System.out.println(Arrays.asList(r2.getValues()));
       assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3L)));
-      assertThat(r3.get("c_float"), is(222.22F));
-      assertThat(r3.get("c_double"), is(3333.333D));
+      assertThat(r3.get("c_float"), is(1.0F));
+      assertThat(r3.get("c_real"), is(-1.0F));
+      assertThat(r3.get("c_double"), is(-1.0D));
 
       GenericRecord r4 = recordList.get(3);
-      System.out.println(Arrays.asList(r4.getValues()));
+      System.out.println(Arrays.asList(r3.getValues()));
       assertThat(r4.getPrimaryKey(), is(ImmutableList.of(4L)));
-      assertThat(r4.get("c_float"), is(12345678.1234F));
-      assertThat(r4.get("c_double"), is(1234567890.123456D));
+      assertThat(r4.get("c_float"), is(222.22F));
+      assertThat(r4.get("c_real"), is(222.22F));
+      assertThat(r4.get("c_double"), is(3333.333D));
 
       GenericRecord r5 = recordList.get(4);
-      System.out.println(Arrays.asList(r5.getValues()));
+      System.out.println(Arrays.asList(r4.getValues()));
       assertThat(r5.getPrimaryKey(), is(ImmutableList.of(5L)));
-      assertThat(r5.get("c_float"), is(-12345678.1234F));
-      assertThat(r5.get("c_double"), is(-1234567890.123456D));
+      assertThat(r5.get("c_float"), is(12345678.1234F));
+      assertThat(r5.get("c_real"), is(12345678.1234F));
+      assertThat(r5.get("c_double"), is(1234567890.123456D));
+
+      GenericRecord r6 = recordList.get(5);
+      System.out.println(Arrays.asList(r5.getValues()));
+      assertThat(r6.getPrimaryKey(), is(ImmutableList.of(6L)));
+      assertThat(r6.get("c_float"), is(-12345678.1234F));
+      assertThat(r6.get("c_real"), is(-12345678.1234F));
+      assertThat(r6.get("c_double"), is(-1234567890.123456D));
     };
   }
 }

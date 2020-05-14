@@ -43,8 +43,10 @@ public class ColumnFactoryTest {
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.YEAR).getName(), is(Short.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.DATE).getName(), is(String.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.FLOAT).getName(), is(Float.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.REAL).getName(), is(Float.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.DOUBLE).getName(), is(Double.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.DECIMAL).getName(), is(BigDecimal.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.NUMERIC).getName(), is(BigDecimal.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.BOOL).getName(), is(Boolean.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.BOOLEAN).getName(), is(Boolean.class.getName()));
   }

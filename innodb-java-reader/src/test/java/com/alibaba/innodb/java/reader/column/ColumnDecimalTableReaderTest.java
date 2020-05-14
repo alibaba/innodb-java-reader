@@ -18,28 +18,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * <pre>
- * mysql> select * from tb19\G;
- * *************************** 1. row ***************************
- * id: 1
- *  a: 0
- *  b: 0.00000
- *  c: 0
- *  d: 0
- * *************************** 2. row ***************************
- * id: 2
- *  a: 123456
- *  b: 12345.67890
- *  c: 12345678901
- *  d: 12346
- * *************************** 3. row ***************************
- * id: 3
- *  a: -123456
- *  b: -12345.67890
- *  c: -12345678901
- *  d: -12346
- * </pre>
- *
  * @author xu.zx
  */
 public class ColumnDecimalTableReaderTest extends AbstractTest {
@@ -50,7 +28,8 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("a").setType("DECIMAL(6)").setNullable(false))
         .addColumn(new Column().setName("b").setType("DECIMAL(10,5)").setNullable(false))
         .addColumn(new Column().setName("c").setType("DECIMAL(12,0)").setNullable(false))
-        .addColumn(new Column().setName("d").setType("DECIMAL").setNullable(false));
+        .addColumn(new Column().setName("d").setType("NUMERIC(6,2)").setNullable(false))
+        .addColumn(new Column().setName("e").setType("DECIMAL").setNullable(false));
   }
 
   @Test
@@ -88,7 +67,8 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
       assertThat(r1.get("a"), is(new BigDecimal("0")));
       assertThat(r1.get("b"), is(new BigDecimal("0.00000")));
       assertThat(r1.get("c"), is(new BigDecimal("0")));
-      assertThat(r1.get("d"), is(new BigDecimal("0")));
+      assertThat(r1.get("d"), is(new BigDecimal("0.00")));
+      assertThat(r1.get("e"), is(new BigDecimal("0")));
 
       GenericRecord r2 = recordList.get(1);
       Object[] v2 = r2.getValues();
@@ -97,7 +77,8 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
       assertThat(r2.get("a"), is(new BigDecimal("123456")));
       assertThat(r2.get("b"), is(new BigDecimal("12345.67890")));
       assertThat(r2.get("c"), is(new BigDecimal("12345678901")));
-      assertThat(r2.get("d"), is(new BigDecimal("12346")));
+      assertThat(r2.get("d"), is(new BigDecimal("1234.10")));
+      assertThat(r2.get("e"), is(new BigDecimal("12346")));
 
       GenericRecord r3 = recordList.get(2);
       Object[] v3 = r3.getValues();
@@ -106,7 +87,8 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
       assertThat(r3.get("a"), is(new BigDecimal("-123456")));
       assertThat(r3.get("b"), is(new BigDecimal("-12345.67890")));
       assertThat(r3.get("c"), is(new BigDecimal("-12345678901")));
-      assertThat(r3.get("d"), is(new BigDecimal("-12346")));
+      assertThat(r3.get("d"), is(new BigDecimal("3.14")));
+      assertThat(r3.get("e"), is(new BigDecimal("-12346")));
     };
   }
 }
