@@ -313,15 +313,26 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
-        ImmutableList.of(start), ComparisonOperator.GTE,
-        ImmutableList.of(end), ComparisonOperator.LT);
-    if (end == start) {
-      end++;
-    }
+    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT);
+    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE);
+    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE);
+    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT);
+  }
 
+  private void rangeQuery(TableReader reader, int start, int end,
+                          ComparisonOperator lowerOp, ComparisonOperator upperOp) {
+    Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
+        ImmutableList.of(start), lowerOp, ImmutableList.of(end), upperOp);
+    int expectedSize = end - start;
+    if (expectedSize > 0
+        && lowerOp == ComparisonOperator.GT && upperOp == ComparisonOperator.LT) {
+      expectedSize--;
+    }
+    if (lowerOp == ComparisonOperator.GTE && upperOp == ComparisonOperator.LTE) {
+      expectedSize++;
+    }
     int count = 0;
-    int i = start;
+    int i = lowerOp == ComparisonOperator.GTE ? start : start + 1;
     while (iterator.hasNext()) {
       GenericRecord record = iterator.next();
       Object[] values = record.getValues();
@@ -334,7 +345,7 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
       i++;
     }
 
-    assertThat(count, is(end - start));
+    assertThat(count, is(expectedSize));
     assertThat(iterator.hasNext(), is(false));
   }
 

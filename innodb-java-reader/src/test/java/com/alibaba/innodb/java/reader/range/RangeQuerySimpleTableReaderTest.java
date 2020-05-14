@@ -228,22 +228,33 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
       reader.open();
       for (int i = 1; i <= 10; i++) {
         for (int j = i; j <= 10; j++) {
-          rangeQuery(reader, i, j);
+          rangeQuery(reader, i, j, ComparisonOperator.GTE, ComparisonOperator.LT);
+          rangeQuery(reader, i, j, ComparisonOperator.GTE, ComparisonOperator.LTE);
+          rangeQuery(reader, i, j, ComparisonOperator.GT, ComparisonOperator.LTE);
+          rangeQuery(reader, i, j, ComparisonOperator.GT, ComparisonOperator.LT);
         }
       }
     }
   }
 
-  private void rangeQuery(TableReader reader, int start, int end) {
+  private void rangeQuery(TableReader reader, int start, int end,
+                          ComparisonOperator lowerOp, ComparisonOperator upperOp) {
     System.out.println(start + " " + end);
     List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-        ImmutableList.of(start), ComparisonOperator.GTE, ImmutableList.of(end), ComparisonOperator.LT);
-    if (end == start) {
-      end++;
+        ImmutableList.of(start), lowerOp, ImmutableList.of(end), upperOp);
+    int expectedSize = end - start;
+    if (expectedSize > 0
+        && lowerOp == ComparisonOperator.GT && upperOp == ComparisonOperator.LT) {
+      expectedSize--;
     }
-    assertThat(recordList.size(), is(end - start));
+    if (lowerOp == ComparisonOperator.GTE && upperOp == ComparisonOperator.LTE) {
+      expectedSize++;
+    }
+    assertThat(recordList.size(), is(expectedSize));
     int index = 0;
-    for (int i = start; i < end; i++) {
+    int iStart = lowerOp == ComparisonOperator.GTE ? start : start + 1;
+    int iEnd = upperOp == ComparisonOperator.LTE ? end : end - 1;
+    for (int i = iStart; i <= iEnd; i++) {
       GenericRecord record = recordList.get(index++);
       Object[] values = record.getValues();
       System.out.println(Arrays.asList(values));
@@ -514,12 +525,12 @@ public class RangeQuerySimpleTableReaderTest extends AbstractTest {
       recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(5), ComparisonOperator.GT,
           ImmutableList.of(5), ComparisonOperator.LTE);
-      assertThat(recordList.size(), is(1));
+      assertThat(recordList.size(), is(0));
 
       recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(5), ComparisonOperator.GTE,
           ImmutableList.of(5), ComparisonOperator.LT);
-      assertThat(recordList.size(), is(1));
+      assertThat(recordList.size(), is(0));
 
       recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(5), ComparisonOperator.GT,

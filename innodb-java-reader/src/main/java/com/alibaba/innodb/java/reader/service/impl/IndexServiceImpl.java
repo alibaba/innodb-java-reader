@@ -300,19 +300,6 @@ public class IndexServiceImpl implements IndexService {
       if (keyComparator.compare(lower, upper) > 0) {
         return new RecordIterator(ImmutableList.of());
       }
-      if (keyComparator.compare(lower, upper) == 0) {
-        if (lowerOperator == GT && upperOperator == LT) {
-          return new RecordIterator(ImmutableList.of());
-        }
-        GenericRecord record = queryByPrimaryKey(lower, recordProjection);
-        return new RecordIterator(record == null ? ImmutableList.of() : ImmutableList.of(record)) {
-
-          @Override
-          public void init() {
-            initialized = true;
-          }
-        };
-      }
     }
     final boolean isNoPk = tableDef.isNoPrimaryKey();
     if (!isNoPk) {
