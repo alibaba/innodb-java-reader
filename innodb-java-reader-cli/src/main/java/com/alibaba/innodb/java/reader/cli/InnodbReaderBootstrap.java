@@ -51,8 +51,6 @@ import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
 
-import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
-import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
 import static com.alibaba.innodb.java.reader.cli.CommandType.GEN_FILLING_RATE_HEATMAP;
 import static com.alibaba.innodb.java.reader.cli.CommandType.GEN_LSN_HEATMAP;
 import static com.alibaba.innodb.java.reader.page.PageType.EXTENT_DESCRIPTOR;
@@ -145,6 +143,9 @@ public class InnodbReaderBootstrap {
     options.addOption("projection", "projection", true,
         "projection list with column names delimited by comma");
 
+    options.addOption("desc", "desc", false,
+        "if records sorted in descending order, works for query all and range query");
+
     options.addOption("args", true, "arguments");
 
     String command = null;
@@ -156,6 +157,7 @@ public class InnodbReaderBootstrap {
     // show all pages or show one page
     boolean jsonStyle = false;
     boolean jsonPrettyStyle = false;
+    boolean desc = false;
     TableDefProvider tableDefProvider = null;
     Writer writer = new SysoutWriter();
     writer.open();
@@ -221,6 +223,9 @@ public class InnodbReaderBootstrap {
             "projection list is empty");
         projection = Arrays.asList(StringUtils.split(projectionStr, ","));
       }
+      if (line.hasOption("desc")) {
+        desc = true;
+      }
 
       if (line.hasOption("json-style")) {
         jsonStyle = true;
@@ -252,7 +257,7 @@ public class InnodbReaderBootstrap {
           showPages(ibdFilePath, writer, tableDefProvider, tableName, pageNumbers, jsonStyle, jsonPrettyStyle);
           break;
         case QUERY_ALL:
-          queryAll(ibdFilePath, writer, tableDefProvider, tableName, projection);
+          queryAll(ibdFilePath, writer, tableDefProvider, tableName, projection, desc);
           break;
         case QUERY_BY_PAGE_NUMBER:
           checkNotNull(args, "args should not be null");
@@ -276,7 +281,8 @@ public class InnodbReaderBootstrap {
               "nop".equalsIgnoreCase(range.get(2)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(2));
           rangeQueryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName, projection,
               lower, lowerOperator,
-              upper, upperOperator);
+              upper, upperOperator,
+              desc);
           break;
         case GEN_LSN_HEATMAP:
           genHeatmap(ibdFilePath, tableDefProvider, tableName, args, commandType);
@@ -307,12 +313,13 @@ public class InnodbReaderBootstrap {
   }
 
   private static void queryAll(String ibdFilePath, Writer writer,
-                               TableDefProvider tableDefProvider, String tableName, List<String> projection) {
+                               TableDefProvider tableDefProvider, String tableName,
+                               List<String> projection, boolean desc) {
     try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = CollectionUtils.isEmpty(projection)
-          ? reader.getQueryAllIterator() : reader.getQueryAllIterator(projection);
+          ? reader.getQueryAllIterator(!desc) : reader.getQueryAllIterator(projection, !desc);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
@@ -344,8 +351,8 @@ public class InnodbReaderBootstrap {
       reader.open();
       showHeaderIfSet(reader, writer);
       GenericRecord record = CollectionUtils.isEmpty(projection)
-          ? reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false))
-          : reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey, false), projection);
+          ? reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey))
+          : reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey), projection);
       StringBuilder b = new StringBuilder();
       if (record != null) {
         writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
@@ -356,17 +363,20 @@ public class InnodbReaderBootstrap {
   private static void rangeQueryByPrimaryKey(String ibdFilePath, Writer writer, TableDefProvider tableDefProvider,
                                              String tableName, List<String> projection,
                                              String lower, ComparisonOperator lowerOperator,
-                                             String upper, ComparisonOperator upperOperator) {
+                                             String upper, ComparisonOperator upperOperator,
+                                             boolean desc) {
     try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
       reader.open();
       showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = CollectionUtils.isEmpty(projection)
           ? reader.getRangeQueryIterator(
-          parseStringToKey(reader.getTableDef(), lower, true), lowerOperator,
-          parseStringToKey(reader.getTableDef(), upper, false), upperOperator)
+          parseStringToKey(reader.getTableDef(), lower), lowerOperator,
+          parseStringToKey(reader.getTableDef(), upper), upperOperator,
+          !desc)
           : reader.getRangeQueryIterator(
-          parseStringToKey(reader.getTableDef(), lower, true), lowerOperator,
-          parseStringToKey(reader.getTableDef(), upper, false), upperOperator, projection);
+          parseStringToKey(reader.getTableDef(), lower), lowerOperator,
+          parseStringToKey(reader.getTableDef(), upper), upperOperator,
+          projection, !desc);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
@@ -516,22 +526,22 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static List<Object> parseStringToKey(TableDef tableDef, String input, boolean min) {
+  private static List<Object> parseStringToKey(TableDef tableDef, String input) {
     int keyColNum = tableDef.getPrimaryKeyColumnNum();
     if (input == null) {
       return null;
     }
-    String[] array = input.split(COMPOSITE_KEY_DELIMITER);
+    String[] array = input.split(COMPOSITE_KEY_DELIMITER, -1);
     if (array.length != keyColNum) {
       throw new IllegalArgumentException("Key column number should be "
-          + keyColNum + ", input is " + input);
+          + keyColNum + ", input is " + input + ", actual length is " + array.length);
     }
     List<Object> result = new ArrayList<>(keyColNum);
     for (int i = 0; i < keyColNum; i++) {
       Column pk = tableDef.getPrimaryKeyColumns().get(i);
-      if (array[i].length() == 0) {
+      if (array[i].length() == 0 || "null".equalsIgnoreCase(array[i])) {
         // for empty string
-        result.add(min ? MIN_VAL : MAX_VAL);
+        continue;
       }
       Object val = ColumnFactory.getColumnToJavaTypeFunc(pk.getType()).apply(array[i]);
       result.add(val);

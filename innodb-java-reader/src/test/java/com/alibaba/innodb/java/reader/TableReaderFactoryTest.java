@@ -57,7 +57,7 @@ public class TableReaderFactoryTest extends AbstractTest {
       .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))
       .addColumn(new Column().setName("c").setType("varchar(1024)").setNullable(true));
 
-  private TableDef tableDef2 = new TableDef().setFullyQualifieName("db.`tb01`")
+  private TableDef tableDef2 = new TableDef().setFullyQualifiedName("db.`tb01`")
       .addColumn(new Column().setName("id").setType("int(11)").setNullable(false))
       .addColumn(new Column().setName("a").setType("bigint(20)").setNullable(false))
       .addColumn(new Column().setName("b").setType("varchar(64)").setNullable(false))

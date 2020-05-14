@@ -305,12 +305,12 @@ public class TableDef {
         .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
     // if full qualified name is null, make it the same as name
     if (fullQualifiedName == null) {
-      setFullyQualifieName(this.name);
+      setFullyQualifiedName(this.name);
     }
     return this;
   }
 
-  public TableDef setFullyQualifieName(String fullQualifiedName) {
+  public TableDef setFullyQualifiedName(String fullQualifiedName) {
     this.fullQualifiedName = fullQualifiedName
         .replace(Symbol.BACKTICK, Symbol.EMPTY)
         .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);

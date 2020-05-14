@@ -528,6 +528,16 @@ public class SimpleTableReaderTest extends AbstractTest {
     }
   }
 
+  @Test
+  public void testSimpleTableQueryAllEmptyTable() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH_MYSQL56
+        + "simple/empty_table.ibd", createSql)) {
+      reader.open();
+      List<GenericRecord> recordList = reader.queryAll();
+      assertThat(recordList.size(), is(0));
+    }
+  }
+
   //==========================================================================
   // queryAll with projection test
   //==========================================================================
@@ -653,7 +663,8 @@ public class SimpleTableReaderTest extends AbstractTest {
       assertThat(recordList.get(0).get("a"), is(projection.contains("a") ? 12L : null));
       assertThat(recordList.get(0).get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
       assertThat(recordList.get(0).get("c"), is(projection.contains("c")
-          ? StringUtils.repeat('C', 8) + (char) (97 + 6) : null));    }
+          ? StringUtils.repeat('C', 8) + (char) (97 + 6) : null));
+    }
   }
 
   //==========================================================================

@@ -44,7 +44,12 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkQueryAllIterator(testQueryAllIteratorExpected());
+        .checkQueryAllIterator(testQueryAllIteratorExpected(true));
+
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkQueryAllIteratorDesc(testQueryAllIteratorExpected(false));
   }
 
   @Test
@@ -52,7 +57,12 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkQueryAllIterator(testQueryAllIteratorExpected());
+        .checkQueryAllIterator(testQueryAllIteratorExpected(true));
+
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkQueryAllIteratorDesc(testQueryAllIteratorExpected(false));
   }
 
   @Test
@@ -60,14 +70,19 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkQueryAllIterator(testQueryAllIteratorExpected());
+        .checkQueryAllIterator(testQueryAllIteratorExpected(true));
+
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkQueryAllIteratorDesc(testQueryAllIteratorExpected(false));
   }
 
-  public Consumer<Iterator<GenericRecord>> testQueryAllIteratorExpected() {
+  public Consumer<Iterator<GenericRecord>> testQueryAllIteratorExpected(boolean asc) {
     return iterator -> {
 
       int count = 0;
-      int i = 1;
+      int i = asc ? 1 : 10;
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
 
@@ -91,7 +106,11 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
         assertThat(record.get(3), is(StringUtils.repeat('C', 8) + (char) (97 + i)));
         assertThat(record.get("c"), is(StringUtils.repeat('C', 8) + (char) (97 + i)));
 
-        i++;
+        if (asc) {
+          i++;
+        } else {
+          i--;
+        }
         count++;
       }
       System.out.println(count);
@@ -137,15 +156,23 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
       AssertThat assertThat = assertTestOf(this);
       func.accept(assertThat);
       assertThat.withTableDef(getTableDef())
-          .checkQueryAllIteratorProjection(testQueryAllIteratorWithProjectionExpected(param), param);
+          .checkQueryAllIteratorProjection(
+              testQueryAllIteratorWithProjectionExpected(param, true), param);
+
+      assertThat = assertTestOf(this);
+      func.accept(assertThat);
+      assertThat.withTableDef(getTableDef())
+          .checkQueryAllIteratorProjectionDesc(
+              testQueryAllIteratorWithProjectionExpected(param, false), param);
     }
   }
 
-  public Consumer<Iterator<GenericRecord>> testQueryAllIteratorWithProjectionExpected(List<String> projection) {
+  public Consumer<Iterator<GenericRecord>> testQueryAllIteratorWithProjectionExpected(List<String> projection,
+                                                                                      boolean asc) {
     return iterator -> {
 
       int count = 0;
-      int i = 1;
+      int i = asc ? 1 : 10;
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
 
@@ -172,7 +199,11 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
         assertThat(record.get("c"), is(projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
-        i++;
+        if (asc) {
+          i++;
+        } else {
+          i--;
+        }
         count++;
       }
       System.out.println(count);
@@ -313,16 +344,24 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT);
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE);
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE);
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT);
+    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, true);
+    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, false);
+
+    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, true);
+    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, false);
+
+    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, true);
+    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, false);
+
+    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, true);
+    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, false);
   }
 
   private void rangeQuery(TableReader reader, int start, int end,
-                          ComparisonOperator lowerOp, ComparisonOperator upperOp) {
+                          ComparisonOperator lowerOp, ComparisonOperator upperOp,
+                          boolean asc) {
     Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
-        ImmutableList.of(start), lowerOp, ImmutableList.of(end), upperOp);
+        ImmutableList.of(start), lowerOp, ImmutableList.of(end), upperOp, asc);
     int expectedSize = end - start;
     if (expectedSize > 0
         && lowerOp == ComparisonOperator.GT && upperOp == ComparisonOperator.LT) {
@@ -332,7 +371,12 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
       expectedSize++;
     }
     int count = 0;
-    int i = lowerOp == ComparisonOperator.GTE ? start : start + 1;
+    int i = 0;
+    if (asc) {
+      i = lowerOp == ComparisonOperator.GTE ? start : start + 1;
+    } else {
+      i = upperOp == ComparisonOperator.LTE ? end : end - 1;
+    }
     while (iterator.hasNext()) {
       GenericRecord record = iterator.next();
       Object[] values = record.getValues();
@@ -342,7 +386,11 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
       assertThat(values[2], is(StringUtils.repeat('A', 16)));
       assertThat(values[3], is(StringUtils.repeat('C', 8) + (char) (97 + i)));
       count++;
-      i++;
+      if (asc) {
+        i++;
+      } else {
+        i--;
+      }
     }
 
     assertThat(count, is(expectedSize));
@@ -379,7 +427,7 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
 
       iterator = reader.getRangeQueryIterator(
           ImmutableList.of(1), ComparisonOperator.GTE,
-          null, ComparisonOperator.NOP);
+          null, ComparisonOperator.NOP, false);
       assertThat(getIteratorSize(iterator), is(10));
 
       iterator = reader.getRangeQueryIterator(
@@ -389,7 +437,7 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
 
       iterator = reader.getRangeQueryIterator(
           ImmutableList.of(5), ComparisonOperator.GTE,
-          Utils.constructMaxRecord(1), ComparisonOperator.LT);
+          Utils.constructMaxRecord(1), ComparisonOperator.LT, false);
       assertThat(getIteratorSize(iterator), is(6));
 
       iterator = reader.getRangeQueryIterator(
@@ -420,7 +468,7 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
   }
 
   //==========================================================================
-  // rangeQueryAllIterator with projection test
+  // range query with projection test
   //==========================================================================
 
   @Test
@@ -456,18 +504,30 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
       AssertThat assertThat = assertTestOf(this);
       func.accept(assertThat);
       assertThat.withTableDef(getTableDef())
-          .checkRangeQueryIteratorProjection(testRangeQueryIteratorWithProjectionExpected(param),
+          .checkRangeQueryIteratorProjection(testRangeQueryIteratorWithProjectionExpected(param, true),
+              ImmutableList.of(5), ComparisonOperator.GTE,
+              ImmutableList.of(8), ComparisonOperator.LT,
+              param);
+
+      assertThat = assertTestOf(this);
+      func.accept(assertThat);
+      assertThat.withTableDef(getTableDef())
+          .checkRangeQueryIteratorProjectionDesc(testRangeQueryIteratorWithProjectionExpected(param, false),
               ImmutableList.of(5), ComparisonOperator.GTE,
               ImmutableList.of(8), ComparisonOperator.LT,
               param);
     }
   }
 
-  public Consumer<Iterator<GenericRecord>> testRangeQueryIteratorWithProjectionExpected(List<String> projection) {
+  public Consumer<Iterator<GenericRecord>> testRangeQueryIteratorWithProjectionExpected(List<String> projection,
+                                                                                        boolean asc) {
     return iterator -> {
 
       int count = 0;
       int i = 5;
+      if (!asc) {
+        i = 7;
+      }
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
 
@@ -494,7 +554,11 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
         assertThat(record.get("c"), is(projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
-        i++;
+        if (asc) {
+          i++;
+        } else {
+          i--;
+        }
         count++;
       }
       System.out.println(count);

@@ -35,6 +35,18 @@ public enum ComparisonOperator {
     return value;
   }
 
+  public static boolean isLowerBoundOp(ComparisonOperator operator) {
+    return operator == GT || operator == GTE;
+  }
+
+  public static boolean isUpperBoundOp(ComparisonOperator operator) {
+    return operator == LT || operator == LTE;
+  }
+
+  public static boolean containsEq(ComparisonOperator operator) {
+    return operator.value.contains("=");
+  }
+
   // ---------- template method ---------- //
 
   private static Map<String, ComparisonOperator> KVS = Maps.newHashMapWithExpectedSize(values().length);

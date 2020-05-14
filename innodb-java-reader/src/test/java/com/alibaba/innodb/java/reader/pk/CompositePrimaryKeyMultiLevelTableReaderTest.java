@@ -11,12 +11,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
+import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
+import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -195,7 +198,17 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
 
     assertThat.withSql(sql())
         .checkRangeQueryRecordsIs(expectedRangeQueryPartially2(1000, 1, 1023 + 1, 4),
-            ImmutableList.of("", 0, ""), ComparisonOperator.GTE,
+            ImmutableList.of("", 0, ""), ComparisonOperator.GT,
+            ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1000, 1, 1023 + 1, 4),
+            ImmutableList.of(), ComparisonOperator.GTE,
+            ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1000, 1, 1023 + 1, 4),
+            ImmutableList.of(), ComparisonOperator.NOP,
             ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
 
     // mid
@@ -210,9 +223,104 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
             ImmutableList.of("1130m", 1, "2m"), ComparisonOperator.LT);
 
     assertThat.withSql(sql())
+        .checkRangeQueryRecordsIs(expectedRangeQueryPartially2(1002, 3, 1130 + 1, 1),
+            ImmutableList.of("1002ooo", 2, "1002ooo"), ComparisonOperator.GTE,
+            Arrays.asList("1130m"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryRecordsIs(expectedRangeQueryPartially2(1002, 3, 1130 + 2, 1),
+            ImmutableList.of("1002ooo", 2, "1002ooo"), ComparisonOperator.GTE,
+            Arrays.asList("1130m"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 1, 1803 + 1, 2),
+            Arrays.asList("1773ffff"), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773 + 1, 1, 1803 + 1, 2),
+            Arrays.asList("1773ffff"), ComparisonOperator.GT,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773 + 1, 1, 1803 + 1, 3),
+            Arrays.asList("1773ffff"), ComparisonOperator.GT,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 3, 1803 + 1, 3),
+            Arrays.asList("1773ffff", 1, "x"), ComparisonOperator.GT,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 3, 1803 + 1, 3),
+            Arrays.asList("1773ffff", 2, MIN_VAL), ComparisonOperator.GT,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 1, 1803 + 1, 2),
+            Arrays.asList("1773ffff"), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 1, 1803 + 1, 3),
+            Arrays.asList("1773ffff"), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 1, 1803 + 1, 3),
+            Arrays.asList("1773a"), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 1, 1803 + 1, 3),
+            Arrays.asList("1773a"), ComparisonOperator.GT,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 3, 1803 + 1, 3),
+            Arrays.asList("1773ffff", 1, "x"), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 3, 1803 + 1, 3),
+            Arrays.asList("1773ffff", 2, MIN_VAL), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773 + 1, 1, 1803 + 1, 3),
+            Arrays.asList("1773ffff", 2, MAX_VAL), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
         .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 4, 1803 + 1, 2),
             ImmutableList.of("1773ffff", 2, "2ffff"), ComparisonOperator.GTE,
             ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 4, 1803 + 1, 3),
+            ImmutableList.of("1773ffff", 2, "2ffff"), ComparisonOperator.GTE,
+            ImmutableList.of("1803jjjj", 1, "2jjjj"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 4, 1803 + 1, 1),
+            ImmutableList.of("1773ffff", 2, "2ffff"), ComparisonOperator.GTE,
+            Arrays.asList("1803jjjj", 1), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 4, 1803 + 1, 3),
+            ImmutableList.of("1773ffff", 2, "2ffff"), ComparisonOperator.GTE,
+            Arrays.asList("1803jjjj", 1), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 4, 1803 + 1, 1),
+            ImmutableList.of("1773ffff", 2, "2ffff"), ComparisonOperator.GTE,
+            Arrays.asList("1803jjjj", 1, "0"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1773, 4, 1803 + 1, 3),
+            ImmutableList.of("1773ffff", 2, "2ffff"), ComparisonOperator.GTE,
+            Arrays.asList("1803jjjj", 1, "A"), ComparisonOperator.LTE);
 
     assertThat.withSql(sql())
         .checkRangeQueryIterator(expectedRangeQueryPartially(1773 + 1, 1, 1803 + 1, 2),
@@ -243,6 +351,21 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
         .checkRangeQueryIterator(expectedRangeQueryPartially(1368, 3, 1368 + 1, 4),
             ImmutableList.of("1368qqqqqqqqq", 2, "1qqqq"), ComparisonOperator.GTE,
             ImmutableList.of("1368qqqqqqqqq", 2, "2qqqq"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1368, 3, 1368 + 1, 3),
+            ImmutableList.of("1368qqqqqqqqq", 2, "1qqqq"), ComparisonOperator.GT,
+            ImmutableList.of("1368qqqqqqqqq", 2, "2qqqq"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1368, 4, 1368 + 2, 1),
+            ImmutableList.of("1368qqqqqqqqq", 2, "1qqqq"), ComparisonOperator.GT,
+            ImmutableList.of("1368qqqqqqqqq", 2, "2qqqq"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1368, 3, 1368 + 2, 1),
+            ImmutableList.of("1368qqqqqqqqq", 2, "1qqqq"), ComparisonOperator.GTE,
+            ImmutableList.of("1368qqqqqqqqq", 2, "2qqqq"), ComparisonOperator.LTE);
 
     // mid, nothing
     assertThat.withSql(sql())
@@ -289,11 +412,20 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
             ImmutableList.of("1998wwwwwwwww", 1, "1wwww"), ComparisonOperator.GTE,
             ImmutableList.of("2", 1, ""), ComparisonOperator.LT);
 
-    // no upper
     assertThat.withSql(sql())
         .checkRangeQueryIterator(expectedRangeQueryPartially(1998, 1, 2000, 4 + 1),
             ImmutableList.of("1998wwwwwwwww", 1, "1wwww"), ComparisonOperator.GTE,
             ImmutableList.of("1999xxxxxxxxxx", 2, "3"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1998, 1, 2000, 4 + 1),
+            ImmutableList.of("1998wwwwwwwww", 1, "1wwww"), ComparisonOperator.GTE,
+            ImmutableList.of(), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1998, 1, 2000, 4 + 1),
+            ImmutableList.of("1998wwwwwwwww", 1, "1wwww"), ComparisonOperator.GTE,
+            ImmutableList.of(), ComparisonOperator.NOP);
   }
 
   public Consumer<Iterator<GenericRecord>> expectedRangeQueryPartially(int start, int a1,

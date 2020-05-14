@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
-import com.alibaba.innodb.java.reader.util.Utils;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -85,6 +84,36 @@ public class GetRangeQueryIteratorMain {
           ImmutableList.of(2), ComparisonOperator.GTE,
           ImmutableList.of(5), ComparisonOperator.LT,
           ImmutableList.of("a"));
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        assert record.getPrimaryKey() == record.get("id");
+        System.out.println("id=" + record.get("id"));
+        System.out.println("a=" + record.get("a"));
+      }
+
+      // ~~~ range query with order
+      boolean ascOrder = false;
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(2), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT,
+          ascOrder);
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+        assert record.getPrimaryKey() == record.get("id");
+        System.out.println("id=" + record.get("id"));
+        System.out.println("a=" + record.get("a"));
+      }
+
+      // ~~~ range query with projection and order
+      ascOrder = false;
+      iterator = reader.getRangeQueryIterator(
+          ImmutableList.of(2), ComparisonOperator.GTE,
+          ImmutableList.of(5), ComparisonOperator.LT,
+          ImmutableList.of("a"), ascOrder);
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
         Object[] values = record.getValues();

@@ -61,6 +61,7 @@ import static com.alibaba.innodb.java.reader.util.Utils.allEmpty;
 import static com.alibaba.innodb.java.reader.util.Utils.anyElementEmpty;
 import static com.alibaba.innodb.java.reader.util.Utils.constructMaxRecord;
 import static com.alibaba.innodb.java.reader.util.Utils.constructMinRecord;
+import static com.alibaba.innodb.java.reader.util.Utils.expandRecord;
 import static com.alibaba.innodb.java.reader.util.Utils.isOptionalPresent;
 import static com.alibaba.innodb.java.reader.util.Utils.noneEmpty;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -262,17 +263,19 @@ public class IndexServiceImpl implements IndexService {
   /**
    * Return an iterator to query all records of a tablespace.
    * <p>
-   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator, Optional)}.
+   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator, Optional, boolean)}.
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    *
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
+   * @param ascOrder         if set result records in ascending order
    * @return all records
    */
   @Override
-  public Iterator<GenericRecord> getQueryAllIterator(Optional<List<String>> recordProjection) {
-    return getRangeQueryIterator(ImmutableList.of(), NOP, ImmutableList.of(), NOP, recordProjection);
+  public Iterator<GenericRecord> getQueryAllIterator(Optional<List<String>> recordProjection,
+                                                     boolean ascOrder) {
+    return getRangeQueryIterator(ImmutableList.of(), NOP, ImmutableList.of(), NOP, recordProjection, ascOrder);
   }
 
   /**
@@ -288,30 +291,39 @@ public class IndexServiceImpl implements IndexService {
    * @param upperOperator    if rangeQuery is true, then this is the comparison operator for upper
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
+   * @param ascOrder         if set result records in ascending order
    * @return record iterator
    */
   @Override
   public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
                                                        List<Object> upper, ComparisonOperator upperOperator,
-                                                       Optional<List<String>> recordProjection) {
+                                                       Optional<List<String>> recordProjection,
+                                                       final boolean ascOrder) {
     checkKey(lower, lowerOperator, upper, upperOperator);
+
+    final boolean isNoPk = tableDef.isNoPrimaryKey();
+    final int keyColumnNum = tableDef.getPrimaryKeyColumnNum();
+    if (!isNoPk) {
+      if (isEmpty(lower)) {
+        lower = constructMinRecord(keyColumnNum);
+        lowerOperator = GTE;
+      } else if (lower.size() < keyColumnNum) {
+        lower = expandRecord(lower, lowerOperator, keyColumnNum);
+      }
+      if (isEmpty(upper)) {
+        upper = constructMaxRecord(tableDef.getPrimaryKeyColumnNum());
+        upperOperator = LTE;
+      } else if (upper.size() < keyColumnNum) {
+        upper = expandRecord(upper, upperOperator, keyColumnNum);
+      }
+    }
 
     if (noneEmpty(lower, upper)) {
       if (keyComparator.compare(lower, upper) > 0) {
         return new RecordIterator(ImmutableList.of());
       }
     }
-    final boolean isNoPk = tableDef.isNoPrimaryKey();
-    if (!isNoPk) {
-      if (isEmpty(lower)) {
-        lower = constructMinRecord(tableDef.getPrimaryKeyColumnNum());
-        lowerOperator = GTE;
-      }
-      if (isEmpty(upper)) {
-        upper = constructMaxRecord(tableDef.getPrimaryKeyColumnNum());
-        upperOperator = LTE;
-      }
-    }
+
     final BitSet projection = transformProjection(recordProjection);
     final List<Object> finalLower = lower;
     final List<Object> finalUpper = upper;
@@ -324,21 +336,34 @@ public class IndexServiceImpl implements IndexService {
       public void init() {
         // for initialization, we only need to search by pk projection
         BitSet pkProjection = tableDef.createBitmapWithPkIncluded();
-
+        this.asc = ascOrder;
         if (!isNoPk) {
           Pair<Long, Long> startAndEndPageNumber = queryStartAndEndPageNumber(
               finalLower, finalLowerOperator, finalUpper, finalUpperOperator, pkProjection);
           // read from start page
-          currPageNumber = startAndEndPageNumber.getFirst();
-          endPageNumber = startAndEndPageNumber.getSecond();
+          if (asc) {
+            currPageNumber = startAndEndPageNumber.getFirst();
+            endPageNumber = startAndEndPageNumber.getSecond();
+          } else {
+            currPageNumber = startAndEndPageNumber.getSecond();
+            endPageNumber = startAndEndPageNumber.getFirst();
+          }
           indexPage = loadIndexPage(currPageNumber);
           curr = queryWithinIndexPage(indexPage, true,
               finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
         } else {
-          currPageNumber = queryStartPage(ROOT_PAGE_NUMBER, pkProjection);
-          endPageNumber = queryEndPage(ROOT_PAGE_NUMBER, pkProjection);
+          if (asc) {
+            currPageNumber = queryStartPage(ROOT_PAGE_NUMBER, pkProjection);
+            endPageNumber = queryEndPage(ROOT_PAGE_NUMBER, pkProjection);
+          } else {
+            currPageNumber = queryEndPage(ROOT_PAGE_NUMBER, pkProjection);
+            endPageNumber = queryStartPage(ROOT_PAGE_NUMBER, pkProjection);
+          }
           indexPage = loadIndexPage(currPageNumber);
           curr = queryWithinIndexPage(indexPage, projection);
+        }
+        if (!asc) {
+          Collections.reverse(curr);
         }
 
         if (log.isDebugEnabled()) {
@@ -351,7 +376,11 @@ public class IndexServiceImpl implements IndexService {
       public boolean doHasNext() {
         if (currIndex == curr.size()) {
           if (currPageNumber != endPageNumber) {
-            currPageNumber = indexPage.getInnerPage().getFilHeader().getNextPage();
+            if (asc) {
+              currPageNumber = indexPage.getInnerPage().getFilHeader().getNextPage();
+            } else {
+              currPageNumber = indexPage.getInnerPage().getFilHeader().getPrevPage();
+            }
             Index nextIndexPage = loadIndexPage(currPageNumber);
             if (log.isDebugEnabled()) {
               log.debug("RangeQuery, load page {} records, {}", nextIndexPage.getIndexHeader());
@@ -362,6 +391,9 @@ public class IndexServiceImpl implements IndexService {
             } else {
               this.curr = queryWithinIndexPage(nextIndexPage, true,
                   finalLower, finalLowerOperator, finalUpper, finalUpperOperator, projection);
+            }
+            if (!asc) {
+              Collections.reverse(curr);
             }
             this.currIndex = 0;
             return true;
@@ -449,7 +481,7 @@ public class IndexServiceImpl implements IndexService {
   /**
    * Range query records by primary key in a tablespace.
    * <p>
-   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator, Optional)}
+   * Leverage {@link #getRangeQueryIterator(List, ComparisonOperator, List, ComparisonOperator, Optional, boolean)}
    * if range is specified, or else fallback to {@link #queryAll(Optional, Optional)}.
    *
    * @param lower            if rangeQuery is true, then this is the lower bound
@@ -474,7 +506,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     Iterator<GenericRecord> iterator = getRangeQueryIterator(lower, lowerOperator,
-        upper, upperOperator, recordProjection);
+        upper, upperOperator, recordProjection, true);
     List<GenericRecord> recordList = new ArrayList<>();
     if (recordPredicate != null && recordPredicate.isPresent()) {
       Predicate<GenericRecord> predicate = recordPredicate.get();
@@ -1043,7 +1075,7 @@ public class IndexServiceImpl implements IndexService {
   }
 
   private void checkKey(List<Object> lower, ComparisonOperator lowerOperator,
-                        List<Object> upper, ComparisonOperator upperOperator) {
+                                List<Object> upper, ComparisonOperator upperOperator) {
     checkArgument(lower != null, "lower should not be null");
     checkArgument(upper != null, "upper should not be null");
     checkArgument(lowerOperator != null, "lowerOperator is null");

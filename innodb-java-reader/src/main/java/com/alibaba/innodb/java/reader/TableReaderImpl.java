@@ -271,19 +271,29 @@ public class TableReaderImpl implements TableReader {
 
   @Override
   public Iterator<GenericRecord> getQueryAllIterator() {
-    return indexService.getQueryAllIterator(Optional.empty());
+    return indexService.getQueryAllIterator(Optional.empty(), true);
   }
 
   @Override
   public Iterator<GenericRecord> getQueryAllIterator(List<String> projection) {
-    return indexService.getQueryAllIterator(Optional.of(projection));
+    return indexService.getQueryAllIterator(Optional.of(projection), true);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getQueryAllIterator(boolean ascOrder) {
+    return indexService.getQueryAllIterator(Optional.empty(), ascOrder);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getQueryAllIterator(List<String> projection, boolean ascOrder) {
+    return indexService.getQueryAllIterator(Optional.of(projection), ascOrder);
   }
 
   @Override
   public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
                                                        List<Object> upper, ComparisonOperator upperOperator) {
     return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
-        Optional.empty());
+        Optional.empty(), true);
   }
 
   @Override
@@ -291,7 +301,24 @@ public class TableReaderImpl implements TableReader {
                                                        List<Object> upper, ComparisonOperator upperOperator,
                                                        List<String> projection) {
     return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
-        Optional.of(projection));
+        Optional.of(projection), true);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       boolean ascOrder) {
+    return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.empty(), ascOrder);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       List<String> projection,
+                                                       boolean ascOrder) {
+    return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.of(projection), ascOrder);
   }
 
   @Override

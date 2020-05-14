@@ -52,6 +52,35 @@ public class GetQueryAllIteratorMain {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
       }
+
+      // ~~~ query all records with order
+      //[5, 10, eeeeeeee]
+      //[4, 8, dddddddd]
+      //[3, 6, cccccccc]
+      //[2, 4, bbbbbbbb]
+      //[1, 2, aaaaaaaa]
+      boolean ascOrder = false;
+      iterator = reader.getQueryAllIterator(ascOrder);
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+      }
+
+      // ~~~ query all records with projection and order
+      //[5, null, eeeeeeee]
+      //[4, null, dddddddd]
+      //[3, null, cccccccc]
+      //[2, null, bbbbbbbb]
+      //[1, null, aaaaaaaa]
+      projection = Arrays.asList("b");
+      ascOrder = false;
+      iterator = reader.getQueryAllIterator(projection, ascOrder);
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
+        Object[] values = record.getValues();
+        System.out.println(Arrays.asList(values));
+      }
     }
   }
 

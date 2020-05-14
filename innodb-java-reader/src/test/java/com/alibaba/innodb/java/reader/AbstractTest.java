@@ -159,12 +159,27 @@ public class AbstractTest {
       }, TableReader::getQueryAllIterator);
     }
 
+    public AssertThat checkQueryAllIteratorDesc(Consumer<Iterator<GenericRecord>> fn) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.getQueryAllIterator(false));
+    }
+
     public AssertThat checkQueryAllIteratorProjection(Consumer<Iterator<GenericRecord>> fn,
                                                       List<String> projection) {
       return doWithTableReader(c -> {
         fn.accept(c);
         return this;
       }, t -> t.getQueryAllIterator(projection));
+    }
+
+    public AssertThat checkQueryAllIteratorProjectionDesc(Consumer<Iterator<GenericRecord>> fn,
+                                                          List<String> projection) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.getQueryAllIterator(projection, false));
     }
 
     public AssertThat checkRangeQueryIterator(Consumer<Iterator<GenericRecord>> fn,
@@ -184,6 +199,16 @@ public class AbstractTest {
         fn.accept(c);
         return this;
       }, t -> t.getRangeQueryIterator(start, startOperator, end, endOperator, projection));
+    }
+
+    public AssertThat checkRangeQueryIteratorProjectionDesc(Consumer<Iterator<GenericRecord>> fn,
+                                                            List<Object> start, ComparisonOperator startOperator,
+                                                            List<Object> end, ComparisonOperator endOperator,
+                                                            List<String> projection) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> t.getRangeQueryIterator(start, startOperator, end, endOperator, projection, false));
     }
 
     public AssertThat checkQueryByPk(Consumer<GenericRecord> fn, List<Object> key) {

@@ -31,6 +31,8 @@ public class RecordIterator implements Iterator<GenericRecord> {
 
   protected Index indexPage;
 
+  protected boolean asc;
+
   public RecordIterator() {
   }
 

@@ -131,7 +131,17 @@ public class InnodbReaderBootstrapTest {
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(1000));
-    check(output, 0, 1000);
+    check(output, 1, 1000);
+  }
+
+  @Test
+  public void testQueryAllWithOrder() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-desc", "-c", "query-all"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1000));
+    check(output, 1, 1000, true);
   }
 
   @Test
@@ -142,7 +152,18 @@ public class InnodbReaderBootstrapTest {
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(1000));
     // pk is included by default
-    check(output, 0, 1000, ImmutableList.of("a"));
+    check(output, 1, 1000, ImmutableList.of("a"));
+  }
+
+  @Test
+  public void testQueryAllWithProjectionDesc() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-all", "-desc", "-projection", "id,a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1000));
+    // pk is included by default
+    check(output, 1, 1000, ImmutableList.of("a"), true);
   }
 
   @Test
@@ -216,6 +237,16 @@ public class InnodbReaderBootstrapTest {
   }
 
   @Test
+  public void testRangeQueryByPrimaryKeyDesc() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-desc", "-c", "range-query-by-pk", "-args", ">=;700;<;800"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(100));
+    check(output, 700, 100, true);
+  }
+
+  @Test
   public void testRangeQueryByPrimaryKey2() {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "range-query-by-pk", "-args", "\">=;700;<;800\""};
@@ -232,19 +263,28 @@ public class InnodbReaderBootstrapTest {
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(300));
-    check(output, 700, 300);
+    check(output, 701, 300);
   }
 
   @Test
   public void testRangeQueryByPrimaryKeyWithProjection() {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
-        "-projection", "id,a", "-c", "range-query-by-pk", "-args", ">=;700;<;800"};
+        "-projection", "id,a", "-c", "range-query-by-pk", "-args", ">=;700;<=;800"};
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
-    assertThat(output.size(), is(100));
+    assertThat(output.size(), is(101));
     check(output, 700, 100, ImmutableList.of("id", "a"));
   }
 
+  @Test
+  public void testRangeQueryByPrimaryKeyWithProjectionDesc() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-projection", "id,a", "-c", "range-query-by-pk", "-desc", "-args", ">=;700;<;800"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(100));
+    check(output, 700, 100, ImmutableList.of("id", "a"), true);
+  }
 
   @Test
   public void testGenLsnHeatmap() throws IOException {
@@ -344,33 +384,61 @@ public class InnodbReaderBootstrapTest {
     } else {
       assertThat(fileContent.size(), is(1000));
     }
-    check(fileContent, 0, 1000, delimiter);
+    check(fileContent, 1, 1000, delimiter);
     String md5 = getFileMD5(outputFilePath);
     System.out.println(md5);
     assertThat(md5, is(expectedFileMd5));
   }
 
   private void check(List<String> output, int start, int count) {
-    check(output, start, count, "\t", ImmutableList.of("id", "a", "b", "c"));
+    check(output, start, count, "\t", ImmutableList.of("id", "a", "b", "c"), false);
+  }
+
+  private void check(List<String> output, int start, int count, boolean desc) {
+    check(output, start, count, "\t", ImmutableList.of("id", "a", "b", "c"), desc);
   }
 
   private void check(List<String> output, int start, int count, String delimiter) {
-    check(output, start, count, delimiter, ImmutableList.of("id", "a", "b", "c"));
+    check(output, start, count, delimiter, ImmutableList.of("id", "a", "b", "c"), false);
+  }
+
+  private void check(List<String> output, int start, int count, String delimiter, boolean desc) {
+    check(output, start, count, delimiter, ImmutableList.of("id", "a", "b", "c"), desc);
   }
 
   private void check(List<String> output, int start, int count, List<String> projection) {
-    check(output, start, count, "\t", projection);
+    check(output, start, count, "\t", projection, false);
   }
 
-  private void check(List<String> output, int start, int count, String delimiter, List<String> projection) {
-    for (int i = start + 1; i <= count; i++) {
-      String[] array = output.get(i - start - 1).split(delimiter);
+  private void check(List<String> output, int start, int count, List<String> projection, boolean desc) {
+    check(output, start, count, "\t", projection, desc);
+  }
+
+  private void check(List<String> output, int start, int count, String delimiter, List<String> projection,
+                     boolean desc) {
+    int iStart = 0;
+    int iEnd = 0;
+    if (desc) {
+      iStart = start + count - 1;
+      iEnd = start;
+    } else {
+      iStart = start;
+      iEnd = start + count;
+    }
+    int index = 0;
+    for (int i = iStart; desc ? i >= iEnd : i < iEnd; ) {
+      String[] array = output.get(index++).split(delimiter);
       assertThat(array[0], is(String.valueOf(i)));
       assertThat(array[1], is(projection.contains("a") ? String.valueOf(i * 2) : "null"));
       assertThat(array[2], is((projection.contains("b")
           ? StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 32) : "null")));
       assertThat(array[3], is((projection.contains("c")
           ? StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 512) : "null")));
+      if (desc) {
+        i--;
+      } else {
+        i++;
+      }
     }
   }
 

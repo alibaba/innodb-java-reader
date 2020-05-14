@@ -500,6 +500,18 @@ Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
           ImmutableList.of("a"));
 ```
 
+#### Ordering
+
+Ordering works on `getQueryAllIterator` and `getRangeQueryIterator`, for example.
+
+```
+boolean ascOrder = false;
+reader.getRangeQueryIterator(
+  ImmutableList.of(2), ComparisonOperator.GTE,
+  ImmutableList.of(5), ComparisonOperator.LT,
+  ascOrder);
+```
+
 ## 6 Command-line tool
 
 ### 6.1 Usage
@@ -510,7 +522,7 @@ Usage shows as below.
 
 ````
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
-       [-delimiter <arg>] [-h] [-i <arg>] [-iomode <arg>] [-json]
+       [-delimiter <arg>] [-desc] [-h] [-i <arg>] [-iomode <arg>] [-json]
        [-jsonpretty] [-o <arg>] [-projection <arg>] [-s <arg>]
        [-showheader]
  -args <arg>                             arguments
@@ -522,6 +534,9 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
                                          map,gen-filling-rate-heatmap,get-
                                          all-index-page-filling-rate
  -delimiter,--delimiter <arg>            field delimiter, default is tab
+ -desc,--desc                            if records sorted in descending
+                                         order, works for query all and
+                                         range query
  -h,--help                               usage
  -i,--ibd-file-path <arg>                mandatory. innodb file path with
                                          suffix of .ibd

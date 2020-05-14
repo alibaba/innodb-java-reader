@@ -97,9 +97,10 @@ public interface IndexService {
    *
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
+   * @param ascOrder         if set result records in ascending order
    * @return record iterator
    */
-  Iterator<GenericRecord> getQueryAllIterator(Optional<List<String>> recordProjection);
+  Iterator<GenericRecord> getQueryAllIterator(Optional<List<String>> recordProjection, boolean ascOrder);
 
   /**
    * Return an iterator to do range query by primary key in a tablespace.
@@ -115,11 +116,13 @@ public interface IndexService {
    * @param upperOperator    if rangeQuery is true, then this is the comparison operator for upper
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
+   * @param ascOrder         if set result records in ascending order
    * @return record iterator
    */
   Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
                                                 List<Object> upper, ComparisonOperator upperOperator,
-                                                Optional<List<String>> recordProjection);
+                                                Optional<List<String>> recordProjection,
+                                                boolean ascOrder);
 
   /**
    * Load index page by page number.

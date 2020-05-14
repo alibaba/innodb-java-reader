@@ -247,6 +247,27 @@ public interface TableReader extends Closeable {
   Iterator<GenericRecord> getQueryAllIterator(List<String> projection);
 
   /**
+   * Return an iterator to query all records of a tablespace.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   *
+   * @param ascOrder if set result records in ascending order
+   * @return record iterator
+   */
+  Iterator<GenericRecord> getQueryAllIterator(boolean ascOrder);
+
+  /**
+   * Return an iterator to query all records of a tablespace.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   *
+   * @param projection projection of selected column names
+   * @param ascOrder   if set result records in ascending order
+   * @return record iterator
+   */
+  Iterator<GenericRecord> getQueryAllIterator(List<String> projection, boolean ascOrder);
+
+  /**
    * Return an iterator to do range query records by primary key in a tablespace.
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
@@ -281,6 +302,45 @@ public interface TableReader extends Closeable {
   Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
                                                 List<Object> upper, ComparisonOperator upperOperator,
                                                 List<String> projection);
+
+  /**
+   * Return an iterator to do range query records by primary key in a tablespace.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param ascOrder      if set result records in ascending order
+   * @return record iterator
+   */
+  Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator,
+                                                boolean ascOrder);
+
+  /**
+   * Return an iterator to do range query records by primary key in a tablespace.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param lower         if rangeQuery is true, then this is the lower bound
+   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
+   * @param upper         if rangeQuery is true, then this is the upper bound
+   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param projection    projection of selected column names
+   * @param ascOrder      if set result records in ascending order
+   * @return record iterator
+   */
+  Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator,
+                                                List<String> projection, boolean ascOrder);
 
   /**
    * Return table definition.

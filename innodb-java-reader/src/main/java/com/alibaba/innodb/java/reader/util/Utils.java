@@ -5,6 +5,8 @@ package com.alibaba.innodb.java.reader.util;
 
 import com.google.common.collect.ImmutableList;
 
+import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -255,6 +257,23 @@ public class Utils {
         }
         return Collections.unmodifiableList(res);
     }
+  }
+
+  public static List<Object> expandRecord(List<Object> key, ComparisonOperator operator, int keyLen) {
+    checkArgument(key != null, "Key should not be null");
+    boolean containsEq = ComparisonOperator.containsEq(operator);
+    ImmutableList.Builder<Object> resultBuilder = ImmutableList.builder();
+    resultBuilder.addAll(key);
+    for (int i = key.size(); i < keyLen; i++) {
+      if (ComparisonOperator.isLowerBoundOp(operator)) {
+        resultBuilder.add(containsEq ? MIN_VAL : MAX_VAL);
+      } else if (ComparisonOperator.isUpperBoundOp(operator)) {
+        resultBuilder.add(containsEq ? MAX_VAL : MIN_VAL);
+      } else {
+        throw new UnsupportedOperationException("Operator not supported " + operator);
+      }
+    }
+    return resultBuilder.build();
   }
 
   /**
