@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 
 import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
 import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -426,116 +425,6 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
         .checkRangeQueryIterator(expectedRangeQueryPartially(1998, 1, 2000, 4 + 1),
             ImmutableList.of("1998wwwwwwwww", 1, "1wwww"), ComparisonOperator.GTE,
             ImmutableList.of(), ComparisonOperator.NOP);
-  }
-
-  public Consumer<Iterator<GenericRecord>> expectedRangeQueryPartially(int start, int a1,
-                                                                       int end, int a2) {
-    return iterator -> {
-      checkData(iterator, start, end, a1, a2);
-    };
-  }
-
-  public Consumer<List<GenericRecord>> expectedRangeQueryPartially2(int start, int a1,
-                                                                    int end, int a2) {
-    return recordList -> {
-      checkData(recordList.iterator(), start, end, a1, a2);
-    };
-  }
-
-  private int checkData(Iterator<GenericRecord> iterator, int start, int end) {
-    // end is exclusive, so add 1
-    return checkData(iterator, start, end, 1, 4 + 1);
-  }
-
-  private int checkData(List<GenericRecord> recordList, int start, int end) {
-    // end is exclusive, so add 1
-    return checkData(recordList.iterator(), start, end, 1, 4 + 1);
-  }
-
-  /**
-   * Data looks like below, 4 rows in a group,
-   * <pre>
-   * [m, 1, m, m, 1000m, 1m, 1569985199, elvWbKt]
-   * [m, 1, m, m, 1000m, 2m, 1569985199, CaCwkBP]
-   * [m, 2, m, m, 1000m, 1m, 1569985199, rUsgZPyBCKT]
-   * [m, 2, m, m, 1000m, 2m, 1569985199, VEsK]
-   * [nn, 1, nn, nn, 1001nn, 1nn, 1569985199, VGqsgjPjq]
-   * [nn, 1, nn, nn, 1001nn, 2nn, 1569985199, QoeEXxq]
-   * [nn, 2, nn, nn, 1001nn, 1nn, 1569985199, mhrp]
-   * [nn, 2, nn, nn, 1001nn, 2nn, 1569985199, bMQZJsN]
-   * ...
-   * </pre>
-   * Primary key is
-   * <pre>
-   *   [1000mm, 1, 1m]
-   *   [1000mm, 1, 2m]
-   *   [1000mm, 2, 1m]
-   *   [1000mm, 2, 2m]
-   *   ...
-   * </pre>
-   */
-  private int checkData(Iterator<GenericRecord> iterator, int start, int end, int a1, int a2) {
-    int count = 0;
-    System.out.println("check [" + start + ", " + end + ") " + a1 + " " + a2);
-    for (int i = start; i < end; i++) {
-      for (int j = 1; j <= 2; j++) {
-        flag:
-        for (int k = 1; k <= 2; k++) {
-          int samePrefixElemIdx = (j - 1) * 2 + k;
-          // check row count in a group, a1 and a2 is the lower (inclusive) and
-          // upper (inclusive) bounds.
-          if (i == start && samePrefixElemIdx < a1) {
-            continue flag;
-          }
-          // check 2nd column in primary key
-          if (i == end - 1 && samePrefixElemIdx > a2) {
-            continue flag;
-          }
-          if (iterator.hasNext()) {
-            GenericRecord r = iterator.next();
-            // System.out.println(Arrays.toString(r.getValues()));
-            assertThat(r.getPrimaryKey().isEmpty(), is(false));
-            assertThat(r.getPrimaryKey(), is(ImmutableList.of(
-                i + StringUtils.repeat((char) (97 + i % 26), i % 10 + 1),
-                j,
-                k + StringUtils.repeat((char) (97 + i % 26), i % 5 + 1)
-            )));
-            assertThat(r.get("c1"), is(StringUtils.repeat((char) (97 + i % 26), i % 20 + 1)));
-            assertThat(r.get("c2"), is(j));
-            assertThat(r.get("c3"), is(StringUtils.repeat((char) (97 + i % 26), i % 10 + 1)));
-            assertThat(r.get("c4"), is(StringUtils.repeat((char) (97 + i % 26), i % 4 + 1)));
-            assertThat(r.get("c5"), is(i + StringUtils.repeat((char) (97 + i % 26), i % 10 + 1)));
-            assertThat(r.get("c6"), is(k + StringUtils.repeat((char) (97 + i % 26), i % 5 + 1)));
-            assertThat(r.get("c7"), is(expectedLocalTime("2019-10-02 02:59:59")));
-            assertThat(r.get("c8").getClass().isAssignableFrom(String.class),
-                is(true));
-            assertThat(StringUtils.isAlpha(r.get("c8").toString()),
-                is(true));
-            assertThat(r.get("c8").toString().length(),
-                greaterThanOrEqualTo(4));
-            count++;
-          }
-        }
-      }
-    }
-    assertThat(iterator.hasNext(), is(false));
-    System.out.println(count);
-    // assert row count,
-    // start, end, same group simply a2 - a1
-    // start, mid, end,
-    // start, mid1, mid2, ... end, when a2 = 1, there is a special case
-    if (end - start == 1) {
-      assertThat(count, is(a2 - a1));
-    } else if (end - start == 2) {
-      assertThat(count, is((5 - a1) + a2 - 1));
-    } else {
-      if (a2 == 1) {
-        assertThat(count, is((end - start - 2) * 4 + (5 - a1)));
-      } else {
-        assertThat(count, is((end - start - 2) * 4 + (5 - a1) + a2 - 1));
-      }
-    }
-    return count;
   }
 
   /**

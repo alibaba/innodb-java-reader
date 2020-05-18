@@ -59,7 +59,8 @@ public class InnerPage {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("Page(");
+    final StringBuilder sb = new StringBuilder("Page#");
+    sb.append(pageNumber).append("(");
     sb.append("header=").append(filHeader);
     sb.append(')');
     return sb.toString();

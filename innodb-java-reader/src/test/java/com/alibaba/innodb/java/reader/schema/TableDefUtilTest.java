@@ -29,65 +29,84 @@ public class TableDefUtilTest {
         + "`e` varchar(64) NOT NULL,\n"
         + "`f` varchar(1024) default 'THIS_IS_DEFAULT_VALUE',\n"
         + "`g` timestamp(3) DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\n"
-        + "`h` decimal(16,8),\n"
+        + "`H` DECIMAL(16,8),\n"
         + "`i` decimal(12) NOT NULL,\n"
         + "PRIMARY KEY (`id`),\n"
-        + "FOREIGN KEY (c) REFERENCES ra_user(id),\n"
-        + "KEY `ddd` (`d`), \n"
-        + "UNIQUE key (e) COMMENT 'feed',\n"
-        + "INDEX `eee` (`b`, `e`) \n"
-        + ")ENGINE=InnoDB DEFAULT CHARSET = utf8mb4;";
+        + "CONSTRAINT `tb01_ibfk_1` FOREIGN KEY (c) REFERENCES ra_user(id),\n"
+        // + "FULLTEXT KEY `fulltext_f` (`f`),\n" //TODO fulltext not support
+        + "key `key_d` (`d`), \n"
+        + "UNIQUE key `key_e` (e),\n" //TODO key support COMMENT
+        + "INDeX `key_b_e` (`b`, `e`) \n"
+        + ")ENGINE=InnoDB DEFAULT CHARSET =utf8mb4;";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
     assertThat(tableDef.getName(), is("tb01"));
     assertThat(tableDef.getFullyQualifiedName(), is("tb01"));
     assertThat(tableDef.getDefaultCharset(), is("utf8mb4"));
+    assertThat(tableDef.getDefaultJavaCharset(), is("UTF-8"));
+    assertThat(tableDef.getCollation(), is("utf8mb4_general_ci"));
+    assertThat(tableDef.isCollationCaseSensitive(), is(false));
 
     List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(10));
     assertThat(tableDef.getColumnNum(), is(10));
 
+    assertThat(columnList.get(0).getOrdinal(), is(0));
     assertThat(columnList.get(0).getName(), is("id"));
     assertThat(columnList.get(0).getType(), is(ColumnType.INT));
+    assertThat(columnList.get(0).getFullType(), is("int(11)"));
     assertThat(columnList.get(0).getLength(), is(11));
     assertThat(columnList.get(0).getPrecision(), is(0));
     assertThat(columnList.get(0).getScale(), is(0));
     assertThat(columnList.get(0).isPrimaryKey(), is(false));
     assertThat(columnList.get(0).isNullable(), is(false));
 
+    assertThat(columnList.get(1).getOrdinal(), is(1));
     assertThat(columnList.get(1).getName(), is("a"));
     assertThat(columnList.get(1).getType(), is(ColumnType.BIGINT + " UNSIGNED"));
+    assertThat(columnList.get(1).getFullType(), is("bigint(20) UNSIGNED"));
     assertThat(columnList.get(1).getLength(), is(20));
     assertThat(columnList.get(1).isPrimaryKey(), is(false));
     assertThat(columnList.get(1).isNullable(), is(false));
 
     assertThat(tableDef.getField("b").getColumn().getName(), is("b"));
     assertThat(tableDef.getField("b").getColumn().getType(), is(ColumnType.TINYINT));
+    assertThat(tableDef.getField("b").getColumn().getFullType(),
+        is("tinyint"));
     assertThat(tableDef.getField("b").getColumn().getLength(), is(0));
     assertThat(tableDef.getField("b").getColumn().getPrecision(), is(0));
     assertThat(tableDef.getField("b").getColumn().getScale(), is(0));
     assertThat(tableDef.getField("b").getColumn().isPrimaryKey(), is(false));
     assertThat(tableDef.getField("b").getColumn().isNullable(), is(true));
 
+    assertThat(columnList.get(3).getOrdinal(), is(3));
     assertThat(columnList.get(3).getName(), is("c"));
     assertThat(columnList.get(3).getType(), is(ColumnType.TEXT));
+    assertThat(columnList.get(3).getFullType(), is("text"));
     assertThat(columnList.get(3).getLength(), is(0));
     assertThat(columnList.get(3).getPrecision(), is(0));
     assertThat(columnList.get(3).getScale(), is(0));
     assertThat(columnList.get(3).isPrimaryKey(), is(false));
     assertThat(columnList.get(3).isNullable(), is(false));
     assertThat(columnList.get(3).getCharset(), is("utf8mb4"));
+    assertThat(columnList.get(3).getJavaCharset(), is("UTF-8"));
+    assertThat(columnList.get(3).getCollation(), nullValue());
+    assertThat(columnList.get(3).isCollationCaseSensitive(), is(false));
 
+    assertThat(columnList.get(4).getOrdinal(), is(4));
     assertThat(columnList.get(4).getName(), is("d"));
     assertThat(columnList.get(4).getType(), is(ColumnType.DATETIME));
+    assertThat(columnList.get(4).getFullType(), is("datetime"));
     assertThat(columnList.get(4).getLength(), is(0));
     assertThat(columnList.get(4).getPrecision(), is(0));
     assertThat(columnList.get(4).getScale(), is(0));
     assertThat(columnList.get(4).isPrimaryKey(), is(false));
     assertThat(columnList.get(4).isNullable(), is(false));
 
+    assertThat(columnList.get(5).getOrdinal(), is(5));
     assertThat(columnList.get(5).getName(), is("e"));
     assertThat(columnList.get(5).getType(), is(ColumnType.VARCHAR));
+    assertThat(columnList.get(5).getFullType(), is("varchar(64)"));
     assertThat(columnList.get(5).getLength(), is(64));
     assertThat(columnList.get(5).getPrecision(), is(0));
     assertThat(columnList.get(5).getScale(), is(0));
@@ -95,8 +114,10 @@ public class TableDefUtilTest {
     assertThat(columnList.get(5).isNullable(), is(false));
     assertThat(columnList.get(5).getCharset(), is("utf8mb4"));
 
+    assertThat(columnList.get(6).getOrdinal(), is(6));
     assertThat(columnList.get(6).getName(), is("f"));
     assertThat(columnList.get(6).getType(), is(ColumnType.VARCHAR));
+    assertThat(columnList.get(6).getFullType(), is("varchar(1024)"));
     assertThat(columnList.get(6).getLength(), is(1024));
     assertThat(columnList.get(6).getPrecision(), is(0));
     assertThat(columnList.get(6).getScale(), is(0));
@@ -106,22 +127,27 @@ public class TableDefUtilTest {
 
     assertThat(tableDef.getField("g").getColumn().getName(), is("g"));
     assertThat(tableDef.getField("g").getColumn().getType(), is(ColumnType.TIMESTAMP));
+    assertThat(tableDef.getField("g").getColumn().getFullType(), is("timestamp(3)"));
     assertThat(tableDef.getField("g").getColumn().getLength(), is(0));
     assertThat(tableDef.getField("g").getColumn().getPrecision(), is(3));
     assertThat(tableDef.getField("g").getColumn().getScale(), is(0));
     assertThat(tableDef.getField("g").getColumn().isPrimaryKey(), is(false));
     assertThat(tableDef.getField("g").getColumn().isNullable(), is(true));
 
-    assertThat(columnList.get(8).getName(), is("h"));
+    assertThat(columnList.get(8).getOrdinal(), is(8));
+    assertThat(columnList.get(8).getName(), is("H"));
     assertThat(columnList.get(8).getType(), is(ColumnType.DECIMAL));
+    assertThat(columnList.get(8).getFullType(), is(ColumnType.DECIMAL + "(16,8)"));
     assertThat(columnList.get(8).getLength(), is(0));
     assertThat(columnList.get(8).getPrecision(), is(16));
     assertThat(columnList.get(8).getScale(), is(8));
     assertThat(columnList.get(8).isPrimaryKey(), is(false));
     assertThat(columnList.get(8).isNullable(), is(true));
 
+    assertThat(columnList.get(9).getOrdinal(), is(9));
     assertThat(columnList.get(9).getName(), is("i"));
     assertThat(columnList.get(9).getType(), is(ColumnType.DECIMAL));
+    assertThat(columnList.get(9).getFullType(), is("decimal(12)"));
     assertThat(columnList.get(9).getLength(), is(0));
     assertThat(columnList.get(9).getPrecision(), is(12));
     assertThat(columnList.get(9).getScale(), is(0));
@@ -130,6 +156,8 @@ public class TableDefUtilTest {
 
     assertThat(tableDef.getField("a").getColumn(), is(columnList.get(1)));
     assertThat(tableDef.getField("a").getOrdinal(), is(1));
+    assertThat(tableDef.getField("H").getColumn(), is(columnList.get(8)));
+    assertThat(tableDef.getField("H").getOrdinal(), is(8));
 
     assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
@@ -137,43 +165,55 @@ public class TableDefUtilTest {
     assertThat(tableDef.getPrimaryKeyVarLenColumns(), is(ImmutableList.of()));
     assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), is(ImmutableList.of()));
     assertThat(tableDef.isColumnPrimaryKey(columnList.get(0)), is(true));
-    assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
+    for (int i = 1; i < 10; i++) {
+      assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
+    }
 
-    assertThat(tableDef.getSecondaryKeyMetaList().size(), is(3));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getType(), is(KeyMeta.Type.KEY));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getName(), is("ddd"));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getNumOfColumns(), is(1));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyColumns(),
-        is(ImmutableList.of(columnList.get(4))));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyColumnNames(),
-        is(ImmutableList.of("d")));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyVarLenColumns(),
-        is(ImmutableList.of()));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getKeyVarLenColumnNames(),
-        is(ImmutableList.of()));
+    assertThat(tableDef.getSecondaryKeyMetaList().size(), is(4));
+    assertThat(tableDef.getSecondaryKeyMetaMap().size(), is(4));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getType(), is(KeyMeta.Type.FOREIGN_KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getName(), is("tb01_ibfk_1"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getNumOfColumns(), is(0));
 
-    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getType(), is(KeyMeta.Type.UNIQUE_KEY));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getName(), nullValue());
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getType(), is(KeyMeta.Type.KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getName(), is("key_d"));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getNumOfColumns(), is(1));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyColumns(),
-        is(ImmutableList.of(columnList.get(5))));
+        is(ImmutableList.of(columnList.get(4))));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyColumnNames(),
-        is(ImmutableList.of("e")));
+        is(ImmutableList.of("d")));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLenColumns(),
-        is(ImmutableList.of(columnList.get(5))));
+        is(ImmutableList.of()));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLenColumnNames(),
-        is(ImmutableList.of("e")));
+        is(ImmutableList.of()));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).containsColumn("d"),
+        is(true));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).containsColumn("e"),
+        is(false));
+    tableDef.getSecondaryKeyMetaList().get(1).validate();
 
-    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getType(), is(KeyMeta.Type.INDEX));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getName(), is("eee"));
-    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getNumOfColumns(), is(2));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getType(), is(KeyMeta.Type.UNIQUE_KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getName(), is("key_e"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getNumOfColumns(), is(1));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyColumns(),
-        is(ImmutableList.of(columnList.get(2), columnList.get(5))));
+        is(ImmutableList.of(columnList.get(5))));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyColumnNames(),
-        is(ImmutableList.of("b", "e")));
+        is(ImmutableList.of("e")));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyVarLenColumns(),
         is(ImmutableList.of(columnList.get(5))));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyVarLenColumnNames(),
+        is(ImmutableList.of("e")));
+
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getType(), is(KeyMeta.Type.INDEX));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getName(), is("key_b_e"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getNumOfColumns(), is(2));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyColumns(),
+        is(ImmutableList.of(columnList.get(2), columnList.get(5))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyColumnNames(),
+        is(ImmutableList.of("b", "e")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyVarLenColumns(),
+        is(ImmutableList.of(columnList.get(5))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyVarLenColumnNames(),
         is(ImmutableList.of("e")));
   }
 
@@ -199,6 +239,9 @@ public class TableDefUtilTest {
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
     assertThat(tableDef.getDefaultCharset(), is("latin1"));
+    assertThat(tableDef.getDefaultJavaCharset(), is("Cp1252"));
+    assertThat(tableDef.getCollation(), is("latin1_swedish_ci"));
+    assertThat(tableDef.isCollationCaseSensitive(), is(false));
 
     List<Column> columnList = tableDef.getColumnList();
     assertThat(columnList.size(), is(2));
@@ -219,7 +262,7 @@ public class TableDefUtilTest {
     assertThat(tableDef.isColumnPrimaryKey(columnList.get(0)), is(true));
     assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
 
-    assertThat(tableDef.getSecondaryKeyMetaList(), nullValue());
+    assertThat(tableDef.getSecondaryKeyMetaList().isEmpty(), is(true));
   }
 
   @Test
@@ -303,12 +346,15 @@ public class TableDefUtilTest {
   }
 
   @Test
-  public void testConvertColumnCharset() {
+  public void testConvertColumnCharsetAndCollate() {
     String sql = "CREATE TABLE t (c CHAR(20) CHARACTER SET utf8 COLLATE utf8_bin);";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
     // by default set to utf8
     assertThat(tableDef.getDefaultCharset(), is("utf8"));
+    assertThat(tableDef.getDefaultJavaCharset(), is("UTF-8"));
+    assertThat(tableDef.getCollation(), is("utf8_general_ci"));
+    assertThat(tableDef.isCollationCaseSensitive(), is(false));
 
     assertThat(tableDef.getPrimaryKeyColumns().isEmpty(), is(true));
 
@@ -323,6 +369,72 @@ public class TableDefUtilTest {
     assertThat(columnList.get(0).isPrimaryKey(), is(false));
     assertThat(columnList.get(0).isNullable(), is(true));
     assertThat(columnList.get(0).getCharset(), is("utf8"));
+    assertThat(columnList.get(0).getJavaCharset(), is("UTF-8"));
+    assertThat(columnList.get(0).getCollation(), is("utf8_bin"));
+    assertThat(columnList.get(0).isCollationCaseSensitive(), is(true));
+  }
+
+  @Test
+  public void testConvertColumnCharsetAndCollate2() {
+    String sql = "CREATE TABLE t (c varchar(20) CHARACTER SET gbk COLLATE gb2312_chinese_ci) "
+        + "ENGINE=InnoDB DEFAULT CHARSET=utf32 COLLATE utf32_bin;";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    System.out.println(tableDef);
+    // by default set to utf8
+    assertThat(tableDef.getDefaultCharset(), is("utf32"));
+    assertThat(tableDef.getDefaultJavaCharset(), is("UTF-32"));
+    assertThat(tableDef.getCollation(), is("utf32_bin"));
+    assertThat(tableDef.isCollationCaseSensitive(), is(true));
+
+    assertThat(tableDef.getPrimaryKeyColumns().isEmpty(), is(true));
+
+    List<Column> columnList = tableDef.getColumnList();
+    assertThat(columnList.size(), is(1));
+
+    assertThat(columnList.get(0).getName(), is("c"));
+    assertThat(columnList.get(0).getType(), is(ColumnType.VARCHAR));
+    assertThat(columnList.get(0).getFullType(), is("varchar(20)"));
+    assertThat(columnList.get(0).getLength(), is(20));
+    assertThat(columnList.get(0).getPrecision(), is(0));
+    assertThat(columnList.get(0).getScale(), is(0));
+    assertThat(columnList.get(0).isPrimaryKey(), is(false));
+    assertThat(columnList.get(0).isNullable(), is(true));
+    assertThat(columnList.get(0).getCharset(), is("gbk"));
+    assertThat(columnList.get(0).getJavaCharset(), is("GBK"));
+    assertThat(columnList.get(0).getCollation(), is("gb2312_chinese_ci"));
+    assertThat(columnList.get(0).isCollationCaseSensitive(), is(false));
+  }
+
+  @Test
+  public void testConvertColumnCharsetAndCollate3() {
+    String sql = "CREATE TABLE t (c varchar(20)) "
+        + "ENGINE=InnoDB DEFAULT CHARSET=latin2 COLLATE latin2_bin;";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    System.out.println(tableDef);
+    // by default set to utf8
+    assertThat(tableDef.getDefaultCharset(), is("latin2"));
+    assertThat(tableDef.getDefaultJavaCharset(), is("ISO8859_2"));
+    assertThat(tableDef.getCollation(), is("latin2_bin"));
+    assertThat(tableDef.isCollationCaseSensitive(), is(true));
+
+    assertThat(tableDef.getPrimaryKeyColumns().isEmpty(), is(true));
+
+    List<Column> columnList = tableDef.getColumnList();
+    assertThat(columnList.size(), is(1));
+
+    assertThat(columnList.get(0).getName(), is("c"));
+    assertThat(columnList.get(0).getType(), is(ColumnType.VARCHAR));
+    assertThat(columnList.get(0).getFullType(), is("varchar(20)"));
+    assertThat(columnList.get(0).getLength(), is(20));
+    assertThat(columnList.get(0).getPrecision(), is(0));
+    assertThat(columnList.get(0).getScale(), is(0));
+    assertThat(columnList.get(0).isPrimaryKey(), is(false));
+    assertThat(columnList.get(0).isNullable(), is(true));
+    assertThat(columnList.get(0).getCharset(), is("latin2"));
+    assertThat(columnList.get(0).getJavaCharset(), is("ISO8859_2"));
+    assertThat(columnList.get(0).getCollation(), nullValue());
+    // use table default collation
+    assertThat(columnList.get(0).isCollationCaseSensitive(), is(true));
   }
 
   @Test(expected = SqlParseException.class)

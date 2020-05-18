@@ -5,6 +5,7 @@ package com.alibaba.innodb.java.reader;
 
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.comparator.DefaultKeyComparator;
+import com.alibaba.innodb.java.reader.comparator.KeyComparator;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.AllocatedPage;
@@ -27,7 +28,6 @@ import com.alibaba.innodb.java.reader.util.Utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -57,13 +57,13 @@ public class TableReaderImpl implements TableReader {
 
   private StorageService storageService;
 
-  private Comparator<List<Object>> keyComparator;
+  private KeyComparator keyComparator;
 
   public TableReaderImpl(String ibdFilePath, String createTableSql) {
     this(ibdFilePath, TableDefUtil.covertToTableDef(createTableSql), new DefaultKeyComparator());
   }
 
-  public TableReaderImpl(String ibdFilePath, String createTableSql, Comparator<List<Object>> keyComparator) {
+  public TableReaderImpl(String ibdFilePath, String createTableSql, KeyComparator keyComparator) {
     this(ibdFilePath, TableDefUtil.covertToTableDef(createTableSql), keyComparator);
   }
 
@@ -71,7 +71,7 @@ public class TableReaderImpl implements TableReader {
     this(ibdFilePath, tableDef, new DefaultKeyComparator());
   }
 
-  public TableReaderImpl(String ibdFilePath, TableDef tableDef, Comparator<List<Object>> keyComparator) {
+  public TableReaderImpl(String ibdFilePath, TableDef tableDef, KeyComparator keyComparator) {
     this.ibdFilePath = ibdFilePath;
     this.tableDef = tableDef;
     this.keyComparator = keyComparator;
@@ -318,6 +318,41 @@ public class TableReaderImpl implements TableReader {
                                                        List<String> projection,
                                                        boolean ascOrder) {
     return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
+        Optional.of(projection), ascOrder);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                       List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator) {
+    return indexService.getQueryIteratorBySk(skName, lower, lowerOperator, upper, upperOperator,
+        Optional.empty(), true);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                       List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       List<String> projection) {
+    return indexService.getQueryIteratorBySk(skName, lower, lowerOperator, upper, upperOperator,
+        Optional.of(projection), true);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                       List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       boolean ascOrder) {
+    return indexService.getQueryIteratorBySk(skName, lower, lowerOperator, upper, upperOperator,
+        Optional.empty(), ascOrder);
+  }
+
+  @Override
+  public Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                       List<Object> lower, ComparisonOperator lowerOperator,
+                                                       List<Object> upper, ComparisonOperator upperOperator,
+                                                       List<String> projection, boolean ascOrder) {
+    return indexService.getQueryIteratorBySk(skName, lower, lowerOperator, upper, upperOperator,
         Optional.of(projection), ascOrder);
   }
 

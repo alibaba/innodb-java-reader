@@ -3,7 +3,8 @@
  */
 package com.alibaba.innodb.java.reader.comparator;
 
-import java.util.Comparator;
+import com.alibaba.innodb.java.reader.schema.Column;
+
 import java.util.List;
 
 import static com.alibaba.innodb.java.reader.util.Utils.castCompare;
@@ -13,11 +14,11 @@ import static com.alibaba.innodb.java.reader.util.Utils.castCompare;
  *
  * @author xu.zx
  */
-public class DefaultKeyComparator implements Comparator<List<Object>> {
+public class DefaultKeyComparator implements KeyComparator {
 
   @Override
-  public int compare(List<Object> recordKey, List<Object> targetKey) {
-    return castCompare(recordKey, targetKey);
+  public int compare(List<Object> recordKey, List<Object> targetKey, List<Column> keyColumnList) {
+    return castCompare(recordKey, targetKey, keyColumnList);
   }
 
 }

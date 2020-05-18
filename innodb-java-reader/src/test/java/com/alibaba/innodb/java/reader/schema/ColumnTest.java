@@ -64,6 +64,7 @@ public class ColumnTest {
     assertThat(column.getType(), is("BIGINT"));
     assertThat(column.getTableDef(), nullValue());
     assertThat(column.getCharset(), nullValue());
+    assertThat(column.getCollation(), nullValue());
     assertThat(column.getJavaCharset(), nullValue());
     assertThat(column.getCollation(), nullValue());
     assertThat(column.isNullable(), is(false));
@@ -86,7 +87,9 @@ public class ColumnTest {
     assertThat(column.getTableDef(), nullValue());
     assertThat(column.getCharset(), is("utf8mb4"));
     assertThat(column.getJavaCharset(), is("UTF-8"));
-    assertThat(column.getCollation(), nullValue());
+    // column has charset, so collation is not empty
+    assertThat(column.getCollation(), is("utf8mb4_general_ci"));
+    assertThat(column.isCollationCaseSensitive(), is(false));
     assertThat(column.isNullable(), is(false));
     assertThat(column.isPrimaryKey(), is(false));
     assertThat(column.isFixedLength(), is(false));

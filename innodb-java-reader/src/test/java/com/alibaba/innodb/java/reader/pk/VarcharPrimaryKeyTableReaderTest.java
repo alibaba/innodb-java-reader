@@ -191,6 +191,56 @@ public class VarcharPrimaryKeyTableReaderTest extends AbstractTest {
     };
   }
 
+  @Test
+  public void testVarcharPkCaseSensitiveMysql56() {
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(expectedSingle(), ImmutableList.of("aBwdPAceTNRye"));
+
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(expectedSingle(), ImmutableList.of("aBwdPAceTNRye".toUpperCase()));
+  }
+
+  @Test
+  public void testVarcharPkCaseSensitiveMysql57() {
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(expectedSingle(), ImmutableList.of("aBwdPAceTNRye"));
+
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(expectedSingle(), ImmutableList.of("aBwdPAceTNRye".toUpperCase()));
+  }
+
+  @Test
+  public void testVarcharPkCaseSensitiveMysql80() {
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(expectedSingle(), ImmutableList.of("aBwdPAceTNRye"));
+
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkQueryByPk(expectedSingle(), ImmutableList.of("aBwdPAceTNRye".toUpperCase()));
+  }
+
+  public Consumer<GenericRecord> expectedSingle() {
+    return record -> {
+      Object[] v = record.getValues();
+      System.out.println(Arrays.asList(v));
+      assertThat(record.getPrimaryKey(), is(ImmutableList.of(valList.get(0))));
+      // assertThat(r.get("a"), is(i)); not in order
+      assertThat(record.get("b"), is(valList.get(0)));
+      assertThat(((String) record.get("c")).length(), greaterThan(3));
+    };
+  }
+
   public static void main(String[] args) {
     Random random = new Random();
     String tableName = "tb22";

@@ -9,11 +9,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * ConcurrentCache.
  *
  * @author xu.zx
  */
+@Slf4j
 public class ConcurrentCache<K, V> implements Computable<K, V> {
 
   protected final ConcurrentMap<K, Future<V>> concurrentMap;
@@ -41,6 +44,7 @@ public class ConcurrentCache<K, V> implements Computable<K, V> {
       // 此时阻塞
       return future.get();
     } catch (Exception e) {
+      log.error(e.getMessage(), e);
       concurrentMap.remove(key);
       return null;
     }

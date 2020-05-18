@@ -62,7 +62,7 @@ public interface IndexService {
    * For single key, the the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param key              primary key, single key or a composite key
+   * @param key              key list of primary key, single key or a composite key
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
    * @return record
@@ -72,14 +72,14 @@ public interface IndexService {
   /**
    * Range query records by primary key in a tablespace with a filter and projection.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key the lower or upper list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower            if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator    if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper            if rangeQuery is true, then this is the upper bound
-   * @param upperOperator    if rangeQuery is true, then this is the comparison operator for upper
-   * @param recordPredicate  optional filtering, if predicate returns true upon
+   * @param lower            lower bound
+   * @param lowerOperator    comparison operator for lower
+   * @param upper            upper bound
+   * @param upperOperator    comparison operator for upper
+   * @param recordPredicate  optional filtering, if predicate returns true upon a
    *                         record, then it will be added to result set
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
@@ -107,13 +107,13 @@ public interface IndexService {
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key the lower or upper list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower            if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator    if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper            if rangeQuery is true, then this is the upper bound
-   * @param upperOperator    if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower            lower bound
+   * @param lowerOperator    comparison operator for lower
+   * @param upper            upper bound
+   * @param upperOperator    comparison operator for upper
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
    * @param ascOrder         if set result records in ascending order
@@ -123,6 +123,31 @@ public interface IndexService {
                                                 List<Object> upper, ComparisonOperator upperOperator,
                                                 Optional<List<String>> recordProjection,
                                                 boolean ascOrder);
+
+  /**
+   * Return record iterator by secondary key (SK) in a tablespace. This is first go through all
+   * secondary keys and look up record back to clustered index.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the lower or upper list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param skName           secondary key name in <code>SHOW CREATE TABLE</code> command
+   * @param lower            lower bound
+   * @param lowerOperator    comparison operator for lower
+   * @param upper            upper bound
+   * @param upperOperator    comparison operator for upper
+   * @param recordProjection optional projection of selected column names, if no present, all
+   *                         fields will be included
+   * @param ascOrder         if set result records in ascending order
+   * @return record iterator, record is composed by secondary key columns and primary key columns
+   */
+  Iterator<GenericRecord> getQueryIteratorBySk(String skName,
+                                               List<Object> lower, ComparisonOperator lowerOperator,
+                                               List<Object> upper, ComparisonOperator upperOperator,
+                                               Optional<List<String>> recordProjection,
+                                               boolean ascOrder);
 
   /**
    * Load index page by page number.

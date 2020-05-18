@@ -4,6 +4,7 @@
 package com.alibaba.innodb.java.reader.schema;
 
 import com.alibaba.innodb.java.reader.CharsetMapping;
+import com.alibaba.innodb.java.reader.CollationMapping;
 import com.alibaba.innodb.java.reader.column.ColumnType;
 import com.alibaba.innodb.java.reader.util.Symbol;
 
@@ -123,6 +124,8 @@ public class Column {
 
   private String collation;
 
+  private boolean collationCaseSensitive = false;
+
   /**
    * //TODO make sure this is the right way to implement
    * For example, if table charset set to utf8, then it will consume up to 3 bytes for one character.
@@ -186,6 +189,8 @@ public class Column {
     if (CHAR.equals(type) && maxBytesPerChar > 1) {
       isVarLenChar = true;
     }
+    this.collation = CollationMapping.getDefaultCollation(charset);
+    this.collationCaseSensitive = CollationMapping.isCollationCaseSensitive(this.collation);
     return this;
   }
 
@@ -222,6 +227,7 @@ public class Column {
   }
 
   public Column setCollation(String collation) {
+    this.collationCaseSensitive = CollationMapping.isCollationCaseSensitive(collation);
     this.collation = collation;
     return this;
   }
@@ -240,6 +246,14 @@ public class Column {
       return false;
     }
     return ColumnType.CHAR.equals(type) || ColumnType.BINARY.equals(type);
+  }
+
+  public boolean isCollationCaseSensitive() {
+    // if collation is not for column, use table definition
+    if (collation == null && tableDef != null) {
+      return tableDef.isCollationCaseSensitive();
+    }
+    return collationCaseSensitive;
   }
 
   private void handleRawType(String type) {

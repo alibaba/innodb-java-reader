@@ -5,16 +5,21 @@ package com.alibaba.innodb.java.reader.schema;
 
 import com.google.common.collect.Maps;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.List;
 import java.util.Map;
 
 import lombok.Builder;
 import lombok.Data;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Key metadata information including name, number of columns and page number, etc.
  * <pre>
- * select * from INNODB_SYS_INDEXES;
+ * MySQL 5.7:  SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES;
+ * MySQL 8.0+: SELECT * FROM INFORMATION_SCHEMA.INNODB_INDEXES;
  * +----------+----------+----------+------+----------+---------+-------+
  * | INDEX_ID | NAME     | TABLE_ID | TYPE | N_FIELDS | PAGE_NO | SPACE |
  * +----------+----------+----------+------+----------+---------+-------+
@@ -30,14 +35,20 @@ import lombok.Data;
 public class KeyMeta {
 
   /**
-   * Key (index) name if present or else null.
+   * Key (index) name if present.
+   * <p>
+   * Every index should have a name, if not specified when creating table,
+   * MySQL will assign a name to it.
    */
   private String name;
 
+  /**
+   * Key type.
+   */
   private Type type;
 
   /**
-   * N_FIELDS.
+   * Number of columns, should be greater than 0.
    */
   private int numOfColumns;
 
@@ -53,15 +64,25 @@ public class KeyMeta {
     return keyColumnNames.contains(columnName);
   }
 
+  public KeyMeta validate() {
+    checkArgument(StringUtils.isNotEmpty(name), "Key name should not be empty " + this);
+    if (Type.isValidSk(type.literal)) {
+      checkArgument(numOfColumns > 0, "Number of columns should be greater than 0");
+    }
+    return this;
+  }
+
   public enum Type {
     /**
      * Key type.
      */
+    PRIMARY_KEY("PRIMARY KEY"),
     KEY("KEY"),
-    UNIQUE_KEY("UNIQUE KEY"),
     INDEX("INDEX"),
+    UNIQUE_KEY("UNIQUE KEY"),
     UNIQUE_INDEX("UNIQUE INDEX"),
-    PRIMARY_KEY("PRIMARY KEY");
+    FULLTEXT_KEY("FULLTEXT KEY"),
+    FOREIGN_KEY("FOREIGN KEY");
 
     private String literal;
 
@@ -71,6 +92,23 @@ public class KeyMeta {
 
     public String literal() {
       return literal;
+    }
+
+    public static boolean isValid(String type) {
+      return PRIMARY_KEY.literal.equalsIgnoreCase(type)
+          || KEY.literal.equalsIgnoreCase(type)
+          || INDEX.literal.equalsIgnoreCase(type)
+          || UNIQUE_KEY.literal.equalsIgnoreCase(type)
+          || UNIQUE_INDEX.literal.equalsIgnoreCase(type)
+          || FULLTEXT_KEY.literal.equalsIgnoreCase(type)
+          || FOREIGN_KEY.literal.equalsIgnoreCase(type);
+    }
+
+    public static boolean isValidSk(String type) {
+      return KEY.literal.equalsIgnoreCase(type)
+          || INDEX.literal.equalsIgnoreCase(type)
+          || UNIQUE_KEY.literal.equalsIgnoreCase(type)
+          || UNIQUE_INDEX.literal.equalsIgnoreCase(type);
     }
 
     // ---------- template method ---------- //

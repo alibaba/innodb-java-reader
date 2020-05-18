@@ -4,8 +4,11 @@
 package com.alibaba.innodb.java.reader.schema;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import com.alibaba.innodb.java.reader.CharsetMapping;
+import com.alibaba.innodb.java.reader.CollationMapping;
+import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
 import com.alibaba.innodb.java.reader.util.Symbol;
 
@@ -17,6 +20,8 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.Data;
@@ -25,7 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_JAVA_CHARSET;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_CHARSET;
+import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_COLLATION;
 import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
+import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FOREIGN_KEY;
+import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FULLTEXT_KEY;
+import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.PRIMARY_KEY;
+import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.isValidSk;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -82,11 +92,27 @@ public class TableDef {
   private String defaultCharset = DEFAULT_MYSQL_CHARSET;
 
   /**
+   * Table DDL collation, for example can be utf8_general_ci, utf8_bin (case sensitive).
+   */
+  private String collation = DEFAULT_MYSQL_COLLATION;
+
+  /**
+   * Per {@link #collation}, determine if string type columns are case sensitive or not.
+   */
+  private boolean collationCaseSensitive = false;
+
+  /**
    * //TODO make sure this is the right way to implement
    * For example, if table charset set to utf8, then it will consume up to 3 bytes for one character.
    * if it is utf8mb4, then it must be set to 4.
    */
   private int maxBytesPerChar = 1;
+
+  /**
+   * When build new TableDef for secondary key, this indicates that the table
+   * is derived from sk, and will only by used internally.
+   */
+  private boolean derivedFromSk;
 
   public TableDef() {
     this.columnList = new ArrayList<>();
@@ -197,7 +223,18 @@ public class TableDef {
   }
 
   public List<KeyMeta> getSecondaryKeyMetaList() {
+    if (CollectionUtils.isEmpty(secondaryKeyMetaList)) {
+      return ImmutableList.of();
+    }
     return secondaryKeyMetaList;
+  }
+
+  public Map<String, KeyMeta> getSecondaryKeyMetaMap() {
+    if (CollectionUtils.isEmpty(secondaryKeyMetaList)) {
+      return ImmutableMap.of();
+    }
+    return secondaryKeyMetaList.stream()
+        .collect(Collectors.toMap(KeyMeta::getName, Function.identity()));
   }
 
   public TableDef setPrimaryKeyColumns(List<String> pkColumnNames) {
@@ -226,8 +263,12 @@ public class TableDef {
    * @return key metadata
    */
   public KeyMeta createKeyMetaInfo(String type, String keyName, List<String> keyColumnNames) {
-    checkArgument(CollectionUtils.isNotEmpty(keyColumnNames),
-        "Key column names is empty for key = " + keyName);
+    checkArgument(KeyMeta.Type.isValid(type),
+        "Key type is invalid " + type);
+    if (isValidSk(type)) {
+      checkArgument(CollectionUtils.isNotEmpty(keyColumnNames),
+          "Key column names is empty for key = " + keyName);
+    }
 
     ImmutableList.Builder<Column> cols = ImmutableList.builder();
     ImmutableList.Builder<String> colNames = ImmutableList.builder();
@@ -236,6 +277,14 @@ public class TableDef {
     for (String colName : keyColumnNames) {
       String columnName = colName.replace(Symbol.BACKTICK, Symbol.EMPTY)
           .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+      if (columnName.contains(Symbol.LEFT_PARENTHESES) && columnName.contains(Symbol.RIGHT_PARENTHESES)) {
+        // TODO wrapped string not in use
+        String wrappedString = StringUtils
+            .substringBetween(columnName, Symbol.LEFT_PARENTHESES, Symbol.RIGHT_PARENTHESES);
+        checkState(StringUtils.isNotEmpty(wrappedString),
+            "String " + colName + " cannot be empty between ( and ), for example varchar(255)");
+        columnName = columnName.substring(0, columnName.indexOf(Symbol.LEFT_PARENTHESES));
+      }
       if (containsColumn(columnName)) {
         Column col = getField(columnName).getColumn();
         cols.add(col);
@@ -259,7 +308,8 @@ public class TableDef {
         .type(KeyMeta.Type.parse(type))
         .name(keyName != null ? keyName.replace(Symbol.BACKTICK, Symbol.EMPTY)
             .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY) : null)
-        .build();
+        .build()
+        .validate();
   }
 
   private boolean isVarLen(Column pk) {
@@ -288,7 +338,26 @@ public class TableDef {
     this.defaultCharset = defaultCharset;
     this.defaultJavaCharset = CharsetMapping.getJavaCharsetForMysqlCharset(defaultCharset);
     this.maxBytesPerChar = CharsetMapping.getMaxByteLengthForMysqlCharset(defaultCharset);
+    this.collation = CollationMapping.getDefaultCollation(defaultCharset);
+    this.collationCaseSensitive = CollationMapping.isCollationCaseSensitive(this.collation);
     return this;
+  }
+
+  /**
+   * Table charset must be set before collation.
+   *
+   * @param collation collation
+   * @return table definition
+   */
+  public TableDef setCollation(String collation) {
+    checkArgument(CollectionUtils.isEmpty(columnList), "Collation should be set before adding columns");
+    this.collationCaseSensitive = CollationMapping.isCollationCaseSensitive(collation);
+    this.collation = collation;
+    return this;
+  }
+
+  public String getCollation() {
+    return collation;
   }
 
   public String getName() {
@@ -347,6 +416,65 @@ public class TableDef {
       }
     }
     return result;
+  }
+
+  /**
+   * Build a virtual secondary key table definition.
+   * This will be used in secondary key querying.
+   *
+   * @param skName    secondary key name
+   * @param skOrdinal secondary key ordinal, starts from 0
+   * @return table definition
+   */
+  public TableDef buildSkTableDef(String skName, Optional<Integer> skOrdinal) {
+    checkArgument(CollectionUtils.isNotEmpty(secondaryKeyMetaList),
+        "Secondary key is empty");
+    KeyMeta keyMeta;
+    if (skOrdinal.isPresent()) {
+      checkArgument(skOrdinal.get() < secondaryKeyMetaList.size(),
+          "Secondary key ordinal " + skOrdinal + "is out of range ");
+      keyMeta = secondaryKeyMetaList.get(skOrdinal.get());
+    } else {
+      Map<String, KeyMeta> skNameMap = getSecondaryKeyMetaMap();
+      keyMeta = skNameMap.get(skName);
+    }
+    if (keyMeta == null) {
+      throw new ReaderException("Secondary key does not exist with name " + skName);
+    }
+    if (keyMeta.getType() == null || FULLTEXT_KEY == keyMeta.getType()
+        || FOREIGN_KEY == keyMeta.getType() || PRIMARY_KEY == keyMeta.getType()) {
+      throw new IllegalStateException("Secondary key type does not support " + keyMeta.getType());
+    }
+    if (CollectionUtils.isEmpty(keyMeta.getKeyColumns())) {
+      throw new AssertionError("Secondary key columns should not be empty " + skOrdinal);
+    }
+    TableDef tableDef = new TableDef().setDefaultCharset(defaultCharset);
+    for (Column keyColumn : keyMeta.getKeyColumns()) {
+      tableDef.addColumn(keyColumn);
+    }
+    if (isNoPrimaryKey()) {
+      // TODO
+      tableDef.addColumn(new Column());
+    } else {
+      for (Column primaryKeyColumn : getPrimaryKeyColumns()) {
+        tableDef.addColumn(primaryKeyColumn);
+      }
+    }
+    tableDef.setPrimaryKeyColumns(keyMeta.getKeyColumnNames());
+    tableDef.setDerivedFromSk(true);
+    return tableDef;
+  }
+
+  public boolean isDerivedFromSk() {
+    return derivedFromSk;
+  }
+
+  public void setDerivedFromSk(boolean derivedFromSk) {
+    this.derivedFromSk = derivedFromSk;
+  }
+
+  public boolean isCollationCaseSensitive() {
+    return collationCaseSensitive;
   }
 
   @Data

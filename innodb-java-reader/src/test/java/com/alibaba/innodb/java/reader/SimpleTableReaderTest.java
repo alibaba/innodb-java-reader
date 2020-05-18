@@ -340,7 +340,7 @@ public class SimpleTableReaderTest extends AbstractTest {
     };
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test(expected = ReaderException.class)
   public void testSimpleTableQueryByPageNumberNegativePage() {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
@@ -799,6 +799,15 @@ public class SimpleTableReaderTest extends AbstractTest {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();
       assertThat(reader.getNumOfPages(), is(6L));
+    }
+  }
+
+  @Test(expected = ReaderException.class)
+  public void testReadRowFormatRedundantTable() {
+    try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH
+        + "simple/tb_redundant_format.ibd", getTableDef())) {
+      reader.open();
+      reader.queryAll();
     }
   }
 

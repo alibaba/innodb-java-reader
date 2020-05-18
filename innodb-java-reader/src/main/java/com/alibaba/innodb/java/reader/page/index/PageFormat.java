@@ -3,11 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.page.index;
 
-import com.google.common.collect.Maps;
-
 import com.alibaba.innodb.java.reader.util.IdAble;
-
-import java.util.Map;
 
 /**
  * Page format.
@@ -43,17 +39,12 @@ public enum PageFormat implements IdAble<Integer> {
     return type;
   }
 
-  // ---------- template method ---------- //
-
-  private static Map<Integer, PageFormat> KVS = Maps.newHashMapWithExpectedSize(values().length);
-
-  static {
-    for (PageFormat recordType : values()) {
-      KVS.put(recordType.type(), recordType);
-    }
-  }
-
   public static PageFormat parse(int type) {
-    return KVS.get(type);
+    if (type == REDUNDANT.type) {
+      return REDUNDANT;
+    } else if (type == COMPACT.type) {
+      return COMPACT;
+    }
+    return null;
   }
 }

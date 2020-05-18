@@ -113,7 +113,7 @@ public class CharsetMapping {
   public static String getJavaCharsetForMysqlCharset(String mysqlCharsetName) {
     MySqlCharset mySqlCharset = MYSQL_CHARSET_MAP.get(mysqlCharsetName);
     if (mySqlCharset == null) {
-      throw new UnsupportedOperationException(mysqlCharsetName + " not supported");
+      throw new UnsupportedOperationException("Charset " + mysqlCharsetName + " not supported");
     }
     return mySqlCharset.javaCharset;
   }

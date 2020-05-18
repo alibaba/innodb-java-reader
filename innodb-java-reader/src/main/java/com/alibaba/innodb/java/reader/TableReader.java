@@ -343,6 +343,93 @@ public interface TableReader extends Closeable {
                                                 List<String> projection, boolean ascOrder);
 
   /**
+   * Return record iterator by secondary key (SK) in a tablespace. This is first go through all
+   * secondary keys and look up record back to clustered index.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the lower or upper list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param skName        secondary key name in <code>SHOW CREATE TABLE</code> command
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
+   * @return record iterator, record is composed by secondary key columns and primary key columns
+   */
+  Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator);
+
+  /**
+   * Return record iterator by secondary key (SK) in a tablespace. This is first go through all
+   * secondary keys and look up record back to clustered index.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the lower or upper list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param skName        secondary key name in <code>SHOW CREATE TABLE</code> command
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
+   * @param projection    projection of selected column names
+   * @return record iterator, record is composed by secondary key columns and primary key columns
+   */
+  Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator,
+                                                List<String> projection);
+
+  /**
+   * Return record iterator by secondary key (SK) in a tablespace. This is first go through all
+   * secondary keys and look up record back to clustered index.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the lower or upper list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param skName        secondary key name in <code>SHOW CREATE TABLE</code> command
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
+   * @param ascOrder      if set result records in ascending order
+   * @return record iterator, record is composed by secondary key columns and primary key columns
+   */
+  Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator,
+                                                boolean ascOrder);
+
+  /**
+   * Return record iterator by secondary key (SK) in a tablespace. This is first go through all
+   * secondary keys and look up record back to clustered index.
+   * <p>
+   * This is friendly to memory since only one page is loaded per batch.
+   * <p>
+   * For single key the lower or upper list size should be one, for composite key the size
+   * will be more than one.
+   *
+   * @param skName        secondary key name in <code>SHOW CREATE TABLE</code> command
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
+   * @param projection    projection of selected column names
+   * @param ascOrder      if set result records in ascending order
+   * @return record iterator, record is composed by secondary key columns and primary key columns
+   */
+  Iterator<GenericRecord> getRecordIteratorBySk(String skName,
+                                                List<Object> lower, ComparisonOperator lowerOperator,
+                                                List<Object> upper, ComparisonOperator upperOperator,
+                                                List<String> projection, boolean ascOrder);
+
+  /**
    * Return table definition.
    *
    * @return table definition

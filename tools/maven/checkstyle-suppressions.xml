@@ -11,6 +11,7 @@
     <!--<suppress checks="." files=".[\\/]pbrpc[\\/]TestNoServiceCase.*\.java$"/>-->
     <suppress checks="." files=".*[\\/]rpc[\\/]protocol[\\/]pbrpc[\\/].*\.java$"/>
     <suppress checks="." files=".*TestNoServiceCase.*\.java$"/>
+    <suppress checks="." files=".*AbstractTest.java$"/>
     <suppress checks="." files=".*ComplexPersonService.*\.java$"/>
     <suppress checks="." files=".*TestServiceCase.*\.java$"/>
 </suppressions>

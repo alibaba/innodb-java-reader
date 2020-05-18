@@ -3,9 +3,11 @@
  */
 package com.alibaba.innodb.java.reader.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
+import com.alibaba.innodb.java.reader.schema.Column;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -176,13 +178,23 @@ public class Utils {
     return false;
   }
 
+  @VisibleForTesting
   public static int castCompare(List<Object> recordKey, List<Object> targetKey) {
+    List<Column> mockKeyColumnList = new ArrayList<>();
+    for (int i = 0; i < recordKey.size(); i++) {
+      mockKeyColumnList.add(new Column());
+    }
+    return castCompare(recordKey, targetKey, mockKeyColumnList);
+  }
+
+  public static int castCompare(List<Object> recordKey, List<Object> targetKey,
+                                List<Column> keyColumnList) {
     if (recordKey.size() != targetKey.size()) {
       throw new IllegalStateException("Record key " + recordKey
           + " and target key " + targetKey + " length not match");
     }
     for (int i = 0; i < recordKey.size(); i++) {
-      int res = castCompare(recordKey.get(i), targetKey.get(i));
+      int res = castCompare(recordKey.get(i), targetKey.get(i), keyColumnList.get(i));
       if (res != 0) {
         return res;
       }
@@ -190,22 +202,29 @@ public class Utils {
     return 0;
   }
 
-  public static int castCompare(Object recordKey, Object targetKey) {
-    if (MAX_VAL.equals(recordKey)) {
-      return 1;
-    }
-    if (MIN_VAL.equals(recordKey)) {
+  public static int castCompare(Object recordKey, Object targetKey, Column column) {
+    if (recordKey == null) {
       return -1;
     }
-    if (MAX_VAL.equals(targetKey)) {
-      return -1;
-    }
-    if (MIN_VAL.equals(targetKey)) {
+    if (MAX_VAL == recordKey) {
       return 1;
     }
-    Comparable k1 = Utils.cast(recordKey);
-    Comparable k2 = Utils.cast(targetKey);
-    return k1.compareTo(k2);
+    if (MIN_VAL == recordKey) {
+      return -1;
+    }
+    if (MAX_VAL == targetKey) {
+      return -1;
+    }
+    if (MIN_VAL == targetKey) {
+      return 1;
+    }
+    Comparable k1 = (Comparable) recordKey;
+    Comparable k2 = (Comparable) targetKey;
+    if (recordKey instanceof String && !column.isCollationCaseSensitive()) {
+      return ((String) k1).compareToIgnoreCase((String) k2);
+    } else {
+      return k1.compareTo(k2);
+    }
   }
 
   public static void close(Closeable closeable) throws IOException {

@@ -4,6 +4,7 @@
 package com.alibaba.innodb.java.reader.schema;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
 
@@ -16,6 +17,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +42,7 @@ public class TableDefUtil {
       tableDef.setFullyQualifiedName(stmt.getTable().getFullyQualifiedName());
       // set charset first
       handleCharset(stmt, tableDef);
+      handleCollation(stmt, tableDef);
       handleColumns(stmt, tableDef);
       handleIndex(stmt, tableDef);
 
@@ -63,6 +66,26 @@ public class TableDefUtil {
       if (indexOfCharset > 0) {
         tableDef.setDefaultCharset((String) tableOptions.get(indexOfCharset + 2));
       }
+      int indexOfCharacterSet = tableOptions.indexOf("CHARACTER");
+      if (indexOfCharacterSet == -1) {
+        indexOfCharacterSet = tableOptions.indexOf("CHARACTER");
+      }
+      if (indexOfCharacterSet > 0) {
+        tableDef.setDefaultCharset((String) tableOptions.get(indexOfCharacterSet + 2));
+      }
+    }
+  }
+
+  private static void handleCollation(CreateTable stmt, TableDef tableDef) {
+    List<?> tableOptions = stmt.getTableOptionsStrings();
+    if (CollectionUtils.isNotEmpty(tableOptions)) {
+      int indexOfCollate = tableOptions.indexOf("COLLATE");
+      if (indexOfCollate == -1) {
+        indexOfCollate = tableOptions.indexOf("collate");
+      }
+      if (indexOfCollate > 0) {
+        tableDef.setCollation((String) tableOptions.get(indexOfCollate + 1));
+      }
     }
   }
 
@@ -70,17 +93,22 @@ public class TableDefUtil {
     List<Index> indices = stmt.getIndexes();
     if (CollectionUtils.isNotEmpty(indices)) {
       for (Index index : indices) {
-        if ("PRIMARY KEY".equalsIgnoreCase(index.getType())) {
+        if (KeyMeta.Type.isValid(index.getType())) {
           List<String> colNames = getColumnNames(index);
-          tableDef.setPrimaryKeyColumns(colNames);
-        }
-
-        if ("KEY".equalsIgnoreCase(index.getType())
-            || "INDEX".equalsIgnoreCase(index.getType())
-            || "UNIQUE KEY".equalsIgnoreCase(index.getType())
-            || "UNIQUE INDEX".equalsIgnoreCase(index.getType())) {
-          List<String> colNames = getColumnNames(index);
-          tableDef.addSecondaryKeyColumns(index.getType().toUpperCase(), index.getName(), colNames);
+          if (KeyMeta.Type.PRIMARY_KEY.literal().equalsIgnoreCase(index.getType())) {
+            // handle pk
+            tableDef.setPrimaryKeyColumns(colNames);
+          } else if (KeyMeta.Type.isValidSk(index.getType())) {
+            // handle sk
+            tableDef.addSecondaryKeyColumns(index.getType().toUpperCase(),
+                index.getName(), colNames);
+          } else {
+            // handle fulltext and foreign key
+            tableDef.addSecondaryKeyColumns(index.getType().toUpperCase(),
+                index.getName(), ImmutableList.of());
+          }
+        } else {
+          throw new SqlParseException("Index type is invalid " + index.getType());
         }
       }
     }
@@ -113,7 +141,7 @@ public class TableDefUtil {
         List<String> specList = col.getColumnSpecStrings().stream()
             .map(String::toUpperCase).collect(Collectors.toList());
         if (specList.contains("UNSIGNED")) {
-          column.setType(column.getType() + " UNSIGNED");
+          column.setType(column.getFullType() + " UNSIGNED");
         }
         String specString = Joiner.on(" ").join(specList);
         if (specString.contains("NOT NULL")) {
@@ -121,6 +149,9 @@ public class TableDefUtil {
         }
         if (specString.contains("PRIMARY KEY") || specString.contains("KEY")) {
           column.setPrimaryKey(true);
+        }
+        if (specString.contains("COLLATE")) {
+          column.setCollation(specList.get(specList.indexOf("COLLATE") + 1).toLowerCase(Locale.ROOT));
         }
       }
       tableDef.addColumn(column);
@@ -130,7 +161,7 @@ public class TableDefUtil {
   private static List<String> getColumnNames(Index index) {
     List<String> colNames = index.getColumnsNames();
     if (CollectionUtils.isEmpty(colNames)) {
-      throw new SqlParseException("No column specified by PRIMARY KEY");
+      throw new SqlParseException("No column specified for index " + index);
     }
     return colNames;
   }

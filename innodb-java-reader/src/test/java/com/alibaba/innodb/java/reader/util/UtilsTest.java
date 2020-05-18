@@ -2,6 +2,8 @@ package com.alibaba.innodb.java.reader.util;
 
 import com.google.common.collect.ImmutableList;
 
+import com.alibaba.innodb.java.reader.schema.Column;
+
 import org.junit.Test;
 
 import java.time.LocalDateTime;
@@ -189,7 +191,56 @@ public class UtilsTest {
     o1 = ImmutableList.of(true);
     o2 = ImmutableList.of(false);
     assertThat(Utils.castCompare(o1, o2), is(1));
+  }
 
+  @Test
+  public void testCastCompareOneColumnSting() {
+    List<Object> o1 = ImmutableList.of("A");
+    List<Object> o2 = ImmutableList.of("A");
+    assertThat(Utils.castCompare(o1, o2), is(0));
+
+    o1 = ImmutableList.of("A");
+    o2 = ImmutableList.of("B");
+    assertThat(Utils.castCompare(o1, o2), is(-1));
+
+    o1 = ImmutableList.of("C");
+    o2 = ImmutableList.of("B");
+    assertThat(Utils.castCompare(o1, o2), is(1));
+
+    o1 = ImmutableList.of("Hello");
+    o2 = ImmutableList.of("world");
+    assertThat(Utils.castCompare(o1, o2), lessThan(0));
+
+    o1 = ImmutableList.of("Hello");
+    o2 = ImmutableList.of("World");
+    assertThat(Utils.castCompare(o1, o2), lessThan(0));
+
+    // case insensitive
+    o1 = ImmutableList.of("Hello");
+    o2 = ImmutableList.of("hello");
+    assertThat(Utils.castCompare(o1, o2), is(0));
+
+    o1 = ImmutableList.of("HELLO");
+    o2 = ImmutableList.of("HELLO");
+    assertThat(Utils.castCompare(o1, o2), is(0));
+
+    // case sensitive
+    o1 = ImmutableList.of("Hello");
+    o2 = ImmutableList.of("hello");
+    List<Column> columnList = ImmutableList.of(new Column().setCollation("utf8_bin"));
+    assertThat(Utils.castCompare(o1, o2, columnList), lessThan(0));
+
+    o1 = ImmutableList.of("HELLO");
+    o2 = ImmutableList.of("hello");
+    assertThat(Utils.castCompare(o1, o2, columnList), lessThan(0));
+
+    o1 = ImmutableList.of("hello");
+    o2 = ImmutableList.of("Hello");
+    assertThat(Utils.castCompare(o1, o2, columnList), greaterThan(0));
+
+    o1 = ImmutableList.of("HELLo");
+    o2 = ImmutableList.of("HELLO");
+    assertThat(Utils.castCompare(o1, o2, columnList), greaterThan(0));
   }
 
   @Test
@@ -202,13 +253,22 @@ public class UtilsTest {
     o2.add(3);
     assertThat(Utils.castCompare(o1, o2), is(-1));
 
+    List<Column> columnList = ImmutableList.of(
+        new Column().setCollation("utf8_bin"),
+        new Column()
+    );
+
     o1 = ImmutableList.of(100, 200);
     o2 = ImmutableList.of(1000, 2000);
     assertThat(Utils.castCompare(o1, o2), is(-1));
 
     o1 = ImmutableList.of("hello", 200);
     o2 = ImmutableList.of("Hello", 2000);
-    assertThat(Utils.castCompare(o1, o2), greaterThan(0));
+    assertThat(Utils.castCompare(o1, o2, columnList), greaterThan(0));
+
+    o1 = ImmutableList.of("hello", 200);
+    o2 = ImmutableList.of("Hello", 2000);
+    assertThat(Utils.castCompare(o1, o2), lessThan(0));
 
     o1 = ImmutableList.of("hello", 200);
     o2 = ImmutableList.of("hello", 2000);
@@ -222,13 +282,25 @@ public class UtilsTest {
     o2 = ImmutableList.of("zhang", "xu");
     assertThat(Utils.castCompare(o1, o2), is(0));
 
+    o1 = ImmutableList.of("ZHANG", "xu");
+    o2 = ImmutableList.of("zhang", "xu");
+    assertThat(Utils.castCompare(o1, o2), is(0));
+
+    o1 = ImmutableList.of("zhang", "xu");
+    o2 = ImmutableList.of("zhang", "XU");
+    assertThat(Utils.castCompare(o1, o2), is(0));
+
     o1 = ImmutableList.of(1000, 2000);
     o2 = ImmutableList.of(100, 200);
     assertThat(Utils.castCompare(o1, o2), is(1));
 
     o1 = ImmutableList.of("Hello", 2000);
     o2 = ImmutableList.of("hello", 200);
-    assertThat(Utils.castCompare(o1, o2), lessThan(0));
+    assertThat(Utils.castCompare(o1, o2), greaterThan(0));
+
+    o1 = ImmutableList.of("Hello", 2000);
+    o2 = ImmutableList.of("hello", 200);
+    assertThat(Utils.castCompare(o1, o2, columnList), lessThan(0));
 
     o1 = ImmutableList.of("hello", 2000);
     o2 = ImmutableList.of("hello", 200);

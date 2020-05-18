@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.page.index;
 
+import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.InnerPage;
 import com.alibaba.innodb.java.reader.schema.TableDef;
@@ -38,8 +39,9 @@ public class Index extends AbstractPage {
 
     // 36 bytes index header
     this.indexHeader = IndexHeader.fromSlice(sliceInput);
-    checkState(this.indexHeader.getFormat() == PageFormat.COMPACT,
-        "only compact page supported");
+    if (this.indexHeader.getFormat() != PageFormat.COMPACT) {
+      reportException();
+    }
 
     // 20 bytes fseg header
     this.fsegHeader = FsegHeader.fromSlice(sliceInput);
@@ -110,6 +112,17 @@ public class Index extends AbstractPage {
   public int usedBytesInIndexPage() {
     return indexHeader.getHeapTopPosition() + SIZE_OF_FIL_TRAILER
         + this.indexHeader.getNumOfDirSlots() * SIZE_OF_PAGE_DIR_SLOT - indexHeader.getGarbageSpace();
+  }
+
+  private void reportException() throws ReaderException {
+    if (this.indexHeader.getIndexId() <= 0L
+        && this.indexHeader.getMaxTrxId() <= 0L) {
+      throw new ReaderException("Index header is unreadable, only compact page supported, "
+          + "please make sure the file is a valid InnoDB data file, page="
+          + innerPage.toString() + ", index.header = " + this.indexHeader.toString());
+    }
+    throw new ReaderException("Only compact page supported, page=" + innerPage.toString()
+        + ", index.header = " + this.indexHeader.toString());
   }
 
 }

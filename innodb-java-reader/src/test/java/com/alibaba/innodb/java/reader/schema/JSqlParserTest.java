@@ -29,9 +29,9 @@ public class JSqlParserTest {
         + "  `outer_id` varchar(1024) NOT NULL COMMENT '用户定义的商品id' KEY,\n"
         + "  `feed_url_id` int(11) NOT NULL DEFAULT '0' COMMENT '抓取信息id',\n"
         + "  `name` varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT '商品名称',\n"
-        + "  `loc` varchar(1024) NOT NULL COMMENT '商品详情页',\n"
+        + "  `loc` varchar(1024) NOT NULL COLLATE utf8_bin COMMENT '商品详情页',\n"
         + "  `MWT` decimal(14,6) DEFAULT NULL,\n"
-        + "  `content` text COMMENT '商品属性',\n"
+        + "  `content` text COLLATE utf8_general_ci COMMENT '商品属性',\n"
         + "  `content_hash` bigint(20) NOT NULL COMMENT 'content的hashcode',\n"
         + "  `version` bigint(20) NOT NULL COMMENT '版本',\n"
         + "  `name_hash` bigint(20) NOT NULL DEFAULT '0' COMMENT 'name hash',\n"
@@ -41,7 +41,7 @@ public class JSqlParserTest {
         + "  KEY `ddd` (`user_id`), \n"
         + "  UNIQUE key (feed_url_id) COMMENT 'feed',\n"
         + "  INDEX `eee` (`user_id`, `loc`) \n"
-        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='商品信息'");
+        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_bin COMMENT='商品信息'");
     System.out.println(stmt.toString());
 
     System.out.println(stmt.getTable().getName());
@@ -55,7 +55,7 @@ public class JSqlParserTest {
     System.out.println(stmt.getTableOptionsStrings());
     assertThat(stmt.getTableOptionsStrings(),
         is(ImmutableList.of("ENGINE", "=", "InnoDB", "DEFAULT", "CHARSET", "=", "utf8",
-            "COMMENT", "=", "'商品信息'")));
+            "COLLATE", "utf8_bin", "COMMENT", "=", "'商品信息'")));
 
     System.out.println(stmt.getIndexes());
     assertThat(stmt.getIndexes().toString(),
@@ -124,7 +124,7 @@ public class JSqlParserTest {
     assertThat(columnDefinition.getColumnName(), is("`outer_id`"));
     assertThat(columnDefinition.getColumnSpecStrings(),
         is(ImmutableList.of("NOT", "NULL", "COMMENT", "'用户定义的商品id'", "KEY")));
-            assertThat(columnDefinition.getColDataType().getDataType(), is("varchar"));
+    assertThat(columnDefinition.getColDataType().getDataType(), is("varchar"));
     assertThat(columnDefinition.getColDataType().getArgumentsStringList(), is(ImmutableList.of("1024")));
     assertThat(columnDefinition.getColDataType().getCharacterSet(), nullValue());
 
@@ -135,6 +135,14 @@ public class JSqlParserTest {
     assertThat(columnDefinition.getColDataType().getDataType(), is("varchar"));
     assertThat(columnDefinition.getColDataType().getArgumentsStringList(), is(ImmutableList.of("200")));
     assertThat(columnDefinition.getColDataType().getCharacterSet(), is("utf8"));
+
+    columnDefinition = stmt.getColumnDefinitions().get(6);
+    assertThat(columnDefinition.getColumnName(), is("`loc`"));
+    assertThat(columnDefinition.getColumnSpecStrings(),
+        is(ImmutableList.of("NOT", "NULL", "COLLATE", "utf8_bin", "COMMENT", "'商品详情页'")));
+    assertThat(columnDefinition.getColDataType().getDataType(), is("varchar"));
+    assertThat(columnDefinition.getColDataType().getArgumentsStringList(), is(ImmutableList.of("1024")));
+    assertThat(columnDefinition.getColDataType().getCharacterSet(), nullValue());
 
     columnDefinition = stmt.getColumnDefinitions().get(7);
     assertThat(columnDefinition.getColumnName(), is("`MWT`"));
