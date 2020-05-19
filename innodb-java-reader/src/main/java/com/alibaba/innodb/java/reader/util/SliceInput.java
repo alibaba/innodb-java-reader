@@ -118,6 +118,16 @@ public final class SliceInput extends InputStream implements DataInput {
     return readInt() & 0xffffffffL;
   }
 
+  public long read6BytesInt() {
+    long v = slice.get6BytesInt(position);
+    position += 6;
+    return v;
+  }
+
+  public long readUnsigned6BytesInt() {
+    return read6BytesInt() & 0xffffffffffffL;
+  }
+
   @Override
   public long readLong() {
     long v = slice.getLong(position);

@@ -74,6 +74,16 @@ public interface Slice {
   int getInt(int index);
 
   /**
+   * Get a 48-bit integer in the slice.
+   *
+   * @param index the specified absolute {@code index} in this slice.
+   * @return 48-bit long integer
+   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or
+   *                                   {@code index + 6} is greater than capacity
+   */
+  long get6BytesInt(int index);
+
+  /**
    * Get a 64-bit long integer in the slice.
    *
    * @param index the specified absolute {@code index} in this slice

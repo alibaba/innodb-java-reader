@@ -43,6 +43,7 @@ import java.util.function.Predicate;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.alibaba.innodb.java.reader.Constants.COLUMN_ROW_ID;
 import static com.alibaba.innodb.java.reader.Constants.ROOT_PAGE_NUMBER;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BODY;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_REC_HEADER;
@@ -256,9 +257,15 @@ public class IndexServiceImpl implements IndexService {
    */
   @Override
   public GenericRecord queryByPrimaryKey(List<Object> key, Optional<List<String>> recordProjection) {
+    return queryByPrimaryKey(tableDef, key, recordProjection);
+  }
+
+  private GenericRecord queryByPrimaryKey(TableDef tableDef, List<Object> key,
+                                         Optional<List<String>> recordProjection) {
     checkArgument(isNotEmpty(key), "Key should not be empty");
     checkArgument(!anyElementEmpty(key), "Key should not contain null elements");
-    checkArgument(key.size() == tableDef.getPrimaryKeyColumnNum(), "Search key count not match");
+    checkArgument(key.size() == tableDef.getPrimaryKeyColumnNum(),
+        "Search key count not match, expected " + tableDef.getPrimaryKeyColumnNum());
 
     BitSet projection = transformProjection(recordProjection);
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
@@ -350,18 +357,20 @@ public class IndexServiceImpl implements IndexService {
         log.debug("Covering index is satisfied skTableDef={}, projection={}", skTableDef, recordProjection.get());
         return skRecordIterator;
       }
+      final TableDef internalTableDef = tableDef.isNoPrimaryKey()
+          ? cloneTableDefWithDefaultRowIdAsPk() : tableDef;
       return new DecoratedRecordIterator(skRecordIterator) {
 
         @Override
         public GenericRecord next() {
           GenericRecord skRecord = super.next();
           // create primary key
-          List<Object> primaryKey = new ArrayList<>(tableDef.getPrimaryKeyColumnNum());
-          for (String pkName : tableDef.getPrimaryKeyColumnNames()) {
+          List<Object> primaryKey = new ArrayList<>(internalTableDef.getPrimaryKeyColumnNum());
+          for (String pkName : internalTableDef.getPrimaryKeyColumnNames()) {
             primaryKey.add(skRecord.get(pkName));
           }
           // look up by clustered index
-          return queryByPrimaryKey(primaryKey, recordProjection);
+          return queryByPrimaryKey(internalTableDef, primaryKey, recordProjection);
         }
       };
     } finally {
@@ -1296,6 +1305,13 @@ public class IndexServiceImpl implements IndexService {
     }
     throw new ReaderException("Operator is invalid, lower should be >= or >, upper should be "
         + "<= or <, actual upper " + upperOperator);
+  }
+
+  private TableDef cloneTableDefWithDefaultRowIdAsPk() {
+    TableDef internalTableDef = tableDef.copy();
+    internalTableDef.addColumn(TableDef.createRowIdColumn());
+    internalTableDef.setPrimaryKeyColumns(ImmutableList.of(COLUMN_ROW_ID));
+    return internalTableDef;
   }
 
 }

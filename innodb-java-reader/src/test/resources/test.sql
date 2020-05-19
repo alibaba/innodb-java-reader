@@ -22,6 +22,12 @@
 DROP TABLE IF EXISTS `ad_campaign`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
+# WARNING: Cannot generate character set or collation names without the --server option.
+# CAUTION: The diagnostic mode is a best-effort parse of the .frm file. As such, it may not identify all of the components of the table correctly. This is especially true for damaged files. It will also not read the default values for the columns and the resulting statement may not be syntactically correct.
+# Reading .frm file for test2.frm:
+# The .frm file is a TABLE.
+# CREATE TABLE Statement:
+
 CREATE TABLE `ad_campaign` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,

@@ -26,6 +26,8 @@ public interface Constants {
 
   String DEFAULT_MYSQL_COLLATION = "utf8_general_ci";
 
+  String COLUMN_ROW_ID = "_row_id_";
+
   List<Object> MAX_RECORD_1 = ImmutableList.of(MAX_VAL);
 
   List<Object> MAX_RECORD_2 = ImmutableList.of(MAX_VAL, MAX_VAL);

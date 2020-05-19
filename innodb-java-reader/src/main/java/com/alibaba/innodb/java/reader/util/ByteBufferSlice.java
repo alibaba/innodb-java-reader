@@ -6,13 +6,13 @@ package com.alibaba.innodb.java.reader.util;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static com.google.common.base.Preconditions.checkPositionIndex;
-import static com.google.common.base.Preconditions.checkPositionIndexes;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BYTE;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_INT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_LONG;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_MEDIUMINT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
+import static com.google.common.base.Preconditions.checkPositionIndex;
+import static com.google.common.base.Preconditions.checkPositionIndexes;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -89,6 +89,18 @@ public final class ByteBufferSlice implements Slice {
         | (data.get(index + 2) & 0xff) << 8
         | (data.get(index + 1) & 0xff) << 16
         | (data.get(index) & 0xff) << 24;
+  }
+
+  @Override
+  public long get6BytesInt(int index) {
+    checkPositionIndexes(index, index + 6, this.length);
+    index += offset;
+    return ((long) data.get(index + 5) & 0xff)
+        | ((long) data.get(index + 4) & 0xff) << 8
+        | ((long) data.get(index + 3) & 0xff) << 16
+        | ((long) data.get(index + 2) & 0xff) << 24
+        | ((long) data.get(index + 1) & 0xff) << 32
+        | ((long) data.get(index) & 0xff) << 40;
   }
 
   @Override

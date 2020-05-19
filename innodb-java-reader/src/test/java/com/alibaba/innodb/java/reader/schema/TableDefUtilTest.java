@@ -346,6 +346,16 @@ public class TableDefUtilTest {
   }
 
   @Test
+  public void testConvertPrimaryKeyWithName() {
+    String sql = "CREATE TABLE `test2` (\n"
+        + "  `key` int(11) NOT NULL, \n"
+        + "  `value` varchar(96) DEFAULT NULL, \n"
+        + "PRIMARY KEY `PRIMARY` (`key`)\n"
+        + ") ENGINE=InnoDB;";
+    TableDefUtil.covertToTableDef(sql);
+  }
+
+  @Test
   public void testConvertColumnCharsetAndCollate() {
     String sql = "CREATE TABLE t (c CHAR(20) CHARACTER SET utf8 COLLATE utf8_bin);";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);

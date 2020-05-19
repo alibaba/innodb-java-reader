@@ -357,6 +357,10 @@ public class Utils {
       String line;
       StringBuilder str = new StringBuilder();
       while ((line = bufferedReader.readLine()) != null) {
+        // for sql file, ignore the comment line
+        if (line.startsWith("#")) {
+          continue;
+        }
         if (line.contains(delimiter)) {
           int index = line.indexOf(delimiter);
           str.append(line.substring(0, index + 1));

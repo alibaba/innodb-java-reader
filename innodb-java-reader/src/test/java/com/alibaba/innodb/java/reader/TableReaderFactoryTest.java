@@ -227,6 +227,7 @@ public class TableReaderFactoryTest extends AbstractTest {
         .build();
     assertThat(tableReaderFactory.getTableNameToDefMap().size(), is(42));
     assertThat(tableReaderFactory.getTableDef("tb03").getName(), is("tb03"));
+    assertThat(tableReaderFactory.getTableDef("ad_campaign").getName(), is("ad_campaign"));
   }
 
   @Test(expected = IllegalArgumentException.class)

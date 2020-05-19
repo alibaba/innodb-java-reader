@@ -55,6 +55,8 @@ public final class ColumnType {
   public static final String DATETIME = "DATETIME";
   public static final String TIMESTAMP = "TIMESTAMP";
 
+  public static final String ROW_ID = "__#ROW_ID#__";
+
   public static final Set<String> VARIABLE_LENGTH_TYPES =
       ImmutableSet.<String>builder().add(VARCHAR, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB,
           TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT).build();

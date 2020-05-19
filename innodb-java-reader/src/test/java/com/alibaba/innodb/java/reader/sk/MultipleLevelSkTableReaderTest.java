@@ -8,15 +8,10 @@ import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
 import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
@@ -392,96 +387,6 @@ public class MultipleLevelSkTableReaderTest extends AbstractTest {
       assertThat(count, is(resultIdList.size()));
       assertThat(iterator.hasNext(), is(false));
     };
-  }
-
-  private static List<Integer> allRowsPk() {
-    List<Object[]> allRows = getAllRows(HrSchema.EMPS);
-    return allRows.stream().map(a -> (Integer) a[0]).collect(Collectors.toList());
-  }
-
-  private static List<Integer> allRowsPkOrderBy(String fieldName) {
-    List<Object[]> allRows = new ArrayList<>(getAllRows(HrSchema.EMPS));
-    int fieldOrdinal = getFieldOrdinal(Employee.class, fieldName);
-    sortIgnoreCase(allRows, fieldOrdinal);
-//    for (Object[] allRow : allRows) {
-//      System.out.println(Arrays.toString(allRow) + " ===");
-//    }
-    return allRows.stream().map(a -> (Integer) a[0]).collect(Collectors.toList());
-  }
-
-  private static List<Integer> someRowsOrderBy(Predicate<Object[]> predicate, String fieldName) {
-    List<Object[]> rows = new ArrayList<>(getAllRows(HrSchema.EMPS));
-    List<Object[]> filteredRows = rows.stream().filter(predicate::test)
-        .collect(Collectors.toList());
-    int fieldOrdinal = getFieldOrdinal(Employee.class, fieldName);
-    sortIgnoreCase(filteredRows, fieldOrdinal);
-    return filteredRows.stream().map(a -> (Integer) a[0]).collect(Collectors.toList());
-  }
-
-  private static List<Integer> someRowsOrderBy2(Predicate<Object[]> predicate,
-                                                String f1, String f2) {
-    List<Object[]> rows = new ArrayList<>(getAllRows(HrSchema.EMPS));
-    List<Object[]> filteredRows = rows.stream().filter(predicate::test)
-        .collect(Collectors.toList());
-    int fieldOrdinal1 = getFieldOrdinal(Employee.class, f1);
-    int fieldOrdinal2 = getFieldOrdinal(Employee.class, f2);
-    sortIgnoreCase(filteredRows, fieldOrdinal1, fieldOrdinal2);
-    return filteredRows.stream().map(a -> (Integer) a[0]).collect(Collectors.toList());
-  }
-
-  private static List<Integer> someRowsOrderBy3(Predicate<Object[]> predicate,
-                                                String f1, String f2, String f3) {
-    List<Object[]> rows = new ArrayList<>(getAllRows(HrSchema.EMPS));
-    List<Object[]> filteredRows = rows.stream().filter(predicate::test)
-        .collect(Collectors.toList());
-    int fieldOrdinal1 = getFieldOrdinal(Employee.class, f1);
-    int fieldOrdinal2 = getFieldOrdinal(Employee.class, f2);
-    int fieldOrdinal3 = getFieldOrdinal(Employee.class, f3);
-    sortIgnoreCase(filteredRows, fieldOrdinal1, fieldOrdinal2, fieldOrdinal3);
-    return filteredRows.stream().map(a -> (Integer) a[0]).collect(Collectors.toList());
-  }
-
-  private static void sort(List<Object[]> allRows, int... fieldOrdinal) {
-    Collections.sort(allRows, new Comparator<Object[]>() {
-      @Override
-      public int compare(Object[] o1, Object[] o2) {
-        for (int i : fieldOrdinal) {
-          Comparable k1 = (Comparable) o1[i];
-          Comparable k2 = (Comparable) o2[i];
-          int result = k1.compareTo(k2);
-          if (result == 0) {
-            continue;
-          } else {
-            return result;
-          }
-        }
-        throw new RuntimeException("");
-      }
-    });
-  }
-
-  private static void sortIgnoreCase(List<Object[]> allRows, int... fieldOrdinal) {
-    Collections.sort(allRows, new Comparator<Object[]>() {
-      @Override
-      public int compare(Object[] o1, Object[] o2) {
-        int result = 0;
-        for (int i : fieldOrdinal) {
-          Comparable k1 = (Comparable) o1[i];
-          Comparable k2 = (Comparable) o2[i];
-          if (k1 instanceof String) {
-            result = ((String) k1).compareToIgnoreCase((String) k2);
-          } else {
-            result = k1.compareTo(k2);
-          }
-          if (result == 0) {
-            continue;
-          } else {
-            return result;
-          }
-        }
-        return result;
-      }
-    });
   }
 
 }

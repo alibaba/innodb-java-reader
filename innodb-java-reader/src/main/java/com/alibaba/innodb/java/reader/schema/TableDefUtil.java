@@ -35,6 +35,7 @@ public class TableDefUtil {
   public static TableDef covertToTableDef(String sql) {
     CreateTable stmt;
     try {
+      sql = reviseSql(sql);
       stmt = (CreateTable) CCJSqlParserUtil.parse(sql);
       checkNotNull(stmt, "CreateTable statement should not be null");
       TableDef tableDef = new TableDef();
@@ -164,6 +165,32 @@ public class TableDefUtil {
       throw new SqlParseException("No column specified for index " + index);
     }
     return colNames;
+  }
+
+  /**
+   * Workaround for cases when jsqlparser cannot work properly.
+   * <p>
+   * For example, the following sql will fail due to
+   * <code>Caused by: net.sf.jsqlparser.parser.ParseException:
+   * Encountered unexpected token: "KEY" "KEY"</code>, so it will be handel properly.
+   * <pre>
+   * CREATE TABLE `test2` (
+   *   `key` int(11) NOT NULL,
+   *   `value` varchar(96) DEFAULT NULL,
+   *    PRIMARY KEY `PRIMARY` (`key`)
+   * ) ENGINE=InnoDB;
+   * </pre>
+   *
+   * @param sql origin sql
+   * @return revised sql
+   */
+  private static String reviseSql(String sql) {
+    String sqlUpperCase = sql.toUpperCase(Locale.ROOT);
+    int indexOfPkPk = sqlUpperCase.indexOf("PRIMARY KEY `PRIMARY`");
+    if (indexOfPkPk > 0) {
+      sql = sql.substring(0, indexOfPkPk + 11) + sql.substring(indexOfPkPk + 21);
+    }
+    return sql;
   }
 
 }

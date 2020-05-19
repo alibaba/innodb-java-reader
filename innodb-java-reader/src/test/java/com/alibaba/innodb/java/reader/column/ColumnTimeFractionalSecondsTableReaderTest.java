@@ -16,16 +16,7 @@ import java.util.function.Consumer;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-/**
- * <pre>
- * insert into tb17 values(null, 100, '2019-10-02 10:59:59.123', '2019-10-02 10:59:59.456389',
- * '10:59:59.45638', '2019-10-02 10:59:59');
- * insert into tb17 values(null, 101, '1970-01-01 08:00:01.550', '1970-01-01 08:00:01.000001',
- * '08:00:01.00000', '1970-01-01 08:00:01');
- * insert into tb17 values(null, 102, '2008-11-23 09:23:00.808', '2008-11-23 09:23:00.294000',
- * '09:23:00.29400', '2008-11-23 09:23:00');
- * </pre>
- *
+/***
  * @author xu.zx
  */
 public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
@@ -35,9 +26,10 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("id").setType("int(11)").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("a").setType("int(11)").setNullable(false))
         .addColumn(new Column().setName("b").setType("datetime(3)").setNullable(false))
-        .addColumn(new Column().setName("c").setType("timestamp(6)").setNullable(false))
-        .addColumn(new Column().setName("d").setType("time(5)").setNullable(false))
-        .addColumn(new Column().setName("e").setType("datetime(0)").setNullable(false));
+        .addColumn(new Column().setName("c").setType("datetime(6)").setNullable(false))
+        .addColumn(new Column().setName("d").setType("timestamp(6)").setNullable(false))
+        .addColumn(new Column().setName("e").setType("time(5)").setNullable(false))
+        .addColumn(new Column().setName("f").setType("datetime(0)").setNullable(false));
   }
 
   @Test
@@ -75,10 +67,11 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1)));
       assertThat(r1.get("a"), is(100));
       assertThat(r1.get("b"), is("2019-10-02 10:59:59.123"));
-      assertThat(r1.get("c"), is(expectedLocalTime("2019-10-02 02:59:59")
+      assertThat(r1.get("c"), is("2000-01-01 00:01:03.100000"));
+      assertThat(r1.get("d"), is(expectedLocalTime("2019-10-02 02:59:59")
           + ".456389"));
-      assertThat(r1.get("d"), is("10:59:59.45638"));
-      assertThat(r1.get("e"), is("2019-10-02 10:59:59"));
+      assertThat(r1.get("e"), is("10:59:59.45638"));
+      assertThat(r1.get("f"), is("2019-10-02 10:59:59"));
 
       GenericRecord r2 = recordList.get(1);
       Object[] v2 = r2.getValues();
@@ -86,10 +79,11 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
       assertThat(r2.get("a"), is(101));
       assertThat(r2.get("b"), is("1970-01-01 08:00:01.550"));
-      assertThat(r2.get("c"), is(expectedLocalTime("1970-01-01 00:00:01")
+      assertThat(r2.get("c"), is("2022-01-01 00:01:03.123450"));
+      assertThat(r2.get("d"), is(expectedLocalTime("1970-01-01 00:00:01")
           + ".000001"));
-      assertThat(r2.get("d"), is("08:00:01.00000"));
-      assertThat(r2.get("e"), is("1970-01-01 08:00:01"));
+      assertThat(r2.get("e"), is("08:00:01.00000"));
+      assertThat(r2.get("f"), is("1970-01-01 08:00:01"));
 
       GenericRecord r3 = recordList.get(2);
       Object[] v3 = r3.getValues();
@@ -97,10 +91,11 @@ public class ColumnTimeFractionalSecondsTableReaderTest extends AbstractTest {
       assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3)));
       assertThat(r3.get("a"), is(102));
       assertThat(r3.get("b"), is("2008-11-23 09:23:00.808"));
-      assertThat(r3.get("c"), is(expectedLocalTime("2008-11-23 01:23:00")
+      assertThat(r3.get("c"), is("1999-12-31 00:01:03.123456"));
+      assertThat(r3.get("d"), is(expectedLocalTime("2008-11-23 01:23:00")
           + ".294000"));
-      assertThat(r3.get("d"), is("09:23:00.29400"));
-      assertThat(r3.get("e"), is("2008-11-23 09:23:00"));
+      assertThat(r3.get("e"), is("09:23:00.29400"));
+      assertThat(r3.get("f"), is("2008-11-23 09:23:00"));
     };
   }
 }

@@ -692,6 +692,28 @@ public class ColumnFactory {
     }
   };
 
+  /**
+   * For table without primary key provided, MySQL will use a default 6 bytes integer to
+   * represent primary key.
+   */
+  private static final ColumnParser<Long> ROW_ID = new AbstractColumnParser<Long>() {
+
+    @Override
+    public Long readFrom(SliceInput input, Column column) {
+      return input.readUnsigned6BytesInt();
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      input.skipBytes(6);
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return Long.class;
+    }
+  };
+
   private static String getFractionString(SliceInput input, Column column) {
     if (column.getPrecision() > 0) {
       int fraction = readFraction(input, column.getPrecision());
@@ -786,6 +808,7 @@ public class ColumnFactory {
     typeToColumnParserMap.put(ColumnType.NUMERIC, DECIMAL);
     typeToColumnParserMap.put(ColumnType.BOOL, BOOLEAN);
     typeToColumnParserMap.put(ColumnType.BOOLEAN, BOOLEAN);
+    typeToColumnParserMap.put(ColumnType.ROW_ID, ROW_ID);
     TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);
   }
 

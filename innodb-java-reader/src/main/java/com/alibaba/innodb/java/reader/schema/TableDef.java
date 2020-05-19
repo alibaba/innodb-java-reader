@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 
 import com.alibaba.innodb.java.reader.CharsetMapping;
 import com.alibaba.innodb.java.reader.CollationMapping;
+import com.alibaba.innodb.java.reader.column.ColumnType;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
 import com.alibaba.innodb.java.reader.util.Symbol;
@@ -28,6 +29,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.alibaba.innodb.java.reader.Constants.COLUMN_ROW_ID;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_JAVA_CHARSET;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_CHARSET;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_COLLATION;
@@ -453,8 +455,7 @@ public class TableDef {
       tableDef.addColumn(keyColumn);
     }
     if (isNoPrimaryKey()) {
-      // TODO
-      tableDef.addColumn(new Column());
+      tableDef.addColumn(createRowIdColumn());
     } else {
       for (Column primaryKeyColumn : getPrimaryKeyColumns()) {
         tableDef.addColumn(primaryKeyColumn);
@@ -475,6 +476,24 @@ public class TableDef {
 
   public boolean isCollationCaseSensitive() {
     return collationCaseSensitive;
+  }
+
+  public TableDef copy() {
+    TableDef result = new TableDef();
+    result.setDefaultCharset(defaultCharset);
+    result.setCollation(collation);
+    result.primaryKeyMeta = primaryKeyMeta;
+    result.secondaryKeyMetaList = secondaryKeyMetaList;
+    result.setName(name);
+    result.setFullyQualifiedName(fullQualifiedName);
+    for (Column column : columnList) {
+      result.addColumn(column);
+    }
+    return result;
+  }
+
+  public static Column createRowIdColumn() {
+    return new Column().setName(COLUMN_ROW_ID).setType(ColumnType.ROW_ID).setNullable(false);
   }
 
   @Data
