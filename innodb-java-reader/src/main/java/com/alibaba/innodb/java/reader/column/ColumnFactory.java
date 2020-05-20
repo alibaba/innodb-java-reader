@@ -801,6 +801,11 @@ public class ColumnFactory {
     typeToColumnParserMap.put(ColumnType.TIME, TIME2);
     typeToColumnParserMap.put(ColumnType.YEAR, YEAR);
     typeToColumnParserMap.put(ColumnType.DATE, DATE);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_FLOAT, FLOAT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_REAL, FLOAT);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_DOUBLE, DOUBLE);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_DECIMAL, DECIMAL);
+    typeToColumnParserMap.put(ColumnType.UNSIGNED_NUMERIC, DECIMAL);
     typeToColumnParserMap.put(ColumnType.FLOAT, FLOAT);
     typeToColumnParserMap.put(ColumnType.REAL, FLOAT);
     typeToColumnParserMap.put(ColumnType.DOUBLE, DOUBLE);

@@ -25,8 +25,11 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
     return new TableDef()
         .addColumn(new Column().setName("id").setType("int(11) unsigned").setNullable(false).setPrimaryKey(true))
         .addColumn(new Column().setName("c_float").setType("float").setNullable(false))
+        .addColumn(new Column().setName("c_float2").setType("FLOAT(7,4)").setNullable(false))
         .addColumn(new Column().setName("c_real").setType("real").setNullable(false))
-        .addColumn(new Column().setName("c_double").setType("double").setNullable(false));
+        .addColumn(new Column().setName("c_double").setType("double").setNullable(false))
+        .addColumn(new Column().setName("c_double2").setType("DOUBLE(15,5)").setNullable(false))
+        .addColumn(new Column().setName("c_double3").setType("double UNSIGNED").setNullable(false));
   }
 
   @Test
@@ -57,6 +60,28 @@ public class ColumnFloatTableReaderTest extends AbstractTest {
     return recordList -> {
 
       assertThat(recordList.size(), is(6));
+
+      List<Object[]> expected = Arrays.asList(
+          new Object[]{1L, 0f, 0.0000f, 0f, 0d, 0.0000d, 0d},
+          new Object[]{2L, 0.56789f, 999.0001f, 0.12345f, 0.987654321d, 1234567890.12345d, 1d},
+          new Object[]{3L, 1f, 0.0000f, -1f, -1d, -1234567890.12345d, 2d},
+          new Object[]{4L, 222.22f, 3.1400f, 222.22f, 3333.333d, 1234.56789d, 3d},
+          new Object[]{5L, 1.2345678E7F, 256.7890f, 1.2345678E7F, 1234567890.123456d, -56.78900d, 4d},
+          new Object[]{6L, -1.2345678E7F, 333.2222f, -1.2345678E7F, -1234567890.123456d, -0.87654d, 5d});
+
+      for (int i = 0; i < recordList.size(); i++) {
+        GenericRecord r = recordList.get(i);
+        Object[] v = r.getValues();
+        System.out.println(Arrays.asList(v));
+        Object[] row = expected.get(i);
+        assertThat(r.getPrimaryKey(), is(ImmutableList.of(row[0])));
+        assertThat(r.get("c_float"), is(row[1]));
+        assertThat(r.get("c_float2"), is(row[2]));
+        assertThat(r.get("c_real"), is(row[3]));
+        assertThat(r.get("c_double"), is(row[4]));
+        assertThat(r.get("c_double2"), is(row[5]));
+        assertThat(r.get("c_double3"), is(row[6]));
+      }
 
       GenericRecord r1 = recordList.get(0);
       System.out.println(Arrays.asList(r1.getValues()));

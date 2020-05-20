@@ -18,9 +18,15 @@ import static com.alibaba.innodb.java.reader.Constants.CONST_UNSIGNED;
 import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DATETIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DECIMAL;
+import static com.alibaba.innodb.java.reader.column.ColumnType.DOUBLE;
+import static com.alibaba.innodb.java.reader.column.ColumnType.FLOAT;
 import static com.alibaba.innodb.java.reader.column.ColumnType.NUMERIC;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIMESTAMP;
+import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_DECIMAL;
+import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_DOUBLE;
+import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_FLOAT;
+import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_NUMERIC;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -264,7 +270,13 @@ public class Column {
       switch (this.type) {
         case DECIMAL:
         case NUMERIC:
-          handleDecimal(wrappedString);
+        case DOUBLE:
+        case FLOAT:
+        case UNSIGNED_DECIMAL:
+        case UNSIGNED_NUMERIC:
+        case UNSIGNED_DOUBLE:
+        case UNSIGNED_FLOAT:
+          handlePrecisionAndScale(wrappedString);
           break;
         case DATETIME:
         case TIMESTAMP:
@@ -288,7 +300,7 @@ public class Column {
     this.type = type.toUpperCase();
   }
 
-  private void handleDecimal(String wrappedString) {
+  private void handlePrecisionAndScale(String wrappedString) {
     if (wrappedString.contains(Symbol.COMMA)) {
       String[] innerPart = wrappedString.split(Symbol.COMMA);
       this.precision = Integer.parseInt(innerPart[0]);

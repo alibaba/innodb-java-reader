@@ -28,8 +28,12 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
         .addColumn(new Column().setName("a").setType("DECIMAL(6)").setNullable(false))
         .addColumn(new Column().setName("b").setType("DECIMAL(10,5)").setNullable(false))
         .addColumn(new Column().setName("c").setType("DECIMAL(12,0)").setNullable(false))
-        .addColumn(new Column().setName("d").setType("NUMERIC(6,2)").setNullable(false))
-        .addColumn(new Column().setName("e").setType("DECIMAL").setNullable(false));
+        .addColumn(new Column().setName("d").setType("NUMERIC(6,3)").setNullable(false))
+        .addColumn(new Column().setName("e").setType("DECIMAL").setNullable(false))
+        .addColumn(new Column().setName("f").setType("decimal(30,25)").setNullable(true))
+        .addColumn(new Column().setName("g").setType("decimal(38)").setNullable(true))
+        .addColumn(new Column().setName("h").setType("decimal(38,30)").setNullable(true))
+        .addColumn(new Column().setName("i").setType("decimal unsigned").setNullable(false));
   }
 
   @Test
@@ -58,37 +62,66 @@ public class ColumnDecimalTableReaderTest extends AbstractTest {
 
   public Consumer<List<GenericRecord>> expected() {
     return recordList -> {
-      assertThat(recordList.size(), is(3));
+      assertThat(recordList.size(), is(4));
 
-      GenericRecord r1 = recordList.get(0);
-      Object[] v1 = r1.getValues();
-      System.out.println(Arrays.asList(v1));
-      assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1)));
-      assertThat(r1.get("a"), is(new BigDecimal("0")));
-      assertThat(r1.get("b"), is(new BigDecimal("0.00000")));
-      assertThat(r1.get("c"), is(new BigDecimal("0")));
-      assertThat(r1.get("d"), is(new BigDecimal("0.00")));
-      assertThat(r1.get("e"), is(new BigDecimal("0")));
+      List<Object[]> expected = Arrays.asList(
+          new Object[]{1, new BigDecimal("0"),
+              new BigDecimal(".00000"),
+              new BigDecimal("0"),
+              new BigDecimal("0.000"),
+              new BigDecimal("0"),
+              new BigDecimal("0.0000000000000000000000000"),
+              new BigDecimal("0"),
+              new BigDecimal("0.000000000000000000000000000000"),
+              new BigDecimal("0")
+          },
+          new Object[]{2, new BigDecimal("123456"),
+              new BigDecimal("12345.67890"),
+              new BigDecimal("12345678901"),
+              new BigDecimal("123.100"),
+              new BigDecimal("12346"),
+              new BigDecimal("12345.1234567890123456789012345"),
+              new BigDecimal("666"),
+              new BigDecimal("0.123456789012345678901234567890"),
+              new BigDecimal("76543")
+          },
+          new Object[]{3, new BigDecimal("-123456"),
+              new BigDecimal("-1234.56789"),
+              new BigDecimal("-12345678901"),
+              new BigDecimal("3.142"),
+              new BigDecimal("-12346"),
+              null,
+              new BigDecimal("12345678901234567890123456789012345678"),
+              new BigDecimal("8.123456789012345678901234567890"),
+              new BigDecimal("89")
+          },
+          new Object[]{4, new BigDecimal("9"),
+              new BigDecimal("567.89100"),
+              new BigDecimal("987654321"),
+              new BigDecimal("456.000"),
+              new BigDecimal("0"),
+              new BigDecimal("0.0123456789012345678912345"),
+              new BigDecimal("999"),
+              null,
+              new BigDecimal("0")
+          }
+      );
 
-      GenericRecord r2 = recordList.get(1);
-      Object[] v2 = r2.getValues();
-      System.out.println(Arrays.asList(v2));
-      assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
-      assertThat(r2.get("a"), is(new BigDecimal("123456")));
-      assertThat(r2.get("b"), is(new BigDecimal("12345.67890")));
-      assertThat(r2.get("c"), is(new BigDecimal("12345678901")));
-      assertThat(r2.get("d"), is(new BigDecimal("1234.10")));
-      assertThat(r2.get("e"), is(new BigDecimal("12346")));
-
-      GenericRecord r3 = recordList.get(2);
-      Object[] v3 = r3.getValues();
-      System.out.println(Arrays.asList(v3));
-      assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3)));
-      assertThat(r3.get("a"), is(new BigDecimal("-123456")));
-      assertThat(r3.get("b"), is(new BigDecimal("-12345.67890")));
-      assertThat(r3.get("c"), is(new BigDecimal("-12345678901")));
-      assertThat(r3.get("d"), is(new BigDecimal("3.14")));
-      assertThat(r3.get("e"), is(new BigDecimal("-12346")));
+      for (int i = 0; i < recordList.size(); i++) {
+        GenericRecord r = recordList.get(i);
+        Object[] v = r.getValues();
+        System.out.println(Arrays.asList(v));
+        Object[] row = expected.get(i);
+        assertThat(r.getPrimaryKey(), is(ImmutableList.of(row[0])));
+        assertThat(r.get("a"), is(row[1]));
+        assertThat(r.get("b"), is(row[2]));
+        assertThat(r.get("c"), is(row[3]));
+        assertThat(r.get("d"), is(row[4]));
+        assertThat(r.get("e"), is(row[5]));
+        assertThat(r.get("f"), is(row[6]));
+        assertThat(r.get("g"), is(row[7]));
+        assertThat(r.get("h"), is(row[8]));
+      }
     };
   }
 }

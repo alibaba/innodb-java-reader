@@ -31,6 +31,12 @@ public final class ColumnType {
   public static final String INT = "INT";
   public static final String BIGINT = "BIGINT";
 
+  public static final String UNSIGNED_FLOAT = "FLOAT UNSIGNED";
+  public static final String UNSIGNED_REAL = "REAL UNSIGNED";
+  public static final String UNSIGNED_DOUBLE = "DOUBLE UNSIGNED";
+  public static final String UNSIGNED_DECIMAL = "DECIMAL UNSIGNED";
+  public static final String UNSIGNED_NUMERIC = "NUMERIC UNSIGNED";
+
   public static final String FLOAT = "FLOAT";
   public static final String REAL = "REAL";
   public static final String DOUBLE = "DOUBLE";
