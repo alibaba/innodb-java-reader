@@ -7,7 +7,7 @@
 [![javadoc](https://javadoc.io/badge2/com.alibaba.database/innodb-java-reader/javadoc.svg)](https://javadoc.io/doc/com.alibaba.database/innodb-java-reader)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-innodb-java-reader is a java implementation to access MySQL InnoDB file directly, which works like a basic InnoDB storage engine. With the library or command-line tool, it provides read-only functions like examining pages, looking up record by primary key or secondary key and generating page heatmap by LSN or filling rate. This project is useful for prototyping and learning MySQL. Moreover, this can be a tool to dump table data by offloading from MySQL process under some conditions.
+innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides some basic read-only features like examining pages, looking up record by primary key, secondary key and generating page heatmap by LSN or filling rate. This project is useful for prototyping and learning MySQL. Moreover, this can be a tool to dump table data by offloading from MySQL process under some conditions.
 
 [1. Background](#1-background)
 
@@ -498,7 +498,7 @@ try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
 }
 ```
 
-Projection and ordering works as below. Covering index is supported which does not need to look up back to primary key which will be more performant.
+Projection and ordering work as below. Covering index is supported, it skips the operation to look up record back to clustered key (primary key), which will usually be more performant.
 
 ```
 boolean isAsc = false;
