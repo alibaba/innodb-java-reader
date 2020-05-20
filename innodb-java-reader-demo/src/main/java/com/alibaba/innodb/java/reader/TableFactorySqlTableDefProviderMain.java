@@ -15,12 +15,13 @@ import java.util.List;
 public class TableFactorySqlTableDefProviderMain {
 
   public static void main(String[] args) {
-    String createTableSql = "CREATE TABLE `tb11`\n" +
-        "(`id` int(11) NOT NULL ,\n" +
-        "`a` bigint(20) NOT NULL,\n" +
-        "`b` varchar(64) NOT NULL,\n" +
-        "PRIMARY KEY (`id`))\n" +
-        "ENGINE=InnoDB;";
+    String createTableSql = "CREATE TABLE `tb11`\n"
+        + "(`id` int(11) NOT NULL ,\n"
+        + "`a` bigint(20) NOT NULL,\n"
+        + "`b` varchar(64) NOT NULL,\n"
+        + "PRIMARY KEY (`id`),\n"
+        + "KEY `key_a` (`a`))\n"
+        + "ENGINE=InnoDB;";
 
     TableDefProvider tableDefProvider = new SqlTableDefProvider(createTableSql);
     TableReaderFactory tableReaderFactory = TableReaderFactory.builder()

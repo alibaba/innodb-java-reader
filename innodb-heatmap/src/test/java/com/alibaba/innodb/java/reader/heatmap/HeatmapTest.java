@@ -52,7 +52,7 @@ public class HeatmapTest {
         pageWrapNum, Optional.of(new Pair<>("800", "500")));
     List<String> fileContent = Files.readLines(new File(destHtmlFilePath), Charset.defaultCharset());
     assertThat(fileContent.get(0), is("<head>"));
-    assertThat(fileContent.get(1067).trim(), is("0.466"));
+    assertThat(fileContent.get(1067).trim(), is("0.011"));
   }
 
 }

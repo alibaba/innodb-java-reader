@@ -3,7 +3,8 @@ CREATE TABLE `t`
 (`id` int(11) NOT NULL,
 `a` bigint(20) NOT NULL,
 `b` varchar(64) NOT NULL,
-PRIMARY KEY (`id`))
+PRIMARY KEY (`id`),
+KEY `key_a` (`a`))
 ENGINE=InnoDB;
 
 delimiter ;;

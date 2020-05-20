@@ -10,6 +10,7 @@ import com.alibaba.innodb.java.reader.page.ibuf.IbufBitmap;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
+import com.alibaba.innodb.java.reader.page.inode.InodeEntry;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
@@ -18,6 +19,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -50,15 +52,15 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   public void testBPlusTreeLevelTableReadAllPages(String path, boolean isMysql8) {
-    testNLevelTableReadAllPages(path, 1, isMysql8);
+    testNLevelTableReadAllPages(path, 1, isMysql8, false);
   }
 
   @Test
   public void testPlusTree2LevelTableReadAllPages() {
-    testNLevelTableReadAllPages(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", 2, false);
+    testNLevelTableReadAllPages(IBD_FILE_BASE_PATH + "multiple/level/tb11.ibd", 2, false, true);
   }
 
-  public void testNLevelTableReadAllPages(String path, int maxLevel, boolean isMysql8) {
+  public void testNLevelTableReadAllPages(String path, int maxLevel, boolean isMysql8, boolean bigTable) {
     try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
@@ -70,16 +72,36 @@ public class BPlusTreeMultipleLevelTableReaderTest extends AbstractTest {
         }
         //System.out.println(page);
       }
+      System.out.println(pages.size());
       //assertThat(pages.size(), is(576));
 
       assertThat(((FspHdrXes) pages.get(0)).getInnerPage().pageType(), is(PageType.FILE_SPACE_HEADER));
       assertThat(((IbufBitmap) pages.get(1)).getInnerPage().pageType(), is(PageType.IBUF_BITMAP));
       assertThat(((Inode) pages.get(2)).getInnerPage().pageType(), is(PageType.INODE));
+      List<InodeEntry> inodeEntries = ((Inode) pages.get(2)).getInodeEntryList();
+      for (InodeEntry inodeEntry : inodeEntries) {
+        System.out.println(inodeEntry);
+      }
+      if (bigTable) {
+        assertThat(inodeEntries.size(), is(2));
+      } else {
+        assertThat(inodeEntries.size(), greaterThanOrEqualTo(6));
+      }
       assertThat(((Index) pages.get(isMysql8 ? 4 : 3)).getInnerPage().pageType(), is(PageType.INDEX));
       assertThat(((Index) pages.get(isMysql8 ? 4 : 3)).getIndexHeader().getPageLevel(), is(maxLevel));
       // 32 bitmap fragArrayEntries
-      for (int i = isMysql8 ? 5 : 4; i <= 35; i++) {
-        assertThat(((Index) pages.get(i)).getIndexHeader().getPageLevel(), is(0));
+
+      if (bigTable) {
+        assertThat(((Index) pages.get(isMysql8 ? 4 : 3)).getIndexHeader().getPageLevel(), is(2));
+      } else {
+        assertThat(((Index) pages.get(isMysql8 ? 4 : 3)).getIndexHeader().getPageLevel(), is(1));
+        assertThat(((Index) pages.get(isMysql8 ? 5 : 4)).getIndexHeader().getPageLevel(), is(1));
+        assertThat(((Index) pages.get(isMysql8 ? 6 : 5)).getIndexHeader().getPageLevel(), is(1));
+      }
+      for (int i = isMysql8 ? 7 : 6; i <= 35; i++) {
+        if (((Index) pages.get(i)).getIndexHeader().getIndexId() == 0) {
+          assertThat(((Index) pages.get(i)).getIndexHeader().getPageLevel(), is(0));
+        }
       }
     }
   }

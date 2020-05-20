@@ -7,7 +7,7 @@
 [![javadoc](https://javadoc.io/badge2/com.alibaba.database/innodb-java-reader/javadoc.svg)](https://javadoc.io/doc/com.alibaba.database/innodb-java-reader)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides some basic read-only features like examining pages, looking up record by primary key and generating page heatmap by LSN or filling rate. This project is useful for prototyping and learning MySQL. Moreover, this can be a tool to dump table data by offloading from MySQL process under some conditions.
+innodb-java-reader is a java implementation to access MySQL InnoDB file directly, which works like a basic InnoDB storage engine. With the library or command-line tool, it provides read-only functions like examining pages, looking up record by primary key or secondary key and generating page heatmap by LSN or filling rate. This project is useful for prototyping and learning MySQL. Moreover, this can be a tool to dump table data by offloading from MySQL process under some conditions.
 
 [1. Background](#1-background)
 
@@ -37,7 +37,7 @@ To better understand how InnoDB stores data, I introduce the project for prototy
 
 ## 2. Prerequisites
 
-* MySQL 5.6, 5.7 or 8.0 (partially supported).
+* MySQL 5.6, 5.7 or 8.0.
 * Make sure [InnoDB row format](https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html) is either `COMPACT` or `DYNAMIC`.
 * Enable `innodb_file_per_table` , which will create standalone `*.ibd` file for each table.
 * InnoDB file page size is set to 16K.
@@ -480,6 +480,34 @@ try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
 }
 ```
 
+#### Query by secondary key
+
+`getRecordIteratorBySk` will return an iterator to scan table by secondary key, the order will be the same as in secondary key. 
+
+```
+try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
+  reader.open();
+  Iterator<GenericRecord> iterator = reader.getRecordIteratorBySk("key_a",
+      ImmutableList.of(2L), ComparisonOperator.GTE,
+      ImmutableList.of(9L), ComparisonOperator.LT);
+  while (iterator.hasNext()) {
+    GenericRecord record = iterator.next();
+    Object[] values = record.getValues();
+    System.out.println(Arrays.asList(values));
+  }
+}
+```
+
+Projection and ordering works as below. Covering index is supported which does not need to look up back to primary key which will be more performant.
+
+```
+boolean isAsc = false;
+Iterator<GenericRecord> iterator = reader.getRecordIteratorBySk("key_a",
+    ImmutableList.of(6L), ComparisonOperator.GTE,
+    null, ComparisonOperator.NOP,
+    ImmutableList.of("id", "a", "b"), isAsc);
+```
+
 #### Filtering and projection
 
 Filtering works on `queryAll` and `rangeQueryByPrimaryKey`, this is more likely index condition pushdown.
@@ -524,15 +552,16 @@ Usage shows as below.
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
        [-delimiter <arg>] [-desc] [-h] [-i <arg>] [-iomode <arg>] [-json]
        [-jsonpretty] [-o <arg>] [-projection <arg>] [-s <arg>]
-       [-showheader]
+       [-showheader] [-skname <arg>] [-skordinal <arg>]
  -args <arg>                             arguments
  -c,--command <arg>                      mandatory. command to run, valid
                                          commands are:
                                          show-all-pages,show-pages,query-b
-                                         y-page-number,query-by-pk,query-a
-                                         ll,range-query-by-pk,gen-lsn-heat
-                                         map,gen-filling-rate-heatmap,get-
-                                         all-index-page-filling-rate
+                                         y-page-number,query-by-pk,query-b
+                                         y-sk,query-all,range-query-by-pk,
+                                         gen-lsn-heatmap,gen-filling-rate-
+                                         heatmap,get-all-index-page-fillin
+                                         g-rate
  -delimiter,--delimiter <arg>            field delimiter, default is tab
  -desc,--desc                            if records sorted in descending
                                          order, works for query all and
@@ -567,6 +596,8 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
                                          command-line.
  -showheader,--show-header               set to true if you want to show
                                          table header when dumping table
+ -skname,--skname <arg>                  secondary key name
+ -skordinal,--skordinal <arg>            secondary key ordinal in DDL
 ````
 
 You can customize log4j configuration by adding `-Dlog4j.configuration=file:/path/log4j.properties` in command.
@@ -675,6 +706,17 @@ java -jar innodb-java-reader-cli.jar \
 ```
 
 For composite key, args will like `>;abc,123,bcd;<;xyz,5,jkl` or `>;abc,123,bcd;<;xyz,5,null`.
+
+#### Querying by secondary key
+
+Argument is like "Range querying by primary key", you should provide the key name. For example, the following command result will be the same as "SELECT * FROM t WHERE a = 1";
+
+```
+java -jar innodb-java-reader-cli.jar \
+  -ibd-file-path /usr/local/mysql/data/test/t.ibd \
+  -create-table-sql-file-path t.sql \
+  -c query-by-sk -args ">=;1;<=;1" -skname "key_a"
+```
 
 #### Dump data
 
