@@ -309,4 +309,24 @@ public class Column {
     }
   }
 
+  public Column copy() {
+    // copy without TableDef and ordinal since they will be reset
+    Column result = new Column();
+    result.name = name;
+    result.fullType = fullType;
+    result.type = type;
+    result.charset = charset;
+    result.javaCharset = javaCharset;
+    result.nullable = nullable;
+    result.isPrimaryKey = isPrimaryKey;
+    result.length = length;
+    result.precision = precision;
+    result.scale = scale;
+    result.collation = collation;
+    result.collationCaseSensitive = collationCaseSensitive;
+    result.maxBytesPerChar = maxBytesPerChar;
+    result.isVarLenChar = isVarLenChar;
+    return result;
+  }
+
 }

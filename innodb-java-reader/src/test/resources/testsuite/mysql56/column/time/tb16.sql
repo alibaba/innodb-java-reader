@@ -7,6 +7,8 @@ PRIMARY KEY (`id`))
 ENGINE=InnoDB;
 
 insert into tb16 values(null, 1901, '1900-01-01');
-insert into tb16 values(null, 1901, '1901-12-31');
+insert into tb16 values(null, 1999, '1901-12-31');
 insert into tb16 values(null, 1969, '1969-10-02');
-insert into tb16 values(null, 2020, '2020-01-29');
+insert into tb16 values(null, 2020, '2020-12-31');
+insert into tb16 values(null, 2100, '0069-01-10');
+insert into tb16 values(null, 2155, '0001-01-01');

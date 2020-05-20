@@ -452,13 +452,13 @@ public class TableDef {
     }
     TableDef tableDef = new TableDef().setDefaultCharset(defaultCharset);
     for (Column keyColumn : keyMeta.getKeyColumns()) {
-      tableDef.addColumn(keyColumn);
+      tableDef.addColumn(keyColumn.copy());
     }
     if (isNoPrimaryKey()) {
       tableDef.addColumn(createRowIdColumn());
     } else {
       for (Column primaryKeyColumn : getPrimaryKeyColumns()) {
-        tableDef.addColumn(primaryKeyColumn);
+        tableDef.addColumn(primaryKeyColumn.copy());
       }
     }
     tableDef.setPrimaryKeyColumns(keyMeta.getKeyColumnNames());

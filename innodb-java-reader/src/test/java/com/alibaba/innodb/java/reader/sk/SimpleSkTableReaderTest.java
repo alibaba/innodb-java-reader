@@ -852,6 +852,187 @@ public class SimpleSkTableReaderTest extends AbstractTest {
   }
 
   //==========================================================================
+  // getRecordIteratorBySk test, single key: age, order: desc
+  //==========================================================================
+
+  @Test
+  public void testQueryBySkAgeDescMysql56() {
+    testQueryBySkAgeDesc(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkAgeDescMysql57() {
+    testQueryBySkAgeDesc(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkAgeDescMysql80() {
+    testQueryBySkAgeDesc(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkAgeDesc(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    // select * from emp FORCE INDEX (age) where age > 0 and age < 100 order by age desc;
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), false),
+            "age",
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+  }
+
+  //==========================================================================
+  // getRecordIteratorBySk test, single key: age, projection
+  //==========================================================================
+
+  @Test
+  public void testQueryBySkAgeProjectionMysql56() {
+    testQueryBySkAgeProjection(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkAgeProjectionMysql57() {
+    testQueryBySkAgeProjection(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkAgeProjectionMysql80() {
+    testQueryBySkAgeProjection(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkAgeProjection(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    List<String> projection = ImmutableList.of("empno", "age", "gender", "name");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("empno", "joindate");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("profile", "address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("birthdate", "age", "level", "city");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("city");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    // covering index
+    projection = ImmutableList.of("age");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+  }
+
+  //==========================================================================
+  // getRecordIteratorBySk test, single key: age, projection, order by
+  //==========================================================================
+
+  @Test
+  public void testQueryBySkAgeProjectionDescMysql56() {
+    testQueryBySkAgeProjectionDesc(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkAgeProjectionDescMysql57() {
+    testQueryBySkAgeProjectionDesc(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkAgeProjectionDescMysql80() {
+    testQueryBySkAgeProjectionDesc(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkAgeProjectionDesc(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    List<String> projection = ImmutableList.of("empno", "age", "gender", "name");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjectionDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, false),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("empno", "joindate");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjectionDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, false),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("profile", "address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjectionDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, false),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("gender", "salary", "level", "city");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjectionDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, false),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("deptno");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjectionDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, false),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+  }
+
+  //==========================================================================
   // negate test
   //==========================================================================
 
@@ -892,10 +1073,16 @@ public class SimpleSkTableReaderTest extends AbstractTest {
   }
 
   public Consumer<Iterator<GenericRecord>> testQueryBySk(List<Integer> resultIdList) {
-    return testQueryBySk(resultIdList, true);
+    return testQueryBySk(resultIdList, ImmutableList.of(), true);
   }
 
   public Consumer<Iterator<GenericRecord>> testQueryBySk(List<Integer> resultIdList, boolean asc) {
+    return testQueryBySk(resultIdList, ImmutableList.of(), asc);
+  }
+
+  public Consumer<Iterator<GenericRecord>> testQueryBySk(List<Integer> resultIdList,
+                                                         List<String> projection,
+                                                         boolean asc) {
     return iterator -> {
       // for debug
 //      System.out.println("-------");
@@ -921,7 +1108,15 @@ public class SimpleSkTableReaderTest extends AbstractTest {
         System.out.println(Arrays.asList(values));
         Object[] expectedRow = expected.get(resultIdList.get(i) - 1);
         // System.out.println(resultIdList + " " + Arrays.asList(expectedRow));
-        assertThat(values, is(expectedRow));
+        if (projection.isEmpty()) {
+          assertThat(values, is(expectedRow));
+        } else {
+          for (String s : projection) {
+            int ordinal = record.getTableDef().getField(s).getOrdinal();
+            Object expect = expectedRow[ordinal];
+            assertThat(record.get(s), is(expect));
+          }
+        }
         count++;
         if (asc) {
           i++;

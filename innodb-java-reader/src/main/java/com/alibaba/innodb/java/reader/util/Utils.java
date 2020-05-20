@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.alibaba.innodb.java.reader.Constants.INT_10;
 import static com.alibaba.innodb.java.reader.Constants.INT_100;
 import static com.alibaba.innodb.java.reader.Constants.INT_1000;
@@ -52,6 +54,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  *
  * @author xu.zx
  */
+@Slf4j
 public class Utils {
 
   public static final DateTimeFormatter[] TIME_FORMAT_TIMESTAMP;
@@ -218,12 +221,19 @@ public class Utils {
     if (MIN_VAL == targetKey) {
       return 1;
     }
-    Comparable k1 = (Comparable) recordKey;
-    Comparable k2 = (Comparable) targetKey;
-    if (recordKey instanceof String && !column.isCollationCaseSensitive()) {
-      return ((String) k1).compareToIgnoreCase((String) k2);
-    } else {
-      return k1.compareTo(k2);
+    try {
+      Comparable k1 = (Comparable) recordKey;
+      Comparable k2 = (Comparable) targetKey;
+      if (recordKey instanceof String && !column.isCollationCaseSensitive()) {
+        return ((String) k1).compareToIgnoreCase((String) k2);
+      } else {
+        return k1.compareTo(k2);
+      }
+    } catch (ClassCastException e) {
+      log.error("Cannot compare " + recordKey + "(" + recordKey.getClass().getName()
+          + ") and " + targetKey + "(" + targetKey.getClass().getName()
+          + ") for column " + column.getName());
+      throw e;
     }
   }
 
@@ -417,7 +427,7 @@ public class Utils {
     } else if (val >= 0 && val < INT_10) {
       return "000" + val;
     }
-    throw new IllegalArgumentException("Not possible");
+    throw new IllegalArgumentException("Not possible " + val);
   }
 
   public static String formatIntLessThan100(int val) {

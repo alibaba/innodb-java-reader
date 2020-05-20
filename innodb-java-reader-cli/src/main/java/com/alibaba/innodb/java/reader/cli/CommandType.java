@@ -18,6 +18,7 @@ public enum CommandType {
   SHOW_PAGES("show-pages", "show specific pages"),
   QUERY_BY_PAGE_NUMBER("query-by-page-number", "query records by page number"),
   QUERY_BY_PK("query-by-pk", "query records by primary key"),
+  QUERY_BY_SK("query-by-sk", "query records by secondary key"),
   QUERY_ALL("query-all", "query all records"),
   RANGE_QUERY_BY_PK("range-query-by-pk", "range query records"),
   GEN_LSN_HEATMAP("gen-lsn-heatmap", "generate lsn heatmap"),

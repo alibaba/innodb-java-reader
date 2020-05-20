@@ -93,14 +93,58 @@ public class InnodbReaderBootstrapTest {
         "-c", "show-all-pages"};
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    String expected = "0,FILE_SPACE_HEADER,space=173,numPagesUsed=44,size=576,xdes.size=2\n"
+        + "1,IBUF_BITMAP\n"
+        + "2,INODE,inode.size=6\n"
+        + "3,INDEX,root.page=true,index.id=226,level=1,numOfRecs=39,num.dir.slot=10,garbage.space=0\n"
+        + "4,INDEX,root.page=true,index.id=227,level=1,numOfRecs=2,num.dir.slot=2,garbage.space=0\n"
+        + "5,INDEX,root.page=true,index.id=228,level=1,numOfRecs=4,num.dir.slot=2,garbage.space=0\n"
+        + "6,INDEX,index.id=226,level=0,numOfRecs=13,num.dir.slot=5,garbage.space=7501\n"
+        + "7,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "8,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "9,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "10,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "11,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "12,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "13,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "14,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "15,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "16,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "17,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "18,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "19,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "20,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "21,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "22,INDEX,index.id=228,level=0,numOfRecs=239,num.dir.slot=55,garbage.space=6006\n"
+        + "23,INDEX,index.id=228,level=0,numOfRecs=260,num.dir.slot=61,garbage.space=5124\n"
+        + "24,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "25,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "26,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "27,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "28,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "29,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "30,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "31,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "32,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "33,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "34,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "35,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "36,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "37,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "38,INDEX,index.id=228,level=0,numOfRecs=261,num.dir.slot=63,garbage.space=0\n"
+        + "39,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "40,INDEX,index.id=228,level=0,numOfRecs=240,num.dir.slot=59,garbage.space=0\n"
+        + "41,INDEX,index.id=226,level=0,numOfRecs=26,num.dir.slot=7,garbage.space=0\n"
+        + "42,INDEX,index.id=227,level=0,numOfRecs=464,num.dir.slot=118,garbage.space=7888\n"
+        + "43,INDEX,index.id=227,level=0,numOfRecs=536,num.dir.slot=135,garbage.space=0\n"
+        + "44,ALLOCATED\n"
+        + "45,ALLOCATED\n"
+        + "46,ALLOCATED";
+    String[] array = expected.split("\n");
     assertThat(output.size(), is(577));
-    assertThat(output.get(1), is("0,FILE_SPACE_HEADER,space=50,numPagesUsed=36,size=576,xdes.size=2"));
-    assertThat(output.get(2), is("1,IBUF_BITMAP"));
-    assertThat(output.get(3), is("2,INODE,inode.size=2"));
-    assertThat(output.get(4),
-        is("3,INDEX,root.page=true,index.id=66,level=1,numOfRecs=39,num.dir.slot=10,garbage.space=0"));
-    assertThat(output.get(5), is("4,INDEX,index.id=66,level=0,numOfRecs=13,num.dir.slot=5,garbage.space=7501"));
-    assertThat(output.get(37), is("36,ALLOCATED"));
+    for (int i = 0; i < array.length; i++) {
+      assertThat(output.get(i + 1), is(array[i]));
+    }
   }
 
   @Test
@@ -286,6 +330,79 @@ public class InnodbReaderBootstrapTest {
     check(output, 700, 100, ImmutableList.of("id", "a"), true);
   }
 
+  // ~~~ sk
+
+  @Test
+  public void testQueryBySecondaryKey() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;1000;<;1900", "-skname", "a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(450));
+    check(output, 500, 450);
+  }
+
+  @Test
+  public void testQueryBySecondaryKeyVarcharKey() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args",
+        ">=;" + StringUtils.repeat("g", 32) + ";<=;" + StringUtils.repeat("g", 32),
+        "-skname", "b"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(33));
+  }
+
+  @Test
+  public void testQueryBySecondaryKeyDesc() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;500;<;1800", "-skname", "a", "-desc"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(650));
+    check(output, 250, 650, true);
+  }
+
+  @Test
+  public void testQueryBySecondaryKey2() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;987;nop;null", "-skname", "a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(507));
+    check(output, 494, 507);
+  }
+
+  @Test
+  public void testQueryBySecondaryKeyWithProjectionCoveringIndex() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-projection", "id,a", "-c", "query-by-sk", "-args", ">=;1700;<;1800", "-skname", "a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(50));
+    check(output, 850, 50, ImmutableList.of("id", "a"));
+  }
+
+  @Test
+  public void testQueryBySecondaryKeyWithProjection() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-projection", "id,b", "-c", "query-by-sk", "-args", ">=;1700;<;1800", "-skname", "a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(50));
+    check(output, 850, 50, ImmutableList.of("id", "b"));
+  }
+
+  @Test
+  public void testQueryBySecondaryKeyWithProjectionDesc() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-desc", "-projection", "id,a", "-c", "query-by-sk", "-args", ">=;1700;<;1800", "-skname", "a"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(50));
+    check(output, 850, 50, ImmutableList.of("id", "a"), true);
+  }
+
   @Test
   public void testGenLsnHeatmap() throws IOException {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
@@ -304,7 +421,7 @@ public class InnodbReaderBootstrapTest {
     List<String> fileContent = Files.readLines(new File("/tmp/lsn-filling-rate-output.html"),
         Charset.defaultCharset());
     assertThat(fileContent.get(0), is("<head>"));
-    assertThat(fileContent.get(1067).trim(), is("0.466"));
+    assertThat(fileContent.get(1067).trim(), is("0.011"));
   }
 
   @Test
@@ -351,7 +468,7 @@ public class InnodbReaderBootstrapTest {
     InnodbReaderBootstrap.main(args);
     List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
     assertThat(output.size(), is(2));
-    assertThat(output.get(1).startsWith("Index page filling rate is 0.8898"), is(true));
+    assertThat(output.get(1).startsWith("Index page filling rate is 0.81943"), is(true));
   }
 
   private void testIOTemplate(String outputFilePath, String ioMode,

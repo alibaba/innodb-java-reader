@@ -353,12 +353,27 @@ public class IndexServiceImpl implements IndexService {
       Iterator<GenericRecord> skRecordIterator =
           getSkRangeQueryIterator(skTableDef, skRootPageNumber, makeNotNull(lower), lowerOperator,
               makeNotNull(upper), upperOperator, ascOrder);
-      if (satisfyCoveringIndex(skTableDef, recordProjection)) {
-        log.debug("Covering index is satisfied skTableDef={}, projection={}", skTableDef, recordProjection.get());
-        return skRecordIterator;
-      }
+
       final TableDef internalTableDef = tableDef.isNoPrimaryKey()
           ? cloneTableDefWithDefaultRowIdAsPk() : tableDef;
+
+      if (satisfyCoveringIndex(skTableDef, recordProjection)) {
+        log.debug("Covering index is satisfied skTableDef={}, projection={}", skTableDef, recordProjection.get());
+        return new DecoratedRecordIterator(skRecordIterator) {
+
+          @Override
+          public GenericRecord next() {
+            GenericRecord skRecord = super.next();
+            // we have to return the actual table record instead of the derived sk table
+            GenericRecord result = new GenericRecord(skRecord.getHeader(), tableDef, skRecord.getPageNumber());
+            for (String columnName : internalTableDef.getColumnNames()) {
+              result.put(columnName, skRecord.get(columnName));
+            }
+            return result;
+          }
+        };
+      }
+
       return new DecoratedRecordIterator(skRecordIterator) {
 
         @Override

@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -244,6 +243,45 @@ public class AbstractTest {
       }, t -> {
         log.info("---- {}, {},{} and {},{}", skName, startOperator, start, endOperator, end);
         return t.getRecordIteratorBySk(skName, start, startOperator, end, endOperator);
+      });
+    }
+
+    public AssertThat checkQueryIteratorBySkProjection(Consumer<Iterator<GenericRecord>> fn,
+                                                       String skName, List<String> projection,
+                                                       List<Object> start, ComparisonOperator startOperator,
+                                                       List<Object> end, ComparisonOperator endOperator) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> {
+        log.info("---- {}, {},{} and {},{}", skName, startOperator, start, endOperator, end);
+        return t.getRecordIteratorBySk(skName, start, startOperator, end, endOperator, projection);
+      });
+    }
+
+    public AssertThat checkQueryIteratorBySkDesc(Consumer<Iterator<GenericRecord>> fn,
+                                                 String skName,
+                                                 List<Object> start, ComparisonOperator startOperator,
+                                                 List<Object> end, ComparisonOperator endOperator) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> {
+        log.info("---- {}, {},{} and {},{}", skName, startOperator, start, endOperator, end);
+        return t.getRecordIteratorBySk(skName, start, startOperator, end, endOperator, false);
+      });
+    }
+
+    public AssertThat checkQueryIteratorBySkProjectionDesc(Consumer<Iterator<GenericRecord>> fn,
+                                                           String skName, List<String> projection,
+                                                           List<Object> start, ComparisonOperator startOperator,
+                                                           List<Object> end, ComparisonOperator endOperator) {
+      return doWithTableReader(c -> {
+        fn.accept(c);
+        return this;
+      }, t -> {
+        log.info("---- {}, {},{} and {},{}", skName, startOperator, start, endOperator, end);
+        return t.getRecordIteratorBySk(skName, start, startOperator, end, endOperator, projection, false);
       });
     }
   }

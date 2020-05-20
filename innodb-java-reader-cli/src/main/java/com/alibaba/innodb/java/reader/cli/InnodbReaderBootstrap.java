@@ -13,6 +13,7 @@ import com.alibaba.innodb.java.reader.cli.writer.WriterFactory;
 import com.alibaba.innodb.java.reader.column.ColumnFactory;
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
+import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.heatmap.GenFillingRateHeatmapUtil;
 import com.alibaba.innodb.java.reader.heatmap.GenLsnHeatmapUtil;
 import com.alibaba.innodb.java.reader.page.AbstractPage;
@@ -25,6 +26,7 @@ import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.schema.provider.TableDefProvider;
 import com.alibaba.innodb.java.reader.schema.provider.impl.SqlFileTableDefProvider;
 import com.alibaba.innodb.java.reader.util.Pair;
+import com.alibaba.innodb.java.reader.util.ThreadContext;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import freemarker.template.TemplateException;
@@ -146,6 +148,12 @@ public class InnodbReaderBootstrap {
     options.addOption("desc", "desc", false,
         "if records sorted in descending order, works for query all and range query");
 
+    options.addOption("skname", "skname", true,
+        "secondary key name");
+
+    options.addOption("skordinal", "skordinal", true,
+        "secondary key ordinal in DDL");
+
     options.addOption("args", true, "arguments");
 
     String command = null;
@@ -158,6 +166,8 @@ public class InnodbReaderBootstrap {
     boolean jsonStyle = false;
     boolean jsonPrettyStyle = false;
     boolean desc = false;
+    String skName = null;
+    int skOrdinal = -1;
     TableDefProvider tableDefProvider = null;
     Writer writer = new SysoutWriter();
     writer.open();
@@ -238,6 +248,12 @@ public class InnodbReaderBootstrap {
       } else {
         SHOW_HEADER = false;
       }
+      if (line.hasOption("skname")) {
+        skName = line.getOptionValue("skname");
+      }
+      if (line.hasOption("skordinal")) {
+        skOrdinal = Integer.parseInt(line.getOptionValue("skordinal"));
+      }
 
       CommandType commandType = EnumUtils.getEnum(CommandType.class, command.replace("-", "_").toUpperCase());
 
@@ -267,6 +283,31 @@ public class InnodbReaderBootstrap {
         case QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
           queryByPrimaryKey(ibdFilePath, writer, tableDefProvider, tableName, projection, args);
+          break;
+        case QUERY_BY_SK:
+          checkNotNull(args, "args should not be null");
+          checkArgument(StringUtils.isNotEmpty(skName), "skname should not be empty");
+          try {
+            if (skOrdinal >= 0) {
+              ThreadContext.init();
+              ThreadContext.putSkOrdinal(skOrdinal);
+            }
+            List<String> range = Stream.of(args.split(RANGE_QUERY_KEY_DELIMITER)).collect(toList());
+            checkArgument(range.size() == 4,
+                "Argument number should not exactly 4, but " + range.size());
+            String lower = "null".equalsIgnoreCase(range.get(1)) ? null : range.get(1);
+            String upper = "null".equalsIgnoreCase(range.get(3)) ? null : range.get(3);
+            ComparisonOperator lowerOperator =
+                "nop".equalsIgnoreCase(range.get(0)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(0));
+            ComparisonOperator upperOperator =
+                "nop".equalsIgnoreCase(range.get(2)) ? ComparisonOperator.NOP : ComparisonOperator.parse(range.get(2));
+            queryBySecondaryKey(ibdFilePath, writer, tableDefProvider, tableName, skName, projection,
+                lower, lowerOperator,
+                upper, upperOperator,
+                desc);
+          } finally {
+            ThreadContext.clean();
+          }
           break;
         case RANGE_QUERY_BY_PK:
           checkNotNull(args, "args should not be null");
@@ -351,10 +392,44 @@ public class InnodbReaderBootstrap {
       reader.open();
       showHeaderIfSet(reader, writer);
       GenericRecord record = CollectionUtils.isEmpty(projection)
-          ? reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey))
-          : reader.queryByPrimaryKey(parseStringToKey(reader.getTableDef(), primaryKey), projection);
+          ? reader.queryByPrimaryKey(
+          parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), primaryKey))
+          : reader.queryByPrimaryKey(
+          parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), primaryKey), projection);
       StringBuilder b = new StringBuilder();
       if (record != null) {
+        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
+      }
+    }
+  }
+
+  private static void queryBySecondaryKey(String ibdFilePath, Writer writer, TableDefProvider tableDefProvider,
+                                          String tableName, String skName, List<String> projection,
+                                          String lower, ComparisonOperator lowerOperator,
+                                          String upper, ComparisonOperator upperOperator,
+                                          boolean desc) {
+    try (TableReader reader = createTableReader(ibdFilePath, tableDefProvider, tableName)) {
+      reader.open();
+      showHeaderIfSet(reader, writer);
+      if (!reader.getTableDef().getSecondaryKeyMetaMap().containsKey(skName)) {
+        throw new ReaderException("Secondary key not exist " + skName);
+      }
+      Iterator<GenericRecord> iterator = CollectionUtils.isEmpty(projection)
+          ? reader.getRecordIteratorBySk(skName,
+          parseStringToKey(reader.getTableDef().getSecondaryKeyMetaMap().get(skName).getKeyColumns(), lower),
+          lowerOperator,
+          parseStringToKey(reader.getTableDef().getSecondaryKeyMetaMap().get(skName).getKeyColumns(), upper),
+          upperOperator,
+          !desc)
+          : reader.getRecordIteratorBySk(skName,
+          parseStringToKey(reader.getTableDef().getSecondaryKeyMetaMap().get(skName).getKeyColumns(), lower),
+          lowerOperator,
+          parseStringToKey(reader.getTableDef().getSecondaryKeyMetaMap().get(skName).getKeyColumns(), upper),
+          upperOperator,
+          projection, !desc);
+      StringBuilder b = new StringBuilder();
+      while (iterator.hasNext()) {
+        GenericRecord record = iterator.next();
         writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
       }
     }
@@ -370,12 +445,12 @@ public class InnodbReaderBootstrap {
       showHeaderIfSet(reader, writer);
       Iterator<GenericRecord> iterator = CollectionUtils.isEmpty(projection)
           ? reader.getRangeQueryIterator(
-          parseStringToKey(reader.getTableDef(), lower), lowerOperator,
-          parseStringToKey(reader.getTableDef(), upper), upperOperator,
+          parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), lower), lowerOperator,
+          parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), upper), upperOperator,
           !desc)
           : reader.getRangeQueryIterator(
-          parseStringToKey(reader.getTableDef(), lower), lowerOperator,
-          parseStringToKey(reader.getTableDef(), upper), upperOperator,
+          parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), lower), lowerOperator,
+          parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), upper), upperOperator,
           projection, !desc);
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
@@ -526,8 +601,8 @@ public class InnodbReaderBootstrap {
     }
   }
 
-  private static List<Object> parseStringToKey(TableDef tableDef, String input) {
-    int keyColNum = tableDef.getPrimaryKeyColumnNum();
+  private static List<Object> parseStringToKey(List<Column> keyColumns, String input) {
+    int keyColNum = keyColumns.size();
     if (input == null) {
       return null;
     }
@@ -538,7 +613,7 @@ public class InnodbReaderBootstrap {
     }
     List<Object> result = new ArrayList<>(keyColNum);
     for (int i = 0; i < keyColNum; i++) {
-      Column pk = tableDef.getPrimaryKeyColumns().get(i);
+      Column pk = keyColumns.get(i);
       if (array[i].length() == 0 || "null".equalsIgnoreCase(array[i])) {
         // for empty string
         continue;

@@ -17,13 +17,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * <pre>
- * insert into tb16 values(null, 1900, '1900-01-01');
- * insert into tb16 values(null, 1901, '1901-12-31');
- * insert into tb16 values(null, 1969, '1969-10-02');
- * insert into tb16 values(null, 2020, '2020-01-29');
- * </pre>
- *
  * @author xu.zx
  */
 public class ColumnYearDateTableReaderTest extends AbstractTest {
@@ -62,35 +55,26 @@ public class ColumnYearDateTableReaderTest extends AbstractTest {
   public Consumer<List<GenericRecord>> expected() {
     return recordList -> {
 
-      assertThat(recordList.size(), is(4));
+      assertThat(recordList.size(), is(6));
 
-      GenericRecord r1 = recordList.get(0);
-      Object[] v1 = r1.getValues();
-      System.out.println(Arrays.asList(v1));
-      assertThat(r1.getPrimaryKey(), is(ImmutableList.of(1)));
-      assertThat(r1.get("a"), is((short) 1901));
-      assertThat(r1.get("b"), is("1900-01-01"));
+      List<Object[]> expected = Arrays.asList(
+          new Object[]{1, (short) 1901, "1900-01-01"},
+          new Object[]{2, (short) 1999, "1901-12-31"},
+          new Object[]{3, (short) 1969, "1969-10-02"},
+          new Object[]{4, (short) 2020, "2020-12-31"},
+          new Object[]{5, (short) 2100, "0069-01-10"},
+          new Object[]{6, (short) 2155, "0001-01-01"}
+      );
 
-      GenericRecord r2 = recordList.get(1);
-      Object[] v2 = r2.getValues();
-      System.out.println(Arrays.asList(v2));
-      assertThat(r2.getPrimaryKey(), is(ImmutableList.of(2)));
-      assertThat(r2.get("a"), is((short) 1901));
-      assertThat(r2.get("b"), is("1901-12-31"));
-
-      GenericRecord r3 = recordList.get(2);
-      Object[] v3 = r3.getValues();
-      System.out.println(Arrays.asList(v3));
-      assertThat(r3.getPrimaryKey(), is(ImmutableList.of(3)));
-      assertThat(r3.get("a"), is((short) 1969));
-      assertThat(r3.get("b"), is("1969-10-02"));
-
-      GenericRecord r4 = recordList.get(3);
-      Object[] v4 = r4.getValues();
-      System.out.println(Arrays.asList(v4));
-      assertThat(r4.getPrimaryKey(), is(ImmutableList.of(4)));
-      assertThat(r4.get("a"), is((short) 2020));
-      assertThat(r4.get("b"), is("2020-01-29"));
+      for (int i = 0; i < recordList.size(); i++) {
+        GenericRecord r = recordList.get(i);
+        Object[] v = r.getValues();
+        System.out.println(Arrays.asList(v));
+        Object[] row = expected.get(i);
+        assertThat(r.getPrimaryKey(), is(ImmutableList.of(row[0])));
+        assertThat(r.get("a"), is(row[1]));
+        assertThat(r.get("b"), is(row[2]));
+      }
     };
   }
 }
