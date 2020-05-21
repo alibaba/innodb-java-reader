@@ -515,4 +515,61 @@ public class TableDefUtilTest {
     assertThat(tableDef.getFullyQualifiedName(), is("test.tb02"));
   }
 
+  @Test
+  public void testMakeUniqueKeyAsPrimaryKey() {
+    String sql = "CREATE TABLE `type_newdecimaltest59` (\n"
+        + "  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\n"
+        + "  `d` decimal(65,30) DEFAULT NULL,\n"
+        + "  UNIQUE KEY `id` (`id`)\n"
+        + ") ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    // have to prepare
+    tableDef.prepare();
+    System.out.println(tableDef);
+
+    assertThat(tableDef.getName(), is("type_newdecimaltest59"));
+    assertThat(tableDef.getFullyQualifiedName(), is("type_newdecimaltest59"));
+    assertThat(tableDef.getDefaultCharset(), is("utf8"));
+    assertThat(tableDef.getDefaultJavaCharset(), is("UTF-8"));
+    assertThat(tableDef.getCollation(), is("utf8_general_ci"));
+    assertThat(tableDef.isCollationCaseSensitive(), is(false));
+
+    List<Column> columnList = tableDef.getColumnList();
+    assertThat(columnList.size(), is(2));
+    assertThat(tableDef.getColumnNum(), is(2));
+
+    assertThat(columnList.get(0).getOrdinal(), is(0));
+    assertThat(columnList.get(0).getName(), is("id"));
+    assertThat(columnList.get(0).getType(), is(ColumnType.UNSIGNED_BIGINT));
+    assertThat(columnList.get(0).getFullType(), is("bigint(20) UNSIGNED"));
+    assertThat(columnList.get(0).getLength(), is(20));
+    assertThat(columnList.get(0).getPrecision(), is(0));
+    assertThat(columnList.get(0).getScale(), is(0));
+    assertThat(columnList.get(0).isPrimaryKey(), is(false));
+    assertThat(columnList.get(0).isNullable(), is(false));
+
+    assertThat(columnList.get(1).getOrdinal(), is(1));
+    assertThat(columnList.get(1).getName(), is("d"));
+    assertThat(columnList.get(1).getType(), is(ColumnType.DECIMAL));
+    assertThat(columnList.get(1).getFullType(), is("decimal(65,30)"));
+    assertThat(columnList.get(1).getLength(), is(0));
+    assertThat(columnList.get(1).getPrecision(), is(65));
+    assertThat(columnList.get(1).getScale(), is(30));
+    assertThat(columnList.get(1).isPrimaryKey(), is(false));
+    assertThat(columnList.get(1).isNullable(), is(true));
+
+    assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
+    assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
+    assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
+    assertThat(tableDef.getPrimaryKeyVarLenColumns(), is(ImmutableList.of()));
+    assertThat(tableDef.getPrimaryKeyVarLenColumnNames(), is(ImmutableList.of()));
+    assertThat(tableDef.isColumnPrimaryKey(columnList.get(0)), is(true));
+    for (int i = 1; i < 10; i++) {
+      assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
+    }
+
+    assertThat(tableDef.getSecondaryKeyMetaList().size(), is(0));
+    assertThat(tableDef.getSecondaryKeyMetaMap().size(), is(0));
+  }
+
 }

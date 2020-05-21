@@ -55,15 +55,17 @@ public class ColumnYearDateTableReaderTest extends AbstractTest {
   public Consumer<List<GenericRecord>> expected() {
     return recordList -> {
 
-      assertThat(recordList.size(), is(6));
+      assertThat(recordList.size(), is(8));
 
       List<Object[]> expected = Arrays.asList(
-          new Object[]{1, (short) 1901, "1900-01-01"},
-          new Object[]{2, (short) 1999, "1901-12-31"},
-          new Object[]{3, (short) 1969, "1969-10-02"},
-          new Object[]{4, (short) 2020, "2020-12-31"},
-          new Object[]{5, (short) 2100, "0069-01-10"},
-          new Object[]{6, (short) 2155, "0001-01-01"}
+          new Object[]{1, (short) 0, "2100-11-11"},
+          new Object[]{2, (short) 2001, "2155-01-01"},
+          new Object[]{3, (short) 1901, "1900-01-01"},
+          new Object[]{4, (short) 1999, "1901-12-31"},
+          new Object[]{5, (short) 1969, "1969-10-02"},
+          new Object[]{6, (short) 2020, "2020-12-31"},
+          new Object[]{7, (short) 2100, "0069-01-10"},
+          new Object[]{8, (short) 2155, "0001-01-01"}
       );
 
       for (int i = 0; i < recordList.size(); i++) {

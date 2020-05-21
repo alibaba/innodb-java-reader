@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import lombok.Data;
@@ -37,6 +38,8 @@ import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FOREIGN_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FULLTEXT_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.PRIMARY_KEY;
+import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.UNIQUE_INDEX;
+import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.UNIQUE_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.isValidSk;
 import static com.alibaba.innodb.java.reader.util.Utils.sanitize;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -125,8 +128,9 @@ public class TableDef {
     this.variableLengthColumnList = new ArrayList<>();
   }
 
-  public void validate() {
+  public void prepare() {
     checkState(CollectionUtils.isNotEmpty(columnList), "No column is specified");
+    makeFirstUniqueKeyAsPrimaryKeyIfPossible();
   }
 
   public boolean containsVariableLengthColumn() {
@@ -489,6 +493,22 @@ public class TableDef {
 
   public static Column createRowIdColumn() {
     return new Column().setName(COLUMN_ROW_ID).setType(ColumnType.ROW_ID).setNullable(false);
+  }
+
+  /**
+   * If no primary key provided, make first unique key as primary key.
+   */
+  private void makeFirstUniqueKeyAsPrimaryKeyIfPossible() {
+    if (primaryKeyMeta == null) {
+      Predicate<KeyMeta> predicate = k -> k.getType() == UNIQUE_KEY || k.getType() == UNIQUE_INDEX;
+      if (secondaryKeyMetaList != null) {
+        if (secondaryKeyMetaList.stream().anyMatch(predicate)) {
+          KeyMeta pkMeta = secondaryKeyMetaList.stream().filter(predicate).findFirst().get();
+          setPrimaryKeyColumns(pkMeta.getKeyColumnNames());
+          secondaryKeyMetaList.remove(pkMeta);
+        }
+      }
+    }
   }
 
   @Data

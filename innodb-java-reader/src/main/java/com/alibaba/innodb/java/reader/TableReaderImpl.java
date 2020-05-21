@@ -75,7 +75,7 @@ public class TableReaderImpl implements TableReader {
     this.ibdFilePath = ibdFilePath;
     this.tableDef = tableDef;
     this.keyComparator = keyComparator;
-    this.tableDef.validate();
+    this.tableDef.prepare();
   }
 
   @Override

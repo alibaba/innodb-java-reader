@@ -595,7 +595,11 @@ public class ColumnFactory {
 
     @Override
     public Short readFrom(SliceInput input, Column column) {
-      return (short) (input.readUnsignedByte() + 1900);
+      int b = input.readUnsignedByte();
+      if (b == 0) {
+        return (short) 0;
+      }
+      return (short) (b + 1900);
     }
 
     @Override
