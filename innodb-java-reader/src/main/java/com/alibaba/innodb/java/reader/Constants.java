@@ -69,4 +69,8 @@ public interface Constants {
 
   int MAX_PRECISION = 6;
 
+  String COLUMN_ATTRIBUTE_ENUM_KEY = "_ENUM_";
+
+  int MAX_ONE_BYTE_ENUM_COUNT = 255;
+
 }

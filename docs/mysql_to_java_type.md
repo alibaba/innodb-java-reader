@@ -13,3 +13,6 @@
 | DOUBLE                                                  | Double     |
 | DECIMAL, NUMERIC                                        | BigDecimal |
 | BOOL, BOOLEAN                                           | Boolean    |
+| ENUM                                          | com.alibaba.innodb.java.reader.util.SingleEnumLiteral    |
+| SET                                          | com.alibaba.innodb.java.reader.util.MultiEnumLiteral    |
+| BIT                                          | com.alibaba.innodb.java.reader.util.BitLiteral    |

@@ -31,6 +31,7 @@ public class TableDefUtilTest {
         + "`g` timestamp(3) DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\n"
         + "`H` DECIMAL(16,8),\n"
         + "`i` decimal(12) NOT NULL,\n"
+        + "`j` ENUM('A', 'B', 'Hello', '0xE4') NOT NULL,\n"
         + "PRIMARY KEY (`id`),\n"
         + "CONSTRAINT `tb01_ibfk_1` FOREIGN KEY (c) REFERENCES ra_user(id),\n"
         // + "FULLTEXT KEY `fulltext_f` (`f`),\n" //TODO fulltext not support
@@ -48,8 +49,8 @@ public class TableDefUtilTest {
     assertThat(tableDef.isCollationCaseSensitive(), is(false));
 
     List<Column> columnList = tableDef.getColumnList();
-    assertThat(columnList.size(), is(10));
-    assertThat(tableDef.getColumnNum(), is(10));
+    assertThat(columnList.size(), is(11));
+    assertThat(tableDef.getColumnNum(), is(11));
 
     assertThat(columnList.get(0).getOrdinal(), is(0));
     assertThat(columnList.get(0).getName(), is("id"));
@@ -153,6 +154,16 @@ public class TableDefUtilTest {
     assertThat(columnList.get(9).getScale(), is(0));
     assertThat(columnList.get(9).isPrimaryKey(), is(false));
     assertThat(columnList.get(9).isNullable(), is(false));
+
+    assertThat(columnList.get(10).getOrdinal(), is(10));
+    assertThat(columnList.get(10).getName(), is("j"));
+    assertThat(columnList.get(10).getType(), is(ColumnType.ENUM));
+    assertThat(columnList.get(10).getFullType(), is("ENUM('A','B','Hello','0xE4')"));
+    assertThat(columnList.get(10).getLength(), is(0));
+    assertThat(columnList.get(10).getPrecision(), is(0));
+    assertThat(columnList.get(10).getScale(), is(0));
+    assertThat(columnList.get(10).isPrimaryKey(), is(false));
+    assertThat(columnList.get(10).isNullable(), is(false));
 
     assertThat(tableDef.getField("a").getColumn(), is(columnList.get(1)));
     assertThat(tableDef.getField("a").getOrdinal(), is(1));
@@ -454,7 +465,7 @@ public class TableDefUtilTest {
         + "    birth_date  DATE            NOT NULL,\n"
         + "    first_name  VARCHAR(14)     NOT NULL,\n"
         + "    last_name   VARCHAR(16)     NOT NULL,\n"
-        + "    gender      ENUM ('M','F')  NOT NULL,  -- Enumeration of either 'M' or 'F'  \n"
+        + "    gender      UNKNOWN ('M','F')  NOT NULL,  -- Enumeration of either 'M' or 'F'  \n"
         + "    hire_date   DATE            NOT NULL,\n"
         + "    PRIMARY KEY (emp_no)                   -- Index built automatically on primary-key column\n"
         + "                                           -- INDEX (first_name)\n"

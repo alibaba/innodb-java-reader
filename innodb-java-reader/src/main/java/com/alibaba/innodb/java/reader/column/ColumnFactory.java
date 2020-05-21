@@ -5,7 +5,10 @@ package com.alibaba.innodb.java.reader.column;
 
 import com.alibaba.innodb.java.reader.exception.ColumnParseException;
 import com.alibaba.innodb.java.reader.schema.Column;
+import com.alibaba.innodb.java.reader.util.BitLiteral;
+import com.alibaba.innodb.java.reader.util.MultiEnumLiteral;
 import com.alibaba.innodb.java.reader.util.MysqlDecimal;
+import com.alibaba.innodb.java.reader.util.SingleEnumLiteral;
 import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Symbol;
 import com.alibaba.innodb.java.reader.util.Utils;
@@ -17,10 +20,12 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Function;
 
+import static com.alibaba.innodb.java.reader.Constants.MAX_ONE_BYTE_ENUM_COUNT;
 import static com.alibaba.innodb.java.reader.Constants.PRECISION_LIMIT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BYTE;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_INT;
@@ -29,6 +34,7 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_MEDIUMINT;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_SHORT;
 import static com.alibaba.innodb.java.reader.config.ReaderSystemProperty.ENABLE_TRIM_CHAR;
 import static com.alibaba.innodb.java.reader.util.Utils.formatDate;
+import static com.google.common.base.Preconditions.checkPositionIndex;
 
 /**
  * Column parser factory.
@@ -692,6 +698,100 @@ public class ColumnFactory {
     }
   };
 
+  private static final ColumnParser<SingleEnumLiteral> ENUM = new AbstractColumnParser<SingleEnumLiteral>() {
+
+    @Override
+    public SingleEnumLiteral readFrom(SliceInput input, Column column) {
+      List<String> enums = column.getEnums();
+      int ordinal = enums.size() > MAX_ONE_BYTE_ENUM_COUNT
+          ? input.readUnsignedShort() : (int) input.readByte();
+      checkPositionIndex(ordinal, enums.size(), "Ordinal " + ordinal
+          + " is out of range for " + enums);
+      return new SingleEnumLiteral(ordinal, enums.get(ordinal - 1));
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      if (column.getEnums().size() > MAX_ONE_BYTE_ENUM_COUNT) {
+        input.skipBytes(2);
+      } else {
+        input.skipBytes(1);
+      }
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return SingleEnumLiteral.class;
+    }
+  };
+
+  private static final ColumnParser<MultiEnumLiteral> SET = new AbstractColumnParser<MultiEnumLiteral>() {
+
+    @Override
+    public MultiEnumLiteral readFrom(SliceInput input, Column column) {
+      List<String> enums = column.getEnums();
+      byte[] bytes = readBytes(input, enums);
+      MultiEnumLiteral result = new MultiEnumLiteral(enums.size());
+      for (int i = bytes.length - 1; i >= 0; i--) {
+        int start = (bytes.length - 1 - i) * SIZE_OF_LONG;
+        for (int j = 0; j < SIZE_OF_LONG && start + j < enums.size(); j++) {
+          if (((bytes[i] >> j) & 0x01) == 1) {
+            result.add(start + j, enums.get(start + j));
+          }
+        }
+      }
+      return result;
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      readBytes(input, column.getEnums());
+    }
+
+    private byte[] readBytes(SliceInput input, List<String> enums) {
+      int len = enums.size() / SIZE_OF_LONG;
+      if (enums.size() % SIZE_OF_LONG != 0) {
+        len++;
+      }
+      return input.readByteArray(len);
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return MultiEnumLiteral.class;
+    }
+  };
+
+  private static final ColumnParser<BitLiteral> BIT = new AbstractColumnParser<BitLiteral>() {
+
+    @Override
+    public BitLiteral readFrom(SliceInput input, Column column) {
+      int len = column.getLength();
+      if (column.getLength() == 0) {
+        len = 1;
+      }
+      return new BitLiteral(readBytes(input, len), len);
+    }
+
+    @Override
+    public void skipFrom(SliceInput input, Column column) {
+      readBytes(input, column.getLength());
+    }
+
+    private byte[] readBytes(SliceInput input, int length) {
+      int len = length / SIZE_OF_LONG;
+      if (length % SIZE_OF_LONG != 0) {
+        len++;
+      }
+      return input.readByteArray(len);
+    }
+
+    @Override
+    public Class<?> typeClass() {
+      return BitLiteral.class;
+    }
+  };
+
   /**
    * For table without primary key provided, MySQL will use a default 6 bytes integer to
    * represent primary key.
@@ -813,6 +913,9 @@ public class ColumnFactory {
     typeToColumnParserMap.put(ColumnType.NUMERIC, DECIMAL);
     typeToColumnParserMap.put(ColumnType.BOOL, BOOLEAN);
     typeToColumnParserMap.put(ColumnType.BOOLEAN, BOOLEAN);
+    typeToColumnParserMap.put(ColumnType.ENUM, ENUM);
+    typeToColumnParserMap.put(ColumnType.SET, SET);
+    typeToColumnParserMap.put(ColumnType.BIT, BIT);
     typeToColumnParserMap.put(ColumnType.ROW_ID, ROW_ID);
     TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);
   }

@@ -83,6 +83,12 @@ public class Utils {
     return result;
   }
 
+  public static String sanitize(String input) {
+    return input.replace(Symbol.BACKTICK, Symbol.EMPTY)
+        .replace(Symbol.SINGLE_QUOTE, Symbol.EMPTY)
+        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+  }
+
   public static String humanReadableBytes(long bytes) {
     return humanReadableBytes(bytes, false);
   }

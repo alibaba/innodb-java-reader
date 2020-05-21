@@ -38,6 +38,7 @@ import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FOREIGN_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FULLTEXT_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.PRIMARY_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.isValidSk;
+import static com.alibaba.innodb.java.reader.util.Utils.sanitize;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -277,8 +278,7 @@ public class TableDef {
     ImmutableList.Builder<Column> varLenCols = ImmutableList.builder();
     ImmutableList.Builder<String> varLenColNames = ImmutableList.builder();
     for (String colName : keyColumnNames) {
-      String columnName = colName.replace(Symbol.BACKTICK, Symbol.EMPTY)
-          .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+      String columnName = sanitize(colName);
       if (columnName.contains(Symbol.LEFT_PARENTHESES) && columnName.contains(Symbol.RIGHT_PARENTHESES)) {
         // TODO wrapped string not in use
         String wrappedString = StringUtils
@@ -308,8 +308,7 @@ public class TableDef {
         .keyVarLenColumnNames(varLenColNames.build())
         .numOfColumns(keyColumnNames.size())
         .type(KeyMeta.Type.parse(type))
-        .name(keyName != null ? keyName.replace(Symbol.BACKTICK, Symbol.EMPTY)
-            .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY) : null)
+        .name(keyName != null ? sanitize(keyName) : null)
         .build()
         .validate();
   }
@@ -371,9 +370,7 @@ public class TableDef {
   }
 
   public TableDef setName(String name) {
-    this.name = name
-        .replace(Symbol.BACKTICK, Symbol.EMPTY)
-        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+    this.name = sanitize(name);
     // if full qualified name is null, make it the same as name
     if (fullQualifiedName == null) {
       setFullyQualifiedName(this.name);
@@ -382,9 +379,7 @@ public class TableDef {
   }
 
   public TableDef setFullyQualifiedName(String fullQualifiedName) {
-    this.fullQualifiedName = fullQualifiedName
-        .replace(Symbol.BACKTICK, Symbol.EMPTY)
-        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+    this.fullQualifiedName = sanitize(fullQualifiedName);
     // if name is null, find the table name from full qualified name and assign to name
     if (name == null) {
       if (this.fullQualifiedName.contains(Symbol.DOT)) {

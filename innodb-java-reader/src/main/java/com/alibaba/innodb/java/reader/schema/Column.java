@@ -6,27 +6,39 @@ package com.alibaba.innodb.java.reader.schema;
 import com.alibaba.innodb.java.reader.CharsetMapping;
 import com.alibaba.innodb.java.reader.CollationMapping;
 import com.alibaba.innodb.java.reader.column.ColumnType;
+import com.alibaba.innodb.java.reader.exception.ColumnParseException;
 import com.alibaba.innodb.java.reader.util.Symbol;
+import com.alibaba.innodb.java.reader.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import static com.alibaba.innodb.java.reader.Constants.COLUMN_ATTRIBUTE_ENUM_KEY;
 import static com.alibaba.innodb.java.reader.Constants.CONST_UNSIGNED;
 import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DATETIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DECIMAL;
 import static com.alibaba.innodb.java.reader.column.ColumnType.DOUBLE;
+import static com.alibaba.innodb.java.reader.column.ColumnType.ENUM;
 import static com.alibaba.innodb.java.reader.column.ColumnType.FLOAT;
 import static com.alibaba.innodb.java.reader.column.ColumnType.NUMERIC;
+import static com.alibaba.innodb.java.reader.column.ColumnType.SET;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.TIMESTAMP;
 import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_DECIMAL;
 import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_DOUBLE;
 import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_FLOAT;
 import static com.alibaba.innodb.java.reader.column.ColumnType.UNSIGNED_NUMERIC;
+import static com.alibaba.innodb.java.reader.util.Utils.sanitize;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -148,6 +160,11 @@ public class Column {
   @ToString.Exclude
   private boolean isVarLenChar;
 
+  /**
+   * Holding attributes for ENUM and SET type.
+   */
+  private Map<String, Object> attributes;
+
   public void setTableDef(TableDef tableDef) {
     this.tableDef = tableDef;
   }
@@ -166,9 +183,7 @@ public class Column {
 
   public Column setName(String name) {
     checkArgument(StringUtils.isNotEmpty(name), "Column name should not be empty");
-    this.name = name
-        .replace(Symbol.BACKTICK, Symbol.EMPTY)
-        .replace(Symbol.DOUBLE_QUOTE, Symbol.EMPTY);
+    this.name = sanitize(name);
     return this;
   }
 
@@ -262,6 +277,24 @@ public class Column {
     return collationCaseSensitive;
   }
 
+  private void setTypeToUppercase(String type) {
+    this.type = type.toUpperCase();
+  }
+
+  public void setEnums(List<String> enums) {
+    if (attributes == null) {
+      attributes = new HashMap<>(4);
+    }
+    attributes.put(COLUMN_ATTRIBUTE_ENUM_KEY, enums);
+  }
+
+  public List<String> getEnums() {
+    if (attributes == null || !attributes.containsKey(COLUMN_ATTRIBUTE_ENUM_KEY)) {
+      throw new ColumnParseException("Cannot read ENUM or SET column " + name);
+    }
+    return (List<String>) attributes.get(COLUMN_ATTRIBUTE_ENUM_KEY);
+  }
+
   private void handleRawType(String type) {
     if (type.contains(Symbol.LEFT_PARENTHESES) && type.contains(Symbol.RIGHT_PARENTHESES)) {
       setTypeToUppercase(type.substring(0, type.indexOf(Symbol.LEFT_PARENTHESES)));
@@ -283,6 +316,10 @@ public class Column {
         case TIME:
           handlePrecision(wrappedString);
           break;
+        case ENUM:
+        case SET:
+          handleEnum(wrappedString);
+          break;
         default:
           this.length = Integer.parseInt(StringUtils.substringBetween(type,
               Symbol.LEFT_PARENTHESES, Symbol.RIGHT_PARENTHESES));
@@ -294,10 +331,6 @@ public class Column {
         this.precision = 10;
       }
     }
-  }
-
-  private void setTypeToUppercase(String type) {
-    this.type = type.toUpperCase();
   }
 
   private void handlePrecisionAndScale(String wrappedString) {
@@ -312,6 +345,11 @@ public class Column {
 
   private void handlePrecision(String wrappedString) {
     this.precision = Integer.parseInt(wrappedString);
+  }
+
+  private void handleEnum(String wrappedString) {
+    String[] enums = StringUtils.split(wrappedString, Symbol.COMMA);
+    setEnums(Arrays.asList(enums).stream().map(Utils::sanitize).collect(Collectors.toList()));
   }
 
   private void handleUnsignedIfPresent(String sign) {

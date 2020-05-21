@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.schema.provider.impl.SqlFileTableDefProvider;
 import com.alibaba.innodb.java.reader.util.ConcurrentCache;
 import com.alibaba.innodb.java.reader.util.Utils;
 
@@ -71,6 +72,8 @@ public class AbstractTest {
 
     private AbstractTest testInstance;
 
+    private boolean enableTableDefProvider;
+
     public AssertThat withTableDef(TableDef tableDef) {
       this.tableDef = tableDef;
       return this;
@@ -78,6 +81,11 @@ public class AbstractTest {
 
     public AssertThat withSql(String createTableSql) {
       this.createTableSql = createTableSql;
+      return this;
+    }
+
+    public AssertThat withTableDefProvider() {
+      this.enableTableDefProvider = true;
       return this;
     }
 
@@ -122,6 +130,13 @@ public class AbstractTest {
         reader = new TableReaderImpl(ibdFileBasePath + ibdDataFilePath, tableDef);
       } else if (createTableSql != null) {
         reader = new TableReaderImpl(ibdFileBasePath + ibdDataFilePath, createTableSql);
+      } else if (enableTableDefProvider) {
+        TableReaderFactory tableReaderFactory = TableReaderFactory.builder()
+            .withProvider(new SqlFileTableDefProvider(IBD_FILE_BASE_PATH
+                + ibdDataFilePath.replace(".ibd", ".sql")))
+            .withDataFilePath(ibdFileBasePath + ibdDataFilePath)
+            .build();
+        reader = tableReaderFactory.createTableReader(getTableName(ibdDataFilePath));
       } else {
         throw new IllegalStateException("No schema or createTableSql found");
       }
@@ -571,6 +586,19 @@ public class AbstractTest {
       }
     }
     return count;
+  }
+
+  private static String getTableName(String ibdDataFilePath) {
+    int indexOfSlash = ibdDataFilePath.lastIndexOf("/");
+    String result = ibdDataFilePath;
+    if (indexOfSlash >= 0) {
+      result = result.substring(indexOfSlash + 1);
+    }
+    int indexOfDot = result.indexOf(".");
+    if (indexOfDot >= 0) {
+      result = result.substring(0, indexOfDot);
+    }
+    return result;
   }
 
 }

@@ -54,8 +54,8 @@ Supported column types are listed below. Java type mapping refer to [docs](docs/
 | ---- | -------------------- |
 | Numeric | TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, REAL, DOUBLE, DECIMAL, NUMERIC |
 | String and Binary | CHAR, VARCHAR, BINARY, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT |
-| Date and Time | DATETIME, TIMESTAMP, TIME, YEAR, DATE (*support precision*) |
-| Other | BOOL, BOOLEAN |
+| Date and Time | DATETIME, TIMESTAMP, TIME (*support precision*), YEAR, DATE |
+| Other | BOOL, BOOLEAN, ENUM, SET, BIT |
 
 ## 4. Quickstart
 

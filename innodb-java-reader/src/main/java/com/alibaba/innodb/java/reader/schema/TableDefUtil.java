@@ -125,10 +125,6 @@ public class TableDefUtil {
       column.setName(col.getColumnName());
       List<String> argList = col.getColDataType().getArgumentsStringList();
       if (CollectionUtils.isNotEmpty(argList)) {
-        if (argList.size() > 2) {
-          throw new SqlParseException("Column " + col.getColumnName()
-              + " contains more than two argument, " + argList);
-        }
         column.setType(col.getColDataType().getDataType()
             + "(" + argList.stream().collect(Collectors.joining(",")) + ")");
       } else {
