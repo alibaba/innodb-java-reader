@@ -397,7 +397,7 @@ public class TableDefUtilTest {
 
   @Test
   public void testConvertColumnCharsetAndCollate2() {
-    String sql = "CREATE TABLE t (c varchar(20) CHARACTER SET gbk COLLATE gb2312_chinese_ci) "
+    String sql = "CREATE TABLE t (c varchar(20) CHARSET gbk COLLATE gb2312_chinese_ci) "
         + "ENGINE=InnoDB DEFAULT CHARSET=utf32 COLLATE utf32_bin;";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);

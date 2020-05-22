@@ -433,14 +433,14 @@ public class TableDef {
     KeyMeta keyMeta;
     if (skOrdinal.isPresent()) {
       checkArgument(skOrdinal.get() < secondaryKeyMetaList.size(),
-          "Secondary key ordinal " + skOrdinal + "is out of range ");
+          "Secondary key ordinal " + skOrdinal + " is out of range ");
       keyMeta = secondaryKeyMetaList.get(skOrdinal.get());
     } else {
       Map<String, KeyMeta> skNameMap = getSecondaryKeyMetaMap();
       keyMeta = skNameMap.get(skName);
     }
     if (keyMeta == null) {
-      throw new ReaderException("Secondary key does not exist with name " + skName);
+      throw new ReaderException("Secondary key does not exist with name " + skName + ", ordinal " + skOrdinal);
     }
     if (keyMeta.getType() == null || FULLTEXT_KEY == keyMeta.getType()
         || FOREIGN_KEY == keyMeta.getType() || PRIMARY_KEY == keyMeta.getType()) {
@@ -542,6 +542,10 @@ public class TableDef {
       sb.append(column.getName());
       sb.append(" ");
       sb.append(column.getFullType());
+      String charsetAndCollate = column.getCharsetCollationString();
+      if (StringUtils.isNotEmpty(charsetAndCollate)) {
+        sb.append(" ").append(charsetAndCollate);
+      }
       if (!column.isNullable()) {
         sb.append(" NOT NULL");
       }

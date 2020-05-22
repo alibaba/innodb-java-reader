@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import lombok.Data;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -356,7 +357,8 @@ public class AbstractTest {
         new Employee(5, 106L, "SMITH", 10, "M", "1981-01-05",
             "Tokyo", 39000, 25, "2018-09-02 12:12:56", 6, "", null),
         new Employee(6, 107L, "lucy", 40, "F", "1989-06-07",
-            "New York", 40000, 30, "2018-06-01 14:45:00", 5, "", null),
+            "New York", 40000, 30, "2018-06-01 14:45:00", 5, StringUtils.repeat("p", 1000),
+            null),
         new Employee(7, 108L, "JAMES", 20, "M", "1992-05-06",
             "LA", 29000, 20, "2017-08-18 23:11:06", 3, "", null),
         new Employee(8, 109L, "John", 40, "M", "1989-06-07",
@@ -366,7 +368,8 @@ public class AbstractTest {
         new Employee(10, 111L, "Jane", 20, "F", "1995-08-29",
             "LA", 19000, 22, "2019-09-30 02:14:56", 5, "", null),
         new Employee(11, 112L, "Sarah", 40, "F", "1988-11-23",
-            "New York", 21000, 26, "2017-04-27 16:27:11", 7, "", null),
+            "New York", 21000, 26, "2017-04-27 16:27:11", 7, StringUtils.repeat("apple", 40),
+            null),
         new Employee(12, 113L, "Paul", 30, "M", "1984-11-06",
             "Berlin", 20000, 43, "2019-07-28 12:12:12", 9, "", null),
         new Employee(13, 114L, "Lara", 20, "F", "1987-01-21",
@@ -380,7 +383,8 @@ public class AbstractTest {
         new Employee(17, 121L, "MARTIN", 10, "F", "1975-02-28",
             "Tokyo", 63000, 45, "2017-06-09 12:01:37", 9, "", null),
         new Employee(18, 122L, "kidd", 20, "m", "1988-05-17",
-            "new York", 37000, 29, "2019-12-31 00:15:30", 5, "", "Queen zone"),
+            "new York", 37000, 29, "2019-12-31 00:15:30", 5, StringUtils.repeat("phone", 50),
+            "Queen zone"),
         new Employee(19, 123L, "Yue", 30, "F", "1979-11-09",
             "New York", 57000, 37, "2017-03-04 16:16:32", 7, "", null),
         new Employee(new Integer(20), new Long(124L), "Oscar", 20, "M", "1988-10-08",
@@ -408,6 +412,7 @@ public class AbstractTest {
     public final int age;
     public final String joindate;
     public final int level;
+    @ToString.Exclude
     public final String profile;
     public final String address;
   }

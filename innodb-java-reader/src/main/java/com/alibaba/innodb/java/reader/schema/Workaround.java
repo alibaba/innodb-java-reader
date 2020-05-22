@@ -36,6 +36,28 @@ public class Workaround {
    * <code>SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES;</code> before 5.7
    * or
    * <code>SELECT * FROM INFORMATION_SCHEMA.INNODB_INDEXES;</code> after 8.0
+   * <p>
+   * For example, for key "age", the page no. will be page#8.
+   * <pre>
+   * mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE TABLE_ID = 3399;
+   * +----------+------------------+----------+------+----------+---------+-------+
+   * | INDEX_ID | NAME             | TABLE_ID | TYPE | N_FIELDS | PAGE_NO | SPACE |
+   * +----------+------------------+----------+------+----------+---------+-------+
+   * |     5969 | PRIMARY          |     3399 |    3 |        1 |       3 |  3385 |
+   * |     5975 | FTS_DOC_ID_INDEX |     3399 |    2 |        1 |       4 |  3385 |
+   * |     5976 | empno            |     3399 |    2 |        1 |       5 |  3385 |
+   * |     5977 | name             |     3399 |    0 |        1 |       6 |  3385 |
+   * |     5978 | idx_city         |     3399 |    0 |        1 |       7 |  3385 |
+   * |     5979 | age              |     3399 |    0 |        1 |       8 |  3385 |
+   * |     5980 | age_2            |     3399 |    0 |        2 |       9 |  3385 |
+   * |     5981 | key_join_date    |     3399 |    0 |        1 |      10 |  3385 |
+   * |     5982 | deptno           |     3399 |    0 |        3 |      11 |  3385 |
+   * |     5983 | deptno_2         |     3399 |    0 |        3 |      12 |  3385 |
+   * |     5984 | address          |     3399 |    0 |        1 |      13 |  3385 |
+   * |     5985 | profile          |     3399 |   32 |        1 |      -1 |  3385 |
+   * |     5992 | key_level        |     3399 |    0 |        1 |      20 |  3385 |
+   * +----------+------------------+----------+------+----------+---------+-------+
+   * </pre>
    *
    * @param tableDef  table definition
    * @param skName    secondary key name

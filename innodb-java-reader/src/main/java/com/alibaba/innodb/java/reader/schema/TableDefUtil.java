@@ -147,6 +147,9 @@ public class TableDefUtil {
         if (specString.contains("PRIMARY KEY") || specString.contains("KEY")) {
           column.setPrimaryKey(true);
         }
+        if (specString.contains("CHARSET")) {
+          column.setCharset(specList.get(specList.indexOf("CHARSET") + 1).toLowerCase(Locale.ROOT));
+        }
         if (specString.contains("COLLATE")) {
           column.setCollation(specList.get(specList.indexOf("COLLATE") + 1).toLowerCase(Locale.ROOT));
         }

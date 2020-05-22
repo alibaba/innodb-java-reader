@@ -154,6 +154,9 @@ public class InnodbReaderBootstrap {
     options.addOption("skordinal", "skordinal", true,
         "secondary key ordinal in DDL");
 
+    options.addOption("skrootpage", "skrootpage", true,
+        "secondary key root page number");
+
     options.addOption("args", true, "arguments");
 
     String command = null;
@@ -168,6 +171,7 @@ public class InnodbReaderBootstrap {
     boolean desc = false;
     String skName = null;
     int skOrdinal = -1;
+    long skRootPageNumber = -1;
     TableDefProvider tableDefProvider = null;
     Writer writer = new SysoutWriter();
     writer.open();
@@ -254,6 +258,9 @@ public class InnodbReaderBootstrap {
       if (line.hasOption("skordinal")) {
         skOrdinal = Integer.parseInt(line.getOptionValue("skordinal"));
       }
+      if (line.hasOption("skrootpage")) {
+        skRootPageNumber = Long.parseLong(line.getOptionValue("skrootpage"));
+      }
 
       CommandType commandType = EnumUtils.getEnum(CommandType.class, command.replace("-", "_").toUpperCase());
 
@@ -288,9 +295,12 @@ public class InnodbReaderBootstrap {
           checkNotNull(args, "args should not be null");
           checkArgument(StringUtils.isNotEmpty(skName), "skname should not be empty");
           try {
+            ThreadContext.init();
             if (skOrdinal >= 0) {
-              ThreadContext.init();
               ThreadContext.putSkOrdinal(skOrdinal);
+            }
+            if (skRootPageNumber >= 0L) {
+              ThreadContext.putSkRootPageNumber(skRootPageNumber);
             }
             List<String> range = Stream.of(args.split(RANGE_QUERY_KEY_DELIMITER)).collect(toList());
             checkArgument(range.size() == 4,

@@ -15,6 +15,8 @@ public class ThreadContext {
 
   public static final String SK_ORDINAL_KEY = "sk_ordinal";
 
+  public static final String SK_ROOT_PAGE_NUMBER = "sk_root_page_number";
+
   private static final ThreadLocal<Map<String, Object>> CTX_HOLDER = new ThreadLocal<Map<String, Object>>();
 
   static {
@@ -74,8 +76,21 @@ public class ThreadContext {
     return (Integer) getContext(SK_ORDINAL_KEY);
   }
 
+  /**
+   * Starts from 0.
+   *
+   * @param skOrdinal secondary key ordinal in DDL
+   */
   public static void putSkOrdinal(int skOrdinal) {
     putContext(SK_ORDINAL_KEY, skOrdinal);
+  }
+
+  public static Long getSkRootPageNumber() {
+    return (Long) getContext(SK_ROOT_PAGE_NUMBER);
+  }
+
+  public static void putSkRootPageNumber(Long skRootPageNumber) {
+    putContext(SK_ROOT_PAGE_NUMBER, skRootPageNumber);
   }
 
 }

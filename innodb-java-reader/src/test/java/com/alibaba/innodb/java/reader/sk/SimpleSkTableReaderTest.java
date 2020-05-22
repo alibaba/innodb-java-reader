@@ -6,6 +6,7 @@ import com.alibaba.innodb.java.reader.AbstractTest;
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
+import com.alibaba.innodb.java.reader.util.ThreadContext;
 
 import org.junit.Test;
 
@@ -41,7 +42,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
       + "  `age` int(11) NOT NULL,\n"
       + "  `joindate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n"
       + "  `level` int(11) NOT NULL,\n"
-      + "  `profile` text NOT NULL,\n"
+      + "  `profile` text CHARSET latin1 NOT NULL,\n"
       + "  `address` varchar(500) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,\n"
       + "  PRIMARY KEY (`id`),\n"
       + "  UNIQUE KEY `empno` (`empno`),\n"
@@ -53,6 +54,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
       + "  KEY `deptno` (`deptno`,`level`,`name`),\n"
       + "  KEY `deptno_2` (`deptno`,`level`,`empno`),\n"
       + "  KEY `address` (`address`(255)),\n"
+      + "  KEY `key_level` (`level`),\n"
       + "  FULLTEXT KEY `profile` (`profile`),\n"
       + "  CONSTRAINT `emp_ibfk_1` FOREIGN KEY (`deptno`) REFERENCES `dept` (`deptno`)\n"
       + ") ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -852,6 +854,206 @@ public class SimpleSkTableReaderTest extends AbstractTest {
   }
 
   //==========================================================================
+  // getRecordIteratorBySk test, single key: age, set sk ordinal
+  //
+  // mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE TABLE_ID = 3480;
+  //+----------+------------------+----------+------+----------+---------+-------+
+  //| INDEX_ID | NAME             | TABLE_ID | TYPE | N_FIELDS | PAGE_NO | SPACE |
+  //+----------+------------------+----------+------+----------+---------+-------+
+  //|     6132 | PRIMARY          |     3480 |    3 |        1 |       3 |  3466 |
+  //|     6138 | FTS_DOC_ID_INDEX |     3480 |    2 |        1 |       4 |  3466 |
+  //|     6139 | empno            |     3480 |    2 |        1 |       5 |  3466 |
+  //|     6140 | name             |     3480 |    0 |        1 |       6 |  3466 |
+  //|     6141 | idx_city         |     3480 |    0 |        1 |       7 |  3466 |
+  //|     6142 | age              |     3480 |    0 |        1 |       8 |  3466 |
+  //|     6143 | age_2            |     3480 |    0 |        2 |       9 |  3466 |
+  //|     6144 | key_join_date    |     3480 |    0 |        1 |      10 |  3466 |
+  //|     6145 | deptno           |     3480 |    0 |        3 |      11 |  3466 |
+  //|     6146 | deptno_2         |     3480 |    0 |        3 |      12 |  3466 |
+  //|     6147 | address          |     3480 |    0 |        1 |      13 |  3466 |
+  //|     6148 | profile          |     3480 |   32 |        1 |      -1 |  3466 |
+  //|     6156 | key_level        |     3480 |    0 |        1 |      15 |  3466 |
+  //+----------+------------------+----------+------+----------+---------+-------+
+  //==========================================================================
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testQueryBySkLevel56NegateOutOfRangeOrdinal() {
+    ThreadContext.putSkOrdinal(32);
+
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(19)),
+            "name",
+            ImmutableList.of("Yue"), ComparisonOperator.GTE,
+            ImmutableList.of("Yue"), ComparisonOperator.LTE
+        );
+  }
+
+  @Test(expected = ClassCastException.class)
+  public void testQueryBySkLevel56NegateWrongOrdinalClassNotCast() {
+    ThreadContext.putSkOrdinal(4);
+
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(19)),
+            "name",
+            ImmutableList.of("Yue"), ComparisonOperator.GTE,
+            ImmutableList.of("Yue"), ComparisonOperator.LTE
+        );
+  }
+
+  /**
+   * Should check age, but goes to address sk, still got result, but nothing matches
+   */
+  @Test
+  public void testQueryBySkLevel56NegateWrongOrdinal() {
+    ThreadContext.putSkOrdinal(8);
+
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(ImmutableList.of()),
+            "name",
+            ImmutableList.of("Yue"), ComparisonOperator.GTE,
+            ImmutableList.of("Yue"), ComparisonOperator.LTE
+        );
+  }
+
+  /**
+   * Secondary key type does not support FULLTEXT_KEY
+   */
+  @Test(expected = IllegalStateException.class)
+  public void testQueryBySkLevel56NegateWrongOrdinal2() {
+    ThreadContext.putSkOrdinal(10);
+
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(19)),
+            "name",
+            ImmutableList.of("Yue"), ComparisonOperator.GTE,
+            ImmutableList.of("Yue"), ComparisonOperator.LTE
+        );
+  }
+
+  @Test
+  public void testQueryBySkPutOrdinal56() {
+    testQueryBySkPutOrdinal(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkPutOrdinal57() {
+    testQueryBySkPutOrdinal(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkPutOrdinal80() {
+    testQueryBySkPutOrdinal(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkPutOrdinal(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    ThreadContext.putSkOrdinal(1);
+
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(19)),
+            "name",
+            ImmutableList.of("Yue"), ComparisonOperator.GTE,
+            ImmutableList.of("Yue"), ComparisonOperator.LTE
+        );
+  }
+
+  //==========================================================================
+  // getRecordIteratorBySk test, single key: level, set sk root page number
+  //==========================================================================
+
+  @Test(expected = ReaderException.class)
+  public void testQueryBySkLevel56NegateWrongPage() {
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(2)),
+            "key_level",
+            ImmutableList.of(6), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.NOP
+        );
+  }
+
+  /**
+   * Should check level, but goes to pk, same type.
+   * <p>
+   * Exception: Cannot query pk record from sk record
+   */
+  @Test(expected = ReaderException.class)
+  public void testQueryBySkLevel56NegateWrongPage2() {
+    ThreadContext.putSkRootPageNumber(3L);
+
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(2)),
+            "key_level",
+            ImmutableList.of(6), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.NOP
+        );
+  }
+
+  /**
+   * Should check level, but goes to age sk, still got result, but nothing matches
+   */
+  @Test
+  public void testQueryBySkLevel56NegateWrongPage3() {
+    ThreadContext.putSkRootPageNumber(8L);
+
+    assertTestOf(this)
+        .withSql(sql)
+        .withMysql56()
+        .checkQueryIteratorBySk(testQueryBySk(ImmutableList.of()),
+            "key_level",
+            ImmutableList.of(6), ComparisonOperator.GT,
+            ImmutableList.of(10), ComparisonOperator.LTE
+        );
+  }
+
+  @Test
+  public void testQueryBySkLevel56() {
+    testQueryBySkLevel(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkLevel57() {
+    testQueryBySkLevel(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkLevel80() {
+    testQueryBySkLevel(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkLevel(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    if (isMysql8Flag.get()) {
+      ThreadContext.putSkRootPageNumber(16L);
+    } else {
+      ThreadContext.putSkRootPageNumber(15L);
+    }
+
+    // select * from emp FORCE INDEX (key_level) where level > 6;
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(9, 11, 16, 19, 2, 15, 12, 17, 4)),
+            "key_level",
+            ImmutableList.of(6), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.NOP
+        );
+  }
+
+  //==========================================================================
   // getRecordIteratorBySk test, single key: age, order: desc
   //==========================================================================
 
@@ -1105,7 +1307,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
         GenericRecord record = iterator.next();
 
         Object[] values = record.getValues();
-        System.out.println(Arrays.asList(values));
+        // System.out.println(Arrays.asList(values));
         Object[] expectedRow = expected.get(resultIdList.get(i) - 1);
         // System.out.println(resultIdList + " " + Arrays.asList(expectedRow));
         if (projection.isEmpty()) {

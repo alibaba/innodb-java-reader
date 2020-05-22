@@ -261,7 +261,7 @@ public class IndexServiceImpl implements IndexService {
   }
 
   private GenericRecord queryByPrimaryKey(TableDef tableDef, List<Object> key,
-                                         Optional<List<String>> recordProjection) {
+                                          Optional<List<String>> recordProjection) {
     checkArgument(isNotEmpty(key), "Key should not be empty");
     checkArgument(!anyElementEmpty(key), "Key should not contain null elements");
     checkArgument(key.size() == tableDef.getPrimaryKeyColumnNum(),
@@ -347,8 +347,14 @@ public class IndexServiceImpl implements IndexService {
       Optional<Integer> skOrdinal = ThreadContext.getSkOrdinal() != null
           ? Optional.of(ThreadContext.getSkOrdinal()) : Optional.empty();
       TableDef skTableDef = tableDef.buildSkTableDef(skName, skOrdinal);
-      long skRootPageNumber =
-          Workaround.getSkRootPageNumber(tableDef, skName, skOrdinal, rootPageNumber -> loadIndexPage(rootPageNumber));
+      long skRootPageNumber;
+      if (ThreadContext.getSkRootPageNumber() != null) {
+        skRootPageNumber = ThreadContext.getSkRootPageNumber();
+      } else {
+        skRootPageNumber =
+            Workaround.getSkRootPageNumber(tableDef, skName, skOrdinal,
+                rootPageNumber -> loadIndexPage(rootPageNumber));
+      }
       log.debug("Build secondary key table {}", skTableDef);
       Iterator<GenericRecord> skRecordIterator =
           getSkRangeQueryIterator(skTableDef, skRootPageNumber, makeNotNull(lower), lowerOperator,
@@ -385,12 +391,17 @@ public class IndexServiceImpl implements IndexService {
             primaryKey.add(skRecord.get(pkName));
           }
           // look up by clustered index
-          return queryByPrimaryKey(internalTableDef, primaryKey, recordProjection);
+          GenericRecord pkRecord = queryByPrimaryKey(internalTableDef, primaryKey, recordProjection);
+          if (pkRecord == null) {
+            throw new ReaderException("Cannot query pk record from sk record " + skRecord);
+          }
+          return pkRecord;
         }
       };
     } finally {
       // we assume the caller would call clean(), but here we remove one key aggressively
       ThreadContext.remove(ThreadContext.SK_ORDINAL_KEY);
+      ThreadContext.remove(ThreadContext.SK_ROOT_PAGE_NUMBER);
     }
   }
 

@@ -253,6 +253,17 @@ public class Column {
     return this;
   }
 
+  public String getCharsetCollationString() {
+    String result = "";
+    if (charset != null) {
+      result += "CHRACTER SET " + charset;
+    }
+    if (collation != null) {
+      result += (StringUtils.isNotEmpty(result) ? " COLLATE " : "COLLATE") + collation;
+    }
+    return result;
+  }
+
   public Column setVarLenChar(boolean varLenChar) {
     isVarLenChar = varLenChar;
     return this;

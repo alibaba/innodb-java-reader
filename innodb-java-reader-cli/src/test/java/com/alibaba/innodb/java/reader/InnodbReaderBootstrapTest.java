@@ -404,6 +404,47 @@ public class InnodbReaderBootstrapTest {
   }
 
   @Test
+  public void testQueryBySecondaryKeySpecifySkRootPageNumber() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;1000;<;1900", "-skname", "a", "-skrootpage", "4"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(450));
+    check(output, 500, 450);
+  }
+
+  @Test
+  public void testQueryBySecondaryKeySpecifySkRootPageNumberNegate() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;1000;<;1900", "-skname", "a", "-skrootpage", "12"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    // sk and pk type is the same INT, so query runs OK but got nothing.
+    assertThat(output.size(), is(0));
+  }
+
+  @Test
+  public void testQueryBySecondaryKeySpecifySkOrdinal() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;1000;<;1900", "-skname", "a", "-skordinal", "0"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(450));
+    check(output, 500, 450);
+  }
+
+  @Test
+  public void testQueryBySecondaryKeySpecifySkOrdinalNegate() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-by-sk", "-args", ">=;1000;<;1900", "-skname", "a", "-skordinal", "1"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    // Cannot compare aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(java.lang.String) and 1000(java.lang.Long) for column b
+    // java.lang.ClassCastException: java.lang.Long cannot be cast to java.lang.String
+    assertThat(output.size(), is(0));
+  }
+
+  @Test
   public void testGenLsnHeatmap() throws IOException {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "gen-lsn-heatmap", "-args", "/tmp/lsn-heatmap-output.html 800 1000"};
