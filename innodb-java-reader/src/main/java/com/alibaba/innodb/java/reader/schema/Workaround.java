@@ -39,7 +39,7 @@ public class Workaround {
    * <p>
    * For example, for key "age", the page no. will be page#8.
    * <pre>
-   * mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE TABLE_ID = 3399;
+   * SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE TABLE_ID = 3399;
    * +----------+------------------+----------+------+----------+---------+-------+
    * | INDEX_ID | NAME             | TABLE_ID | TYPE | N_FIELDS | PAGE_NO | SPACE |
    * +----------+------------------+----------+------+----------+---------+-------+
