@@ -554,7 +554,8 @@ Usage shows as below.
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
        [-delimiter <arg>] [-desc] [-h] [-i <arg>] [-iomode <arg>] [-json]
        [-jsonpretty] [-o <arg>] [-projection <arg>] [-s <arg>]
-       [-showheader] [-skname <arg>] [-skordinal <arg>]
+       [-showheader] [-skname <arg>] [-skordinal <arg>] [-skrootpage
+       <arg>]
  -args <arg>                             arguments
  -c,--command <arg>                      mandatory. command to run, valid
                                          commands are:
@@ -600,6 +601,7 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
                                          table header when dumping table
  -skname,--skname <arg>                  secondary key name
  -skordinal,--skordinal <arg>            secondary key ordinal in DDL
+ -skrootpage,--skrootpage <arg>          secondary key root page number
 ````
 
 You can customize log4j configuration by adding `-Dlog4j.configuration=file:/path/log4j.properties` in command.
