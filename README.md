@@ -508,6 +508,8 @@ Iterator<GenericRecord> iterator = reader.getRecordIteratorBySk("key_a",
     ImmutableList.of("id", "a", "b"), isAsc);
 ```
 
+Note that if table has ever been altered to add or remove indices, the secondary key root page number may be incorrect, and cause error, please goes to [FAQ](docs/FAQ.md).
+
 #### Filtering and projection
 
 Filtering works on `queryAll` and `rangeQueryByPrimaryKey`, this is more likely index condition pushdown.
@@ -810,5 +812,4 @@ TPC-H `LINEITEM` table scan result is as below.
 ## 9 Future works
 
 * Support MySQL 8.0 newly introduced LOB page.
-* Look up and range query by secondary key.
 * Load table metadata from system tablespace.
