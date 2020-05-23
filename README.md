@@ -775,15 +775,15 @@ Filling rate, also known as page filling factor, means how efficient for InnoDB 
 
 Assume we build a table by inserting rows in sequential order. The page filling rate will be more than 90 percent initially.
 
-![](http://neoremind.com/wp-content/uploads/2020/05/filling-rate1.png)
+![](docs/images/filling-rate1.png)
 
 After deleting some rows. Looking at the filling rate heatmap, we can see some pages are fragmented and the filling rate drops dramatically.
 
-![](http://neoremind.com/wp-content/uploads/2020/05/filling-rate2.png)
+![](docs/images/filling-rate2.png)
 
 After `OPTIMIZED TABLE <T>`, the table filling rate will go back to more than 90 percent.
 
-![](http://neoremind.com/wp-content/uploads/2020/05/filling-rate3.png)
+![](docs/images/filling-rate3.png)
 
 #### Get all index page filling rate
 
