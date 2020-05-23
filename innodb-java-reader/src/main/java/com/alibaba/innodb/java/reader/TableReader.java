@@ -98,7 +98,7 @@ public interface TableReader extends Closeable {
   /**
    * Query record by primary key in a tablespace.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key, the the list size should be one, for composite key the size
    * will be more than one.
    *
    * @param key primary key, single key or a composite key
@@ -109,10 +109,10 @@ public interface TableReader extends Closeable {
   /**
    * Query record by primary key in a tablespace with projection.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key, the the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param key        primary key, single key or a composite key
+   * @param key        key list of primary key, single key or a composite key
    * @param projection projection of selected column names
    * @return record
    */
@@ -166,10 +166,10 @@ public interface TableReader extends Closeable {
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
    * @return list of records
    */
   List<GenericRecord> rangeQueryByPrimaryKey(List<Object> lower, ComparisonOperator lowerOperator,
@@ -180,10 +180,10 @@ public interface TableReader extends Closeable {
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower           if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper           if rangeQuery is true, then this is the upper bound
-   * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower           lower bound
+   * @param lowerOperator   comparison operator for lower
+   * @param upper           upper bound
+   * @param upperOperator   comparison operator for upper
    * @param recordPredicate optional filtering, if predicate returns true upon
    *                        record, then it will be added to result set
    * @return list of records
@@ -197,10 +197,10 @@ public interface TableReader extends Closeable {
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
    * @param projection    projection of selected column names
    * @return list of records
    */
@@ -213,10 +213,10 @@ public interface TableReader extends Closeable {
    * For single key the list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower           if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator   if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper           if rangeQuery is true, then this is the upper bound
-   * @param upperOperator   if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower           lower bound
+   * @param lowerOperator   comparison operator for lower
+   * @param upper           upper bound
+   * @param upperOperator   comparison operator for upper
    * @param recordPredicate optional filtering, if predicate returns true upon
    *                        record, then it will be added to result set
    * @param projection      projection of selected column names
@@ -272,13 +272,13 @@ public interface TableReader extends Closeable {
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key the lower or upper list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
    * @return record iterator
    */
   Iterator<GenericRecord> getRangeQueryIterator(List<Object> lower, ComparisonOperator lowerOperator,
@@ -289,13 +289,13 @@ public interface TableReader extends Closeable {
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key the lower or upper list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
    * @param projection    projection of selected column names
    * @return record iterator
    */
@@ -308,13 +308,13 @@ public interface TableReader extends Closeable {
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key the lower or upper list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
    * @param ascOrder      if set result records in ascending order
    * @return record iterator
    */
@@ -327,13 +327,13 @@ public interface TableReader extends Closeable {
    * <p>
    * This is friendly to memory since only one page is loaded per batch.
    * <p>
-   * For single key the list size should be one, for composite key the size
+   * For single key the lower or upper list size should be one, for composite key the size
    * will be more than one.
    *
-   * @param lower         if rangeQuery is true, then this is the lower bound
-   * @param lowerOperator if rangeQuery is true, then this is the comparison operator for lower
-   * @param upper         if rangeQuery is true, then this is the upper bound
-   * @param upperOperator if rangeQuery is true, then this is the comparison operator for upper
+   * @param lower         lower bound
+   * @param lowerOperator comparison operator for lower
+   * @param upper         upper bound
+   * @param upperOperator comparison operator for upper
    * @param projection    projection of selected column names
    * @param ascOrder      if set result records in ascending order
    * @return record iterator
