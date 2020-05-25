@@ -106,6 +106,10 @@ public class InnodbReaderBootstrap {
   private static String RANGE_QUERY_KEY_DELIMITER = ReaderSystemProperty.RANGE_QUERY_KEY_DELIMITER.value();
 
   public static void main(String[] arguments) {
+    run(arguments);
+  }
+
+  public static boolean run(String[] arguments) {
     CommandLineParser parser = new DefaultParser();
 
     Options options = new Options();
@@ -350,10 +354,13 @@ public class InnodbReaderBootstrap {
       }
     } catch (ParseException e) {
       log.error("Parse error occurred: " + e.getMessage(), e);
+      return false;
     } catch (IOException e) {
       log.error("IO error occurred: " + e.getMessage(), e);
+      return false;
     } catch (Exception e) {
       log.error("Error occurred: " + e.getMessage(), e);
+      return false;
     } finally {
       try {
         Utils.close(writer);
@@ -361,6 +368,7 @@ public class InnodbReaderBootstrap {
         log.error("Close writer failed: " + e.getMessage(), e);
       }
     }
+    return true;
   }
 
   private static void queryAll(String ibdFilePath, Writer writer,
