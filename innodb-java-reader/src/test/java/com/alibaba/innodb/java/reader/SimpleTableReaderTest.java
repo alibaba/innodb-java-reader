@@ -17,6 +17,7 @@ import com.alibaba.innodb.java.reader.page.index.RecordType;
 import com.alibaba.innodb.java.reader.page.inode.Inode;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.schema.TableDef;
+import com.alibaba.innodb.java.reader.service.impl.RecordIterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.alibaba.innodb.java.reader.page.index.PageFormat.COMPACT;
@@ -354,26 +356,44 @@ public class SimpleTableReaderTest extends AbstractTest {
 
   @Test
   public void testSimpleTableQueryByPrimaryKeyMysql56() {
-    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd");
+    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd", i -> i);
   }
 
   @Test
   public void testSimpleTableQueryByPrimaryKeyMysql57() {
-    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd");
+    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd", i -> i);
   }
 
   @Test
   public void testSimpleTableQueryByPrimaryKeyMysql80() {
-    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd");
+    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd", i -> i);
   }
 
-  public void testSimpleTableQueryByPrimaryKey(String path) {
+  @Test
+  public void testSimpleTableQueryByPrimaryKeyStringTypeMysql56() {
+    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd",
+        String::valueOf);
+  }
+
+  @Test
+  public void testSimpleTableQueryByPrimaryKeyStringTypeMysql57() {
+    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd",
+        String::valueOf);
+  }
+
+  @Test
+  public void testSimpleTableQueryByPrimaryKeyStringTypeMysql80() {
+    testSimpleTableQueryByPrimaryKey(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd",
+        String::valueOf);
+  }
+
+  public void testSimpleTableQueryByPrimaryKey(String path, Function<Integer, Object> func) {
     try (TableReader reader = new TableReaderImpl(path, getTableDef())) {
       reader.open();
 
       for (int i = 1; i <= 10; i++) {
         List<Object> key = new ArrayList<>(1);
-        key.add(i);
+        key.add(func.apply(i));
         GenericRecord record = reader.queryByPrimaryKey(key);
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
@@ -383,10 +403,25 @@ public class SimpleTableReaderTest extends AbstractTest {
         assertThat(values[3], is(StringUtils.repeat('C', 8) + (char) (97 + i)));
       }
 
+      assertThat(reader.queryByPrimaryKey(ImmutableList.of(Integer.MAX_VALUE)), nullValue());
       assertThat(reader.queryByPrimaryKey(ImmutableList.of(100)), nullValue());
       assertThat(reader.queryByPrimaryKey(ImmutableList.of(11)), nullValue());
       assertThat(reader.queryByPrimaryKey(ImmutableList.of(0)), nullValue());
       assertThat(reader.queryByPrimaryKey(ImmutableList.of(-1)), nullValue());
+      assertThat(reader.queryByPrimaryKey(ImmutableList.of(Integer.MIN_VALUE)), nullValue());
+      try {
+        assertThat(reader.queryByPrimaryKey(ImmutableList.of()), nullValue());
+      } catch (IllegalArgumentException e) {
+        assertThat(e.getMessage(), is("Key should not be empty"));
+      }
+
+      RecordIterator iterator = RecordIterator.create(reader.queryByPrimaryKey(ImmutableList.of(6)));
+      assertThat(iterator.hasNext(), is(true));
+      assertThat(iterator.next().get("a"), is(12L));
+      assertThat(iterator.hasNext(), is(false));
+
+      iterator = RecordIterator.create(reader.queryByPrimaryKey(ImmutableList.of(999)));
+      assertThat(iterator.hasNext(), is(false));
     }
   }
 
@@ -410,6 +445,7 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryByPrimaryKeyWithProjection(String path) {
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of());
     testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("a"));
     testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("b"));
     testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("c"));
@@ -417,6 +453,13 @@ public class SimpleTableReaderTest extends AbstractTest {
     testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("a", "c"));
     testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("b", "c"));
     testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("a", "b", "c"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "a"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "b"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "c"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "a", "b"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "b", "c"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "a", "c"));
+    testSimpleTableQueryByPrimaryKeyWithProjection(path, ImmutableList.of("id", "a", "b", "c"));
   }
 
   public void testSimpleTableQueryByPrimaryKeyWithProjection(String path, List<String> projection) {
@@ -431,10 +474,14 @@ public class SimpleTableReaderTest extends AbstractTest {
         System.out.println(Arrays.asList(values));
         // pk should always present
         assertThat(record.get("id"), is(i));
-        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
-        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-        assertThat(record.get("c"), is(projection.contains("c")
-            ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
+        assertThat(record.get("a"), is(
+            projection.isEmpty() || projection.contains("a") ? i * 2L : null));
+        assertThat(record.get("b"), is(
+            projection.isEmpty() || projection.contains("b")
+                ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("c"), is(
+            projection.isEmpty() || projection.contains("c")
+                ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
       }
     }
   }
@@ -442,24 +489,6 @@ public class SimpleTableReaderTest extends AbstractTest {
   //==========================================================================
   // queryByPrimaryKey with projection negate
   //==========================================================================
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableQueryByPrimaryKeyWithProjectionNegateMysql56() {
-    testSimpleTableQueryByPrimaryKeyWithProjectionNegate(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd",
-        ImmutableList.of());
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableQueryByPrimaryKeyWithProjectionNegateMysql57() {
-    testSimpleTableQueryByPrimaryKeyWithProjectionNegate(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd",
-        ImmutableList.of());
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testSimpleTableQueryByPrimaryKeyWithProjectionNotNegateMysql80() {
-    testSimpleTableQueryByPrimaryKeyWithProjectionNegate(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd",
-        ImmutableList.of());
-  }
 
   @Test(expected = ReaderException.class)
   public void testSimpleTableQueryByPrimaryKeyWithProjectionNotFoundMysql56() {
@@ -558,9 +587,8 @@ public class SimpleTableReaderTest extends AbstractTest {
   }
 
   public void testSimpleTableQueryAllWithProjection(String path) {
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of());
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id"));
-    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "b"));
-    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "b", "a"));
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("a"));
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("b"));
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("c"));
@@ -568,6 +596,13 @@ public class SimpleTableReaderTest extends AbstractTest {
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("a", "c"));
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("b", "c"));
     testSimpleTableQueryAllWithProjection(path, ImmutableList.of("a", "b", "c"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "a"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "b"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "c"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "a", "b"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "a", "c"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "b", "c"));
+    testSimpleTableQueryAllWithProjection(path, ImmutableList.of("id", "a", "b", "c"));
   }
 
   public void testSimpleTableQueryAllWithProjection(String path, List<String> projection) {
@@ -583,9 +618,11 @@ public class SimpleTableReaderTest extends AbstractTest {
         System.out.println(Arrays.asList(values));
         // pk should always present
         assertThat(record.get("id"), is(i));
-        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
-        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-        assertThat(record.get("c"), is(projection.contains("c")
+        assertThat(record.get("a"), is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
+        assertThat(record.get("b"), is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("c"), is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
       }
     }
@@ -623,6 +660,11 @@ public class SimpleTableReaderTest extends AbstractTest {
       assertThat(recordList.get(0).get("a"), is(12L));
       assertThat(recordList.get(0).get("b"), is(StringUtils.repeat('A', 16)));
       assertThat(recordList.get(0).get("c"), is(StringUtils.repeat('C', 8) + (char) (97 + 6)));
+
+      predicate = r -> (long) (r.get("a")) == 999L;
+
+      recordList = reader.queryAll(predicate);
+      assertThat(recordList.size(), is(0));
     }
   }
 
@@ -634,18 +676,45 @@ public class SimpleTableReaderTest extends AbstractTest {
   public void testSimpleTableQueryAllWithPredicateProjectionMysql56() {
     testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd",
         ImmutableList.of("a"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd",
+        ImmutableList.of("a", "b"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd",
+        ImmutableList.of("a", "id"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL56 + "simple/tb01.ibd",
+        ImmutableList.of());
   }
 
   @Test
   public void testSimpleTableQueryAllWithPredicateProjectionMysql57() {
     testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd",
         ImmutableList.of("a"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd",
+        ImmutableList.of("a", "b"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd",
+        ImmutableList.of("a", "id"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL57 + "simple/tb01.ibd",
+        ImmutableList.of());
   }
 
   @Test
   public void testSimpleTableQueryAllWithPredicateProjectionMysql80() {
     testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd",
         ImmutableList.of("a"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd",
+        ImmutableList.of("a", "b"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd",
+        ImmutableList.of("a", "id"));
+
+    testSimpleTableQueryAllWithPredicateProjection(IBD_FILE_BASE_PATH_MYSQL80 + "simple/tb01.ibd",
+        ImmutableList.of());
   }
 
   public void testSimpleTableQueryAllWithPredicateProjection(String path, List<String> projection) {
@@ -660,9 +729,11 @@ public class SimpleTableReaderTest extends AbstractTest {
       assertThat(recordList.get(0).getPrimaryKey(), is(ImmutableList.of(6)));
       // pk should always present
       assertThat(recordList.get(0).get("id"), is(6));
-      assertThat(recordList.get(0).get("a"), is(projection.contains("a") ? 12L : null));
-      assertThat(recordList.get(0).get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-      assertThat(recordList.get(0).get("c"), is(projection.contains("c")
+      assertThat(recordList.get(0).get("a"), is(projection.isEmpty() || projection.contains("a")
+          ? 12L : null));
+      assertThat(recordList.get(0).get("b"), is(projection.isEmpty() || projection.contains("b")
+          ? StringUtils.repeat('A', 16) : null));
+      assertThat(recordList.get(0).get("c"), is(projection.isEmpty() || projection.contains("c")
           ? StringUtils.repeat('C', 8) + (char) (97 + 6) : null));
     }
   }
@@ -765,8 +836,10 @@ public class SimpleTableReaderTest extends AbstractTest {
     }
   }
 
-  // TODO type check
-  @Test(expected = ClassCastException.class)
+  /**
+   * com.alibaba.innodb.java.reader.exception.ReaderException: Failed to make type compatible for [abc]
+   */
+  @Test(expected = ReaderException.class)
   public void testSimpleTableNotValidKey3() {
     try (TableReader reader = new TableReaderImpl(IBD_FILE_BASE_PATH + "simple/tb01.ibd", getTableDef())) {
       reader.open();

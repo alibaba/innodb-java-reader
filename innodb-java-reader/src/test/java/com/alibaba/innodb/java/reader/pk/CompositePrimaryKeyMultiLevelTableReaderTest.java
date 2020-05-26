@@ -130,6 +130,13 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
     func.accept(assertThat);
     assertThat.withSql(sql())
         .checkRangeQueryIterator(rangeQueryNothingExpected(),
+            ImmutableList.of("9999999999", "0", ""), ComparisonOperator.GTE,
+            ImmutableList.of("99999999999999999", "0", ""), ComparisonOperator.LT);
+
+    assertThat = assertTestOf(this);
+    func.accept(assertThat);
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(rangeQueryNothingExpected(),
             ImmutableList.of("", -1, ""), ComparisonOperator.GTE,
             ImmutableList.of("", 0, ""), ComparisonOperator.LT);
 
@@ -196,6 +203,11 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
             ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
 
     assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1000, 1, 1023 + 1, 4),
+            ImmutableList.of("", "0", ""), ComparisonOperator.GTE,
+            ImmutableList.of("1023jjjj", "2", "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
         .checkRangeQueryRecordsIs(expectedRangeQueryPartially2(1000, 1, 1023 + 1, 4),
             ImmutableList.of("", 0, ""), ComparisonOperator.GT,
             ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
@@ -215,6 +227,11 @@ public class CompositePrimaryKeyMultiLevelTableReaderTest extends AbstractTest {
         .checkRangeQueryIterator(expectedRangeQueryPartially(1002, 3, 1130 + 1, 2),
             ImmutableList.of("1002ooo", 2, "1002ooo"), ComparisonOperator.GTE,
             ImmutableList.of("1130m", 1, "2m"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkRangeQueryIterator(expectedRangeQueryPartially(1002, 3, 1130 + 1, 2),
+            ImmutableList.of("1002ooo", "2", "1002ooo"), ComparisonOperator.GTE,
+            ImmutableList.of("1130m", "1", "2m"), ComparisonOperator.LT);
 
     assertThat.withSql(sql())
         .checkRangeQueryRecordsIs(expectedRangeQueryPartially2(1002, 3, 1130 + 1, 2),

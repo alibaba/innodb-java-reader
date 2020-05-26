@@ -815,3 +815,5 @@ TPC-H `LINEITEM` table scan result is as below.
 
 * Support MySQL 8.0 newly introduced LOB page.
 * Load table metadata from system tablespace.
+* Support compressed table.
+* Support spatial indexes.

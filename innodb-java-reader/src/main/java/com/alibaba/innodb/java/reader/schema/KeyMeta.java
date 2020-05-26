@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.Builder;
 import lombok.Data;
@@ -60,8 +61,26 @@ public class KeyMeta {
 
   private List<String> keyVarLenColumnNames;
 
+  /**
+   * key length might be different from column definition, for example,
+   * column <code>address varchar(500)</code> will have key as <code>varchar(255)</code>;
+   */
+  private List<Integer> keyVarLen;
+
   public boolean containsColumn(String columnName) {
     return keyColumnNames.contains(columnName);
+  }
+
+  public Optional<Integer> getVarLen(String columnName) {
+    if (!keyVarLenColumnNames.contains(columnName)) {
+      return Optional.empty();
+    }
+    int index = keyVarLenColumnNames.indexOf(columnName);
+    int varLen = keyVarLen.get(index);
+    if (varLen > 0) {
+      return Optional.of(varLen);
+    }
+    return Optional.empty();
   }
 
   public KeyMeta validate() {

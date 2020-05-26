@@ -19,6 +19,7 @@ import com.alibaba.innodb.java.reader.page.index.OverflowPagePointer;
 import com.alibaba.innodb.java.reader.page.index.RecordHeader;
 import com.alibaba.innodb.java.reader.page.index.RecordType;
 import com.alibaba.innodb.java.reader.schema.Column;
+import com.alibaba.innodb.java.reader.schema.KeyMeta;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.schema.Workaround;
 import com.alibaba.innodb.java.reader.service.IndexService;
@@ -44,6 +45,8 @@ import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.alibaba.innodb.java.reader.Constants.COLUMN_ROW_ID;
+import static com.alibaba.innodb.java.reader.Constants.MAX_VAL;
+import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
 import static com.alibaba.innodb.java.reader.Constants.ROOT_PAGE_NUMBER;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_BODY;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_REC_HEADER;
@@ -267,6 +270,7 @@ public class IndexServiceImpl implements IndexService {
     checkArgument(key.size() == tableDef.getPrimaryKeyColumnNum(),
         "Search key count not match, expected " + tableDef.getPrimaryKeyColumnNum());
 
+    key = makeTypeCompatible(key, tableDef);
     BitSet projection = transformProjection(recordProjection);
     Index index = loadIndexPage(ROOT_PAGE_NUMBER);
     checkState(index.isRootPage(), "Root page is wrong which should not happen");
@@ -346,7 +350,9 @@ public class IndexServiceImpl implements IndexService {
     try {
       Optional<Integer> skOrdinal = ThreadContext.getSkOrdinal() != null
           ? Optional.of(ThreadContext.getSkOrdinal()) : Optional.empty();
-      TableDef skTableDef = tableDef.buildSkTableDef(skName, skOrdinal);
+      Pair<KeyMeta, TableDef> pair = tableDef.buildSkTableDef(skName, skOrdinal);
+      KeyMeta keyMeta = pair.getFirst();
+      TableDef skTableDef = pair.getSecond();
       long skRootPageNumber;
       if (ThreadContext.getSkRootPageNumber() != null) {
         skRootPageNumber = ThreadContext.getSkRootPageNumber();
@@ -356,6 +362,10 @@ public class IndexServiceImpl implements IndexService {
                 rootPageNumber -> loadIndexPage(rootPageNumber));
       }
       log.debug("Build secondary key table {}", skTableDef);
+
+      checkKeyVarLenCompatible(keyMeta, lower);
+      checkKeyVarLenCompatible(keyMeta, upper);
+
       Iterator<GenericRecord> skRecordIterator =
           getSkRangeQueryIterator(skTableDef, skRootPageNumber, makeNotNull(lower), lowerOperator,
               makeNotNull(upper), upperOperator, ascOrder);
@@ -363,7 +373,7 @@ public class IndexServiceImpl implements IndexService {
       final TableDef internalTableDef = tableDef.isNoPrimaryKey()
           ? cloneTableDefWithDefaultRowIdAsPk() : tableDef;
 
-      if (satisfyCoveringIndex(skTableDef, recordProjection)) {
+      if (satisfyCoveringIndex(keyMeta, skTableDef, recordProjection)) {
         log.debug("Covering index is satisfied skTableDef={}, projection={}", skTableDef, recordProjection.get());
         return new DecoratedRecordIterator(skRecordIterator) {
 
@@ -408,17 +418,28 @@ public class IndexServiceImpl implements IndexService {
   /**
    * If covering index is satisfied, this will help to determine whether to look up back to
    * clustered index.
+   * <p>
+   * If key length is less than column length, we should disable covering index.
    *
+   * @param keyMeta          key meta
    * @param skTableDef       secondary key virtual table definition
    * @param recordProjection optional projection of selected column names, if no present, all
    *                         fields will be included
    * @return true if covering index is met
    */
-  private boolean satisfyCoveringIndex(TableDef skTableDef, Optional<List<String>> recordProjection) {
+  private boolean satisfyCoveringIndex(KeyMeta keyMeta, TableDef skTableDef, Optional<List<String>> recordProjection) {
     if (recordProjection.isPresent()) {
       List<String> projection = recordProjection.get();
-      return projection.stream()
-          .allMatch(p -> skTableDef.getColumnNames().contains(p));
+      for (String p : projection) {
+        if (!skTableDef.getColumnNames().contains(p)) {
+          return false;
+        }
+        Optional<Integer> varLen = keyMeta.getVarLen(p);
+        if (varLen.isPresent()) {
+          return false;
+        }
+      }
+      return true;
     }
     return false;
   }
@@ -466,6 +487,9 @@ public class IndexServiceImpl implements IndexService {
                                                         Optional<List<String>> recordProjection,
                                                         final boolean ascOrder) {
     checkKey(lower, lowerOperator, upper, upperOperator);
+
+    lower = makeTypeCompatible(lower, tableDef);
+    upper = makeTypeCompatible(upper, tableDef);
 
     final boolean isNoPk = tableDef.isNoPrimaryKey();
     final int keyColumnNum = tableDef.getPrimaryKeyColumnNum();
@@ -1340,4 +1364,55 @@ public class IndexServiceImpl implements IndexService {
     return internalTableDef;
   }
 
+  /**
+   * Make input key list object with {@link String} type to actual type.
+   *
+   * @param keyList  key list
+   * @param tableDef table definition
+   * @return compatible typed key list
+   */
+  private List<Object> makeTypeCompatible(List<Object> keyList, TableDef tableDef) {
+    if (CollectionUtils.isEmpty(keyList)) {
+      return keyList;
+    }
+    List<Column> keyColumnList = tableDef.getPrimaryKeyColumns();
+    checkArgument(keyList.size() <= keyColumnList.size(), "key size " + keyList
+        + " should be less than column " + keyColumnList);
+    ImmutableList.Builder<Object> builder = ImmutableList.builder();
+    try {
+      for (int i = 0; i < keyList.size(); i++) {
+        Object key = keyList.get(i);
+        Column column = keyColumnList.get(i);
+        Class<?> keyClass = ColumnFactory.getColumnJavaType(column.getType());
+        if (key instanceof String && !String.class.equals(keyClass)
+            && key != MIN_VAL && key != MAX_VAL) {
+          builder.add(ColumnFactory.getColumnToJavaTypeFunc(column.getType()).apply((String) key));
+        } else {
+          builder.add(key);
+        }
+      }
+    } catch (Exception e) {
+      throw new ReaderException("Failed to make type compatible for key: " + keyList
+          + " to expected type " + keyColumnList, e);
+    }
+    return builder.build();
+  }
+
+  private boolean checkKeyVarLenCompatible(KeyMeta keyMeta, List<Object> key) {
+    List<String> pkColNames = keyMeta.getKeyColumnNames();
+    if (CollectionUtils.isEmpty(key) || CollectionUtils.isEmpty(pkColNames)) {
+      return true;
+    }
+    for (int i = 0; i < Math.min(pkColNames.size(), key.size()); i++) {
+      String colName = pkColNames.get(i);
+      Optional<Integer> varLen = keyMeta.getVarLen(colName);
+      if (varLen.isPresent() && key.get(i) instanceof String) {
+        if (((String) key.get(i)).length() > varLen.get()) {
+          throw new IllegalArgumentException("key " + colName + " variable length is out of range, "
+              + "should be less or equal than " + varLen.get());
+        }
+      }
+    }
+    return true;
+  }
 }

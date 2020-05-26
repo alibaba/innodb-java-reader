@@ -212,9 +212,6 @@ public class Utils {
   }
 
   public static int castCompare(Object recordKey, Object targetKey, Column column) {
-    if (recordKey == null) {
-      return -1;
-    }
     if (MAX_VAL == recordKey) {
       return 1;
     }
@@ -226,6 +223,12 @@ public class Utils {
     }
     if (MIN_VAL == targetKey) {
       return 1;
+    }
+    // TODO Note that we take NULL as small elements, so if column is nullable,
+    // NULL will be included in full scan, but NULL should be not included
+    // in range query, but here innodb-java-reader returns them as well.
+    if (recordKey == null) {
+      return -1;
     }
     try {
       Comparable k1 = (Comparable) recordKey;

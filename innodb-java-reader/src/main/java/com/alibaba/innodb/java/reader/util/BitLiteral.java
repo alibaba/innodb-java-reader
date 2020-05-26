@@ -5,6 +5,8 @@
  */
 package com.alibaba.innodb.java.reader.util;
 
+import lombok.EqualsAndHashCode;
+
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_LONG;
 
 /**
@@ -12,7 +14,8 @@ import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_LONG;
  *
  * @author xu.zx
  */
-public class BitLiteral {
+@EqualsAndHashCode
+public class BitLiteral implements Comparable<BitLiteral> {
 
   private final int len;
 
@@ -25,6 +28,12 @@ public class BitLiteral {
 
   public byte[] getBytes() {
     return bytes;
+  }
+
+  @Override
+  public int compareTo(BitLiteral o) {
+    // TODO
+    throw new UnsupportedOperationException();
   }
 
   @Override

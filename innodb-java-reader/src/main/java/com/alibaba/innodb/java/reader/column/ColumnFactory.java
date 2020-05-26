@@ -17,6 +17,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -262,7 +263,7 @@ public class ColumnFactory {
 
     @Override
     public Class<?> typeClass() {
-      return Integer.class;
+      return Long.class;
     }
   };
 
@@ -860,6 +861,7 @@ public class ColumnFactory {
     } else if (Byte.class.equals(javaType)) {
       return Byte::parseByte;
     } else if (Short.class.equals(javaType)) {
+      // year
       return Short::parseShort;
     } else if (Float.class.equals(javaType)) {
       return Float::parseFloat;
@@ -869,8 +871,21 @@ public class ColumnFactory {
       return BigInteger::new;
     } else if (BigDecimal.class.equals(javaType)) {
       return BigDecimal::new;
+    } else if (byte[].class.equals(javaType)) {
+      return s -> s;
+    } else if (SingleEnumLiteral.class.equals(javaType)) {
+      return s -> new SingleEnumLiteral(0, s);
+    } else if (MultiEnumLiteral.class.equals(javaType)) {
+      return s -> {
+        List<String> inputList = Arrays.asList(s.split(Symbol.COMMA));
+        MultiEnumLiteral multiEnumLiteral = new MultiEnumLiteral(inputList.size());
+        for (String input : inputList) {
+          multiEnumLiteral.add(0, input);
+        }
+        return multiEnumLiteral;
+      };
     } else {
-      // also for year, date, time, timestamp and datetime
+      // also for date, time, timestamp and datetime
       // we take them as string
       return s -> s;
     }

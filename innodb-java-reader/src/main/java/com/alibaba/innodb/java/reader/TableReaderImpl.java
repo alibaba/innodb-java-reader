@@ -26,6 +26,8 @@ import com.alibaba.innodb.java.reader.service.impl.FileChannelStorageServiceImpl
 import com.alibaba.innodb.java.reader.service.impl.IndexServiceImpl;
 import com.alibaba.innodb.java.reader.util.Utils;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -210,7 +212,7 @@ public class TableReaderImpl implements TableReader {
 
   @Override
   public GenericRecord queryByPrimaryKey(List<Object> key, List<String> projection) {
-    return indexService.queryByPrimaryKey(key, Optional.of(projection));
+    return indexService.queryByPrimaryKey(key, sanitize(projection));
   }
 
   @Override
@@ -225,12 +227,12 @@ public class TableReaderImpl implements TableReader {
 
   @Override
   public List<GenericRecord> queryAll(List<String> projection) {
-    return indexService.queryAll(Optional.empty(), Optional.of(projection));
+    return indexService.queryAll(Optional.empty(), sanitize(projection));
   }
 
   @Override
   public List<GenericRecord> queryAll(Predicate<GenericRecord> recordPredicate, List<String> projection) {
-    return indexService.queryAll(Optional.of(recordPredicate), Optional.of(projection));
+    return indexService.queryAll(Optional.of(recordPredicate), sanitize(projection));
   }
 
   @Override
@@ -256,7 +258,7 @@ public class TableReaderImpl implements TableReader {
                                                     List<String> projection) {
     return indexService.rangeQueryByPrimaryKey(
         makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
-        Optional.empty(), Optional.of(projection));
+        Optional.empty(), sanitize(projection));
   }
 
   @Override
@@ -266,7 +268,7 @@ public class TableReaderImpl implements TableReader {
                                                     List<String> projection) {
     return indexService.rangeQueryByPrimaryKey(
         makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
-        Optional.of(recordPredicate), Optional.of(projection));
+        Optional.of(recordPredicate), sanitize(projection));
   }
 
   @Override
@@ -276,7 +278,7 @@ public class TableReaderImpl implements TableReader {
 
   @Override
   public Iterator<GenericRecord> getQueryAllIterator(List<String> projection) {
-    return indexService.getQueryAllIterator(Optional.of(projection), true);
+    return indexService.getQueryAllIterator(sanitize(projection), true);
   }
 
   @Override
@@ -286,7 +288,7 @@ public class TableReaderImpl implements TableReader {
 
   @Override
   public Iterator<GenericRecord> getQueryAllIterator(List<String> projection, boolean ascOrder) {
-    return indexService.getQueryAllIterator(Optional.of(projection), ascOrder);
+    return indexService.getQueryAllIterator(sanitize(projection), ascOrder);
   }
 
   @Override
@@ -301,7 +303,7 @@ public class TableReaderImpl implements TableReader {
                                                        List<Object> upper, ComparisonOperator upperOperator,
                                                        List<String> projection) {
     return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
-        Optional.of(projection), true);
+        sanitize(projection), true);
   }
 
   @Override
@@ -318,7 +320,7 @@ public class TableReaderImpl implements TableReader {
                                                        List<String> projection,
                                                        boolean ascOrder) {
     return indexService.getRangeQueryIterator(makeNotNull(lower), lowerOperator, makeNotNull(upper), upperOperator,
-        Optional.of(projection), ascOrder);
+        sanitize(projection), ascOrder);
   }
 
   @Override
@@ -335,7 +337,7 @@ public class TableReaderImpl implements TableReader {
                                                        List<Object> upper, ComparisonOperator upperOperator,
                                                        List<String> projection) {
     return indexService.getQueryIteratorBySk(skName, lower, lowerOperator, upper, upperOperator,
-        Optional.of(projection), true);
+        sanitize(projection), true);
   }
 
   @Override
@@ -353,12 +355,19 @@ public class TableReaderImpl implements TableReader {
                                                        List<Object> upper, ComparisonOperator upperOperator,
                                                        List<String> projection, boolean ascOrder) {
     return indexService.getQueryIteratorBySk(skName, lower, lowerOperator, upper, upperOperator,
-        Optional.of(projection), ascOrder);
+        sanitize(projection), ascOrder);
   }
 
   @Override
   public TableDef getTableDef() {
     return tableDef;
+  }
+
+  private Optional<List<String>> sanitize(List<String> projection) {
+    if (CollectionUtils.isEmpty(projection)) {
+      return Optional.empty();
+    }
+    return Optional.of(projection);
   }
 
   @Override

@@ -11,6 +11,7 @@ import com.alibaba.innodb.java.reader.CollationMapping;
 import com.alibaba.innodb.java.reader.column.ColumnType;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
 import com.alibaba.innodb.java.reader.exception.SqlParseException;
+import com.alibaba.innodb.java.reader.util.Pair;
 import com.alibaba.innodb.java.reader.util.Symbol;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -229,6 +230,10 @@ public class TableDef {
     return primaryKeyMeta != null && primaryKeyMeta.containsColumn(column.getName());
   }
 
+  public KeyMeta getPrimaryKeyMeta() {
+    return primaryKeyMeta;
+  }
+
   public List<KeyMeta> getSecondaryKeyMetaList() {
     if (CollectionUtils.isEmpty(secondaryKeyMetaList)) {
       return ImmutableList.of();
@@ -281,11 +286,12 @@ public class TableDef {
     ImmutableList.Builder<String> colNames = ImmutableList.builder();
     ImmutableList.Builder<Column> varLenCols = ImmutableList.builder();
     ImmutableList.Builder<String> varLenColNames = ImmutableList.builder();
+    ImmutableList.Builder<Integer> varLen = ImmutableList.builder();
     for (String colName : keyColumnNames) {
       String columnName = sanitize(colName);
+      String wrappedString = null;
       if (columnName.contains(Symbol.LEFT_PARENTHESES) && columnName.contains(Symbol.RIGHT_PARENTHESES)) {
-        // TODO wrapped string not in use
-        String wrappedString = StringUtils
+        wrappedString = StringUtils
             .substringBetween(columnName, Symbol.LEFT_PARENTHESES, Symbol.RIGHT_PARENTHESES);
         checkState(StringUtils.isNotEmpty(wrappedString),
             "String " + colName + " cannot be empty between ( and ), for example varchar(255)");
@@ -299,6 +305,11 @@ public class TableDef {
         if (isVarLen(col)) {
           varLenCols.add(col);
           varLenColNames.add(columnName);
+          if (StringUtils.isNotEmpty(wrappedString)) {
+            varLen.add(Integer.parseInt(wrappedString));
+          } else {
+            varLen.add(0);
+          }
         }
       } else {
         throw new SqlParseException("Column " + columnName + " is not defined for key " + keyName);
@@ -310,6 +321,7 @@ public class TableDef {
         .keyColumnNames(colNames.build())
         .keyVarLenColumns(varLenCols.build())
         .keyVarLenColumnNames(varLenColNames.build())
+        .keyVarLen(varLen.build())
         .numOfColumns(keyColumnNames.size())
         .type(KeyMeta.Type.parse(type))
         .name(keyName != null ? sanitize(keyName) : null)
@@ -427,7 +439,7 @@ public class TableDef {
    * @param skOrdinal secondary key ordinal, starts from 0
    * @return table definition
    */
-  public TableDef buildSkTableDef(String skName, Optional<Integer> skOrdinal) {
+  public Pair<KeyMeta, TableDef> buildSkTableDef(String skName, Optional<Integer> skOrdinal) {
     checkArgument(CollectionUtils.isNotEmpty(secondaryKeyMetaList),
         "Secondary key is empty");
     KeyMeta keyMeta;
@@ -462,7 +474,7 @@ public class TableDef {
     }
     tableDef.setPrimaryKeyColumns(keyMeta.getKeyColumnNames());
     tableDef.setDerivedFromSk(true);
-    return tableDef;
+    return Pair.of(keyMeta, tableDef);
   }
 
   public boolean isDerivedFromSk() {
@@ -496,16 +508,27 @@ public class TableDef {
   }
 
   /**
-   * If no primary key provided, make first unique key as primary key.
+   * If no primary key provided, make first non-null unique key as primary key.
    */
   private void makeFirstUniqueKeyAsPrimaryKeyIfPossible() {
     if (primaryKeyMeta == null) {
-      Predicate<KeyMeta> predicate = k -> k.getType() == UNIQUE_KEY || k.getType() == UNIQUE_INDEX;
-      if (secondaryKeyMetaList != null) {
-        if (secondaryKeyMetaList.stream().anyMatch(predicate)) {
-          KeyMeta pkMeta = secondaryKeyMetaList.stream().filter(predicate).findFirst().get();
-          setPrimaryKeyColumns(pkMeta.getKeyColumnNames());
-          secondaryKeyMetaList.remove(pkMeta);
+      if (CollectionUtils.isNotEmpty(secondaryKeyMetaList)) {
+        Predicate<KeyMeta> predicate = k -> {
+          if (k.getType() == UNIQUE_KEY || k.getType() == UNIQUE_INDEX) {
+            for (Column keyColumn : k.getKeyColumns()) {
+              if (keyColumn.isNullable()) {
+                return false;
+              }
+            }
+            return true;
+          }
+          return false;
+        };
+        Optional<KeyMeta> pkMeta = secondaryKeyMetaList.stream().filter(predicate).findFirst();
+        if (pkMeta.isPresent()) {
+          log.debug("Make key `{}` as primary key", pkMeta.get().getName());
+          setPrimaryKeyColumns(pkMeta.get().getKeyColumnNames());
+          secondaryKeyMetaList.remove(pkMeta.get());
         }
       }
     }

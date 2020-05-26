@@ -10,7 +10,6 @@ import com.alibaba.innodb.java.reader.TableReaderFactory;
 import com.alibaba.innodb.java.reader.cli.writer.SysoutWriter;
 import com.alibaba.innodb.java.reader.cli.writer.Writer;
 import com.alibaba.innodb.java.reader.cli.writer.WriterFactory;
-import com.alibaba.innodb.java.reader.column.ColumnFactory;
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
 import com.alibaba.innodb.java.reader.exception.ReaderException;
@@ -634,10 +633,12 @@ public class InnodbReaderBootstrap {
       Column pk = keyColumns.get(i);
       if (array[i].length() == 0 || "null".equalsIgnoreCase(array[i])) {
         // for empty string
-        continue;
+        break;
       }
-      Object val = ColumnFactory.getColumnToJavaTypeFunc(pk.getType()).apply(array[i]);
-      result.add(val);
+      // Object val = ColumnFactory.getColumnToJavaTypeFunc(pk.getType()).apply(array[i]);
+      // result.add(val);
+      // underlying framework can handle string type to appropriate type properly
+      result.add(array[i]);
     }
     return Collections.unmodifiableList(result);
   }

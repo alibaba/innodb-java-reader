@@ -121,6 +121,10 @@ public class QueryIteratorMultipleLevelTableReaderTest extends AbstractTest {
           ComparisonOperator.GTE, ComparisonOperator.LT, true);
       rangeQuery(reader, 100, 19000, ImmutableList.of(100), ImmutableList.of(19000),
           ComparisonOperator.GTE, ComparisonOperator.LT, false);
+      rangeQuery(reader, 100, 19000, ImmutableList.of(100), ImmutableList.of(19000),
+          ComparisonOperator.GTE, ComparisonOperator.LT, true);
+      rangeQuery(reader, 100, 19000, ImmutableList.of(100), ImmutableList.of(19000),
+          ComparisonOperator.GTE, ComparisonOperator.LT, false);
 
       rangeQuery(reader, 30100, 45123, ImmutableList.of(30100), ImmutableList.of(45123),
           ComparisonOperator.GTE, ComparisonOperator.LTE, true);

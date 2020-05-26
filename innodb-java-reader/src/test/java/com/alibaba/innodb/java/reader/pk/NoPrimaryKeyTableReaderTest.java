@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -61,7 +62,7 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkQueryAllIterator(expectedIterator());
+        .checkQueryAllIterator(expectedIterator(true));
   }
 
   @Test
@@ -69,7 +70,7 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkQueryAllIterator(expectedIterator());
+        .checkQueryAllIterator(expectedIterator(true));
   }
 
   @Test
@@ -77,7 +78,31 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkQueryAllIterator(expectedIterator());
+        .checkQueryAllIterator(expectedIterator(true));
+  }
+
+  @Test
+  public void testNoPkQueryAllIteratorDescMysql56() {
+    assertTestOf(this)
+        .withMysql56()
+        .withTableDef(getTableDef())
+        .checkQueryAllIteratorDesc(expectedIterator(false));
+  }
+
+  @Test
+  public void testNoPkQueryAllIteratorDescMysql57() {
+    assertTestOf(this)
+        .withMysql57()
+        .withTableDef(getTableDef())
+        .checkQueryAllIteratorDesc(expectedIterator(false));
+  }
+
+  @Test
+  public void testNoPkQueryAllIteratorDescMysql80() {
+    assertTestOf(this)
+        .withMysql80()
+        .withTableDef(getTableDef())
+        .checkQueryAllIteratorDesc(expectedIterator(false));
   }
 
   /**
@@ -100,8 +125,8 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql56()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(expectedIterator(),
-            ImmutableList.of(100), ComparisonOperator.GT,
+        .checkRangeQueryIterator(expectedIterator(true),
+            ImmutableList.of(), ComparisonOperator.GT,
             ImmutableList.of(), ComparisonOperator.LT);
   }
 
@@ -110,8 +135,8 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql57()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(expectedIterator(),
-            ImmutableList.of(100), ComparisonOperator.GT,
+        .checkRangeQueryIterator(expectedIterator(true),
+            ImmutableList.of(), ComparisonOperator.GT,
             ImmutableList.of(), ComparisonOperator.LT);
   }
 
@@ -120,8 +145,8 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     assertTestOf(this)
         .withMysql80()
         .withTableDef(getTableDef())
-        .checkRangeQueryIterator(expectedIterator(),
-            ImmutableList.of(100), ComparisonOperator.GT,
+        .checkRangeQueryIterator(expectedIterator(true),
+            ImmutableList.of(), ComparisonOperator.GT,
             ImmutableList.of(), ComparisonOperator.LT);
   }
 
@@ -212,13 +237,16 @@ public class NoPrimaryKeyTableReaderTest extends AbstractTest {
     };
   }
 
-  public Consumer<Iterator<GenericRecord>> expectedIterator() {
+  public Consumer<Iterator<GenericRecord>> expectedIterator(boolean asc) {
     return iterator -> {
 
       assertThat(iterator.hasNext(), is(true));
       List<GenericRecord> list = new ArrayList<>();
       while (iterator.hasNext()) {
         list.add(iterator.next());
+      }
+      if (!asc) {
+        Collections.reverse(list);
       }
       expected().accept(list);
     };

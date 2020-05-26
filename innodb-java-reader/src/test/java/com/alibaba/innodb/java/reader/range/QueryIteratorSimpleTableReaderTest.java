@@ -140,6 +140,7 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
 
   public void testQueryAllIteratorWithProjection(Consumer<AssertThat> func) {
     List<List<String>> params = Arrays.asList(
+        ImmutableList.of(),
         ImmutableList.of("id"),
         ImmutableList.of("id", "b"),
         ImmutableList.of("id", "b", "a"),
@@ -149,7 +150,8 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
         ImmutableList.of("a", "b"),
         ImmutableList.of("a", "c"),
         ImmutableList.of("b", "c"),
-        ImmutableList.of("a", "b", "c")
+        ImmutableList.of("a", "b", "c"),
+        ImmutableList.of("id", "a", "b", "c")
     );
 
     for (List<String> param : params) {
@@ -179,24 +181,30 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
         assertThat(values[0], is(i));
-        assertThat(values[1], is(projection.contains("a") ? i * 2L : null));
-        assertThat(values[2], is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-        assertThat(values[3], is(projection.contains("c")
+        assertThat(values[1], is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
+        assertThat(values[2], is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
+        assertThat(values[3], is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
         assertThat(record.getPrimaryKey(), is(ImmutableList.of(i)));
         assertThat(record.get(0), is(i));
         assertThat(record.get("id"), is(i));
 
-        assertThat(record.get(1), is(projection.contains("a") ? i * 2L : null));
-        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
+        assertThat(record.get(1), is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
+        assertThat(record.get("a"), is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
 
-        assertThat(record.get(2), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get(2), is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("b"), is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
 
-        assertThat(record.get(3), is(projection.contains("c")
+        assertThat(record.get(3), is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
-        assertThat(record.get("c"), is(projection.contains("c")
+        assertThat(record.get("c"), is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
         if (asc) {
@@ -344,24 +352,36 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, false);
+    boolean[][] options = BOOLEAN_OPTIONS;
+    for (int k = 0; k < options.length; k++) {
+      rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, false,
+          options[k][0], options[k][1]);
 
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, false);
+      rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, false,
+          options[k][0], options[k][1]);
 
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, false);
+      rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, false,
+          options[k][0], options[k][1]);
 
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, false);
+      rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, false,
+          options[k][0], options[k][1]);
+    }
   }
 
   private void rangeQuery(TableReader reader, int start, int end,
                           ComparisonOperator lowerOp, ComparisonOperator upperOp,
-                          boolean asc) {
+                          boolean asc, boolean startAsString, boolean endAsString) {
     Iterator<GenericRecord> iterator = reader.getRangeQueryIterator(
-        ImmutableList.of(start), lowerOp, ImmutableList.of(end), upperOp, asc);
+        ImmutableList.of(startAsString ? String.valueOf(start) : start), lowerOp,
+        ImmutableList.of(endAsString ? String.valueOf(end) : end), upperOp, asc);
     int expectedSize = end - start;
     if (expectedSize > 0
         && lowerOp == ComparisonOperator.GT && upperOp == ComparisonOperator.LT) {
@@ -462,6 +482,11 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
 
       iterator = reader.getRangeQueryIterator(
           null, ComparisonOperator.NOP,
+          ImmutableList.of("1"), ComparisonOperator.LT);
+      assertThat(getIteratorSize(iterator), is(0));
+
+      iterator = reader.getRangeQueryIterator(
+          null, ComparisonOperator.NOP,
           null, ComparisonOperator.NOP);
       assertThat(getIteratorSize(iterator), is(10));
     }
@@ -488,16 +513,22 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
 
   public void testRangeQueryIteratorWithProjection(Consumer<AssertThat> func) {
     List<List<String>> params = Arrays.asList(
+        ImmutableList.of(),
         ImmutableList.of("id"),
-        ImmutableList.of("id", "b"),
-        ImmutableList.of("id", "b", "a"),
         ImmutableList.of("a"),
         ImmutableList.of("b"),
         ImmutableList.of("c"),
         ImmutableList.of("a", "b"),
         ImmutableList.of("a", "c"),
         ImmutableList.of("b", "c"),
-        ImmutableList.of("a", "b", "c")
+        ImmutableList.of("a", "b", "c"),
+        ImmutableList.of("id", "a"),
+        ImmutableList.of("id", "b"),
+        ImmutableList.of("id", "c"),
+        ImmutableList.of("id", "a", "b"),
+        ImmutableList.of("id", "a", "c"),
+        ImmutableList.of("id", "b", "c"),
+        ImmutableList.of("id", "a", "b", "c")
     );
 
     for (List<String> param : params) {
@@ -534,24 +565,30 @@ public class QueryIteratorSimpleTableReaderTest extends AbstractTest {
         Object[] values = record.getValues();
         System.out.println(Arrays.asList(values));
         assertThat(values[0], is(i));
-        assertThat(values[1], is(projection.contains("a") ? i * 2L : null));
-        assertThat(values[2], is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-        assertThat(values[3], is(projection.contains("c")
+        assertThat(values[1], is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
+        assertThat(values[2], is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
+        assertThat(values[3], is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
         assertThat(record.getPrimaryKey(), is(ImmutableList.of(i)));
         assertThat(record.get(0), is(i));
         assertThat(record.get("id"), is(i));
 
-        assertThat(record.get(1), is(projection.contains("a") ? i * 2L : null));
-        assertThat(record.get("a"), is(projection.contains("a") ? i * 2L : null));
+        assertThat(record.get(1), is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
+        assertThat(record.get("a"), is(projection.isEmpty() || projection.contains("a")
+            ? i * 2L : null));
 
-        assertThat(record.get(2), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
-        assertThat(record.get("b"), is(projection.contains("b") ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get(2), is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
+        assertThat(record.get("b"), is(projection.isEmpty() || projection.contains("b")
+            ? StringUtils.repeat('A', 16) : null));
 
-        assertThat(record.get(3), is(projection.contains("c")
+        assertThat(record.get(3), is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
-        assertThat(record.get("c"), is(projection.contains("c")
+        assertThat(record.get("c"), is(projection.isEmpty() || projection.contains("c")
             ? StringUtils.repeat('C', 8) + (char) (97 + i) : null));
 
         if (asc) {

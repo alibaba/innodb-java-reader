@@ -55,6 +55,10 @@ public class AbstractTest {
 
   protected static final ConcurrentCache<Object, List<Object[]>> TABLES = new ConcurrentCache<>();
 
+  public static final boolean[][] BOOLEAN_OPTIONS = new boolean[][]{
+      {true, false}, {true, true}, {false, true}, {false, false},
+  };
+
   protected static <T extends AbstractTest> AssertThat assertTestOf(T testInstance) {
     return new AssertThat().withTestCase(testInstance);
   }
@@ -347,48 +351,65 @@ public class AbstractTest {
 
     public static final Employee[] EMPS = {
         new Employee(1, 100L, "Eric", 20, "M", "1983-10-23",
-            "New York", 52000, 30, "2020-01-01 18:35:40", 6, "", null),
+            "New York", 52000, 30, "2020-01-01 18:35:40", 6, "",
+            null, "eric@test.com"),
         new Employee(2, 101L, "Neo", 10, "M", "1986-10-02",
-            "Berlin", 68000, 33, "2018-04-09 09:00:00", 8, "", "main street"),
+            "Berlin", 68000, 33, "2018-04-09 09:00:00", 8, "",
+            "main street", "neo@test.com"),
         new Employee(3, 102L, "Sarah", 20, "F", "1990-07-25",
-            "LA", 20000, 27, "2019-11-16 10:26:40", 4, "Hello world", null),
+            "LA", 20000, 27, "2019-11-16 10:26:40", 4, "Hello world",
+            null, "sarah@test.com"),
         new Employee(4, 105L, "Json", 30, "M", "1959-02-14",
-            "Beijing", 100000, 60, "2015-03-09 22:16:30", 12, "Start", null),
+            "Beijing", 100000, 60, "2015-03-09 22:16:30", 12, "Start",
+            null, "json@test.com"),
         new Employee(5, 106L, "SMITH", 10, "M", "1981-01-05",
-            "Tokyo", 39000, 25, "2018-09-02 12:12:56", 6, "", null),
+            "Tokyo", 39000, 25, "2018-09-02 12:12:56", 6, "",
+            null, "smith@test.com"),
         new Employee(6, 107L, "lucy", 40, "F", "1989-06-07",
             "New York", 40000, 30, "2018-06-01 14:45:00", 5, StringUtils.repeat("p", 1000),
-            null),
+            null, "lucy@test.com"),
         new Employee(7, 108L, "JAMES", 20, "M", "1992-05-06",
-            "LA", 29000, 20, "2017-08-18 23:11:06", 3, "", null),
+            "LA", 29000, 20, "2017-08-18 23:11:06", 3, "",
+            null, "james@test.com"),
         new Employee(8, 109L, "John", 40, "M", "1989-06-07",
-            "New York", 32000, 42, "2018-06-01 14:45:00", 6, "", null),
+            "New York", 32000, 42, "2018-06-01 14:45:00", 6, "",
+            null, "john@test.com"),
         new Employee(9, 110L, "MILLER", 30, "F", "1982-07-04",
-            "New York", 68000, 40, "2020-01-02 12:19:00", 7, "", null),
+            "New York", 68000, 40, "2020-01-02 12:19:00", 7, "",
+            null, "miller@test.com"),
         new Employee(10, 111L, "Jane", 20, "F", "1995-08-29",
-            "LA", 19000, 22, "2019-09-30 02:14:56", 5, "", null),
+            "LA", 19000, 22, "2019-09-30 02:14:56", 5, "",
+            null, "jane@test.com"),
         new Employee(11, 112L, "Sarah", 40, "F", "1988-11-23",
             "New York", 21000, 26, "2017-04-27 16:27:11", 7, StringUtils.repeat("apple", 40),
-            null),
+            null, "sarah02@test.com"),
         new Employee(12, 113L, "Paul", 30, "M", "1984-11-06",
-            "Berlin", 20000, 43, "2019-07-28 12:12:12", 9, "", null),
+            "Berlin", 20000, 43, "2019-07-28 12:12:12", 9, "",
+            null, "paul@test.com"),
         new Employee(13, 114L, "Lara", 20, "F", "1987-01-21",
-            "Beijing", 35000, 29, "2018-06-08 12:12:12", 6, "", "老北京胡同Z区"),
+            "Beijing", 35000, 29, "2018-06-08 12:12:12", 6, "",
+            "老北京胡同Z区", "lara@test.com"),
         new Employee(14, 115L, "ADAMS", 20, "M", "1993-04-15",
-            "LA", 38000, 35, "2019-06-08 12:12:12", 5, "", "LA 001"),
+            "LA", 38000, 35, "2019-06-08 12:12:12", 5, "",
+            "LA 001", "adams@test.com"),
         new Employee(15, 116L, "SMITH", 30, "M", "1986-07-25",
-            "Beijing", 55000, 36, "2017-08-17 22:01:37", 8, "", null),
+            "Beijing", 55000, 36, "2017-08-17 22:01:37", 8, "",
+            null, "smith02@test.com"),
         new Employee(16, 120L, "Scott", 20, "M", "1990-03-04",
-            "Berlin", 33000, 31, "2018-08-17 22:01:37", 7, "", null),
+            "Berlin", 33000, 31, "2018-08-17 22:01:37", 7, "",
+            null, "scott@test.com"),
         new Employee(17, 121L, "MARTIN", 10, "F", "1975-02-28",
-            "Tokyo", 63000, 45, "2017-06-09 12:01:37", 9, "", null),
+            "Tokyo", 63000, 45, "2017-06-09 12:01:37", 9, "",
+            null, "martin@test.com"),
         new Employee(18, 122L, "kidd", 20, "m", "1988-05-17",
             "new York", 37000, 29, "2019-12-31 00:15:30", 5, StringUtils.repeat("phone", 50),
-            "Queen zone"),
+            "Queen zone", "kidd@test.com"),
         new Employee(19, 123L, "Yue", 30, "F", "1979-11-09",
-            "New York", 57000, 37, "2017-03-04 16:16:32", 7, "", null),
+            "New York", 57000, 37, "2017-03-04 16:16:32", 7, "",
+            null, "yue@test.com"),
         new Employee(new Integer(20), new Long(124L), "Oscar", 20, "M", "1988-10-08",
-            "LA", 36000, 27, "2018-03-04 16:16:32", 6, "", null)
+            "LA", 36000, 27, "2018-03-04 16:16:32", 6, "",
+            null, "oscar@test.com")
     };
 
     public static final Department[] DEPTS = {
@@ -415,6 +436,7 @@ public class AbstractTest {
     @ToString.Exclude
     public final String profile;
     public final String address;
+    public final String email;
   }
 
   @Data

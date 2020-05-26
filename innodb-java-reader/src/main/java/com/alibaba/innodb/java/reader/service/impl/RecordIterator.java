@@ -3,9 +3,12 @@
  */
 package com.alibaba.innodb.java.reader.service.impl;
 
+import com.google.common.collect.ImmutableList;
+
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -38,6 +41,10 @@ public class RecordIterator implements Iterator<GenericRecord> {
 
   public RecordIterator(List<GenericRecord> curr) {
     this.curr = curr;
+  }
+
+  public static RecordIterator create(GenericRecord singleRecord) {
+    return new RecordIterator(singleRecord == null ? ImmutableList.of() : Arrays.asList(singleRecord));
   }
 
   /**

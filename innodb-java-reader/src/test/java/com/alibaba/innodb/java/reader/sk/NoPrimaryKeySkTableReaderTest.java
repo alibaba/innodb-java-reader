@@ -36,63 +36,130 @@ public class NoPrimaryKeySkTableReaderTest extends AbstractTest {
       + "ENGINE=InnoDB;";
 
   @Test
-  public void testNoPkSkQueryAllIteratorMysql56() {
-    testQueryBySk(a -> a.withMysql56());
+  public void testNoPkSkBQueryAllIteratorMysql56() {
+    testQueryBySkB(a -> a.withMysql56());
   }
 
   @Test
-  public void testNoPkSkQueryAllIteratorMysql57() {
-    testQueryBySk(a -> a.withMysql57());
+  public void testNoPkSkBQueryAllIteratorMysql57() {
+    testQueryBySkB(a -> a.withMysql57());
   }
 
   @Test
-  public void testNoPkSkQueryAllIteratorMysql80() {
-    testQueryBySk(a -> a.withMysql80());
+  public void testNoPkSkBQueryAllIteratorMysql80() {
+    testQueryBySkB(a -> a.withMysql80());
   }
 
-  public void testQueryBySk(Consumer<AssertThat> func) {
+  public void testQueryBySkB(Consumer<AssertThat> func) {
     AssertThat assertThat = assertTestOf(this);
     func.accept(assertThat);
 
     assertThat.withSql(sql)
-        .checkQueryIteratorBySk(expectedIterator(),
+        .checkQueryIteratorBySk(expectedIterator(true),
             "key_b",
             ImmutableList.of("a"), ComparisonOperator.GTE,
             ImmutableList.of("z"), ComparisonOperator.LT);
   }
 
-  public Consumer<List<GenericRecord>> expected() {
+  @Test
+  public void testNoPkSkAQueryAllIteratorMysql56() {
+    testQueryBySkA(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testNoPkSkAQueryAllIteratorMysql57() {
+    testQueryBySkA(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testNoPkSkAQueryAllIteratorMysql80() {
+    testQueryBySkA(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkA(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(expectedIterator(false),
+            "key_a",
+            ImmutableList.of("50"), ComparisonOperator.GTE,
+            ImmutableList.of("1001"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(expectedIterator(false),
+            "key_a",
+            ImmutableList.of("50"), ComparisonOperator.GT,
+            ImmutableList.of(1000), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(expectedIterator(false),
+            "key_a",
+            ImmutableList.of(100), ComparisonOperator.GTE,
+            ImmutableList.of("1000"), ComparisonOperator.LTE);
+
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(expectedIterator(false),
+            "key_a",
+            ImmutableList.of("50"), ComparisonOperator.GT,
+            ImmutableList.of("1001"), ComparisonOperator.LT);
+  }
+
+  public Consumer<List<GenericRecord>> expected(boolean checkColumnB) {
     return recordList -> {
 
       assertThat(recordList.size(), is(10));
-      // verify sort by b
-      // mysql> select b from tb21 force index (key_b) ;
-      //+-------+
-      //| b     |
-      //+-------+
-      //| Eric  |
-      //| jane  |
-      //| Jason |
-      //| jim   |
-      //| jim   |
-      //| Lucy  |
-      //| Sarah |
-      //| smith |
-      //| Tom   |
-      //| tom   |
-      //+-------+
-      List<String> bList = Arrays.asList("Eric",
-          "jane",
-          "Jason",
-          "jim",
-          "jim",
-          "Lucy",
-          "Sarah",
-          "smith",
-          "Tom",
-          "tom");
-      for (int i = 0; i < bList.size(); i++) {
-        assertThat((String) recordList.get(i).get("b"), is(bList.get(i)));
+      if (checkColumnB) {
+        // verify sort by b
+        // mysql> select b from tb21 force index (key_b) ;
+        //+-------+
+        //| b     |
+        //+-------+
+        //| Eric  |
+        //| jane  |
+        //| Jason |
+        //| jim   |
+        //| jim   |
+        //| Lucy  |
+        //| Sarah |
+        //| smith |
+        //| Tom   |
+        //| tom   |
+        //+-------+
+        List<String> bList = Arrays.asList("Eric",
+            "jane",
+            "Jason",
+            "jim",
+            "jim",
+            "Lucy",
+            "Sarah",
+            "smith",
+            "Tom",
+            "tom");
+        for (int i = 0; i < bList.size(); i++) {
+          assertThat((String) recordList.get(i).get("b"), is(bList.get(i)));
+        }
+      } else {
+        // verify sort by a
+        // mysql> select a from tb21 force index (key_a) ;
+        //+------+
+        //| a    |
+        //+------+
+        //|  100 |
+        //|  200 |
+        //|  300 |
+        //|  400 |
+        //|  500 |
+        //|  600 |
+        //|  700 |
+        //|  800 |
+        //|  900 |
+        //| 1000 |
+        //+------+
+        List<Integer> aList = Arrays.asList(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000);
+        for (int i = 0; i < aList.size(); i++) {
+          assertThat(recordList.get(i).get("a"), is(aList.get(i)));
+        }
       }
 
       // verify record
@@ -190,7 +257,7 @@ public class NoPrimaryKeySkTableReaderTest extends AbstractTest {
     };
   }
 
-  public Consumer<Iterator<GenericRecord>> expectedIterator() {
+  public Consumer<Iterator<GenericRecord>> expectedIterator(boolean checkColumnB) {
     return iterator -> {
 
       assertThat(iterator.hasNext(), is(true));
@@ -198,7 +265,7 @@ public class NoPrimaryKeySkTableReaderTest extends AbstractTest {
       while (iterator.hasNext()) {
         list.add(iterator.next());
       }
-      expected().accept(list);
+      expected(checkColumnB).accept(list);
     };
   }
 

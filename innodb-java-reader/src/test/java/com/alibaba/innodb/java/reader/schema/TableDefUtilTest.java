@@ -32,12 +32,14 @@ public class TableDefUtilTest {
         + "`H` DECIMAL(16,8),\n"
         + "`i` decimal(12) NOT NULL,\n"
         + "`j` ENUM('A', 'B', 'Hello', '0xE4') NOT NULL,\n"
+        + "`k` varchar(500) NOT NULL,\n"
         + "PRIMARY KEY (`id`),\n"
         + "CONSTRAINT `tb01_ibfk_1` FOREIGN KEY (c) REFERENCES ra_user(id),\n"
-        // + "FULLTEXT KEY `fulltext_f` (`f`),\n" //TODO fulltext not support
         + "key `key_d` (`d`), \n"
         + "UNIQUE key `key_e` (e),\n" //TODO key support COMMENT
-        + "INDeX `key_b_e` (`b`, `e`) \n"
+        + "INDeX `key_b_e` (`b`, `e`), \n"
+        + "KEY `key_k` (`k`(255)),\n"
+        + "FULLTEXT KEY `fulltext_f` (`f`)\n"
         + ")ENGINE=InnoDB DEFAULT CHARSET =utf8mb4;";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     System.out.println(tableDef);
@@ -49,8 +51,8 @@ public class TableDefUtilTest {
     assertThat(tableDef.isCollationCaseSensitive(), is(false));
 
     List<Column> columnList = tableDef.getColumnList();
-    assertThat(columnList.size(), is(11));
-    assertThat(tableDef.getColumnNum(), is(11));
+    assertThat(columnList.size(), is(12));
+    assertThat(tableDef.getColumnNum(), is(12));
 
     assertThat(columnList.get(0).getOrdinal(), is(0));
     assertThat(columnList.get(0).getName(), is("id"));
@@ -165,11 +167,22 @@ public class TableDefUtilTest {
     assertThat(columnList.get(10).isPrimaryKey(), is(false));
     assertThat(columnList.get(10).isNullable(), is(false));
 
+    assertThat(columnList.get(11).getOrdinal(), is(11));
+    assertThat(columnList.get(11).getName(), is("k"));
+    assertThat(columnList.get(11).getType(), is(ColumnType.VARCHAR));
+    assertThat(columnList.get(11).getFullType(), is("varchar(500)"));
+    assertThat(columnList.get(11).getLength(), is(500));
+    assertThat(columnList.get(11).getPrecision(), is(0));
+    assertThat(columnList.get(11).getScale(), is(0));
+    assertThat(columnList.get(11).isPrimaryKey(), is(false));
+    assertThat(columnList.get(11).isNullable(), is(false));
+
     assertThat(tableDef.getField("a").getColumn(), is(columnList.get(1)));
     assertThat(tableDef.getField("a").getOrdinal(), is(1));
     assertThat(tableDef.getField("H").getColumn(), is(columnList.get(8)));
     assertThat(tableDef.getField("H").getOrdinal(), is(8));
 
+    assertThat(tableDef.getPrimaryKeyMeta().getName(), is(KeyMeta.Type.PRIMARY_KEY.literal()));
     assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
     assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
@@ -180,8 +193,8 @@ public class TableDefUtilTest {
       assertThat(tableDef.isColumnPrimaryKey(columnList.get(1)), is(false));
     }
 
-    assertThat(tableDef.getSecondaryKeyMetaList().size(), is(4));
-    assertThat(tableDef.getSecondaryKeyMetaMap().size(), is(4));
+    assertThat(tableDef.getSecondaryKeyMetaList().size(), is(6));
+    assertThat(tableDef.getSecondaryKeyMetaMap().size(), is(6));
     assertThat(tableDef.getSecondaryKeyMetaList().get(0).getType(), is(KeyMeta.Type.FOREIGN_KEY));
     assertThat(tableDef.getSecondaryKeyMetaList().get(0).getName(), is("tb01_ibfk_1"));
     assertThat(tableDef.getSecondaryKeyMetaList().get(0).getNumOfColumns(), is(0));
@@ -196,6 +209,8 @@ public class TableDefUtilTest {
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLenColumns(),
         is(ImmutableList.of()));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLenColumnNames(),
+        is(ImmutableList.of()));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyVarLen(),
         is(ImmutableList.of()));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).containsColumn("d"),
         is(true));
@@ -214,6 +229,8 @@ public class TableDefUtilTest {
         is(ImmutableList.of(columnList.get(5))));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyVarLenColumnNames(),
         is(ImmutableList.of("e")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyVarLen(),
+        is(ImmutableList.of(0)));
 
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getType(), is(KeyMeta.Type.INDEX));
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getName(), is("key_b_e"));
@@ -226,6 +243,25 @@ public class TableDefUtilTest {
         is(ImmutableList.of(columnList.get(5))));
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyVarLenColumnNames(),
         is(ImmutableList.of("e")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyVarLen(),
+        is(ImmutableList.of(0)));
+
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getType(), is(KeyMeta.Type.KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getName(), is("key_k"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getNumOfColumns(), is(1));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getKeyColumns(),
+        is(ImmutableList.of(columnList.get(11))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getKeyColumnNames(),
+        is(ImmutableList.of("k")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getKeyVarLenColumns(),
+        is(ImmutableList.of(columnList.get(11))));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getKeyVarLenColumnNames(),
+        is(ImmutableList.of("k")));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getKeyVarLen(),
+        is(ImmutableList.of(255)));
+
+    assertThat(tableDef.getSecondaryKeyMetaList().get(5).getType(), is(KeyMeta.Type.FULLTEXT_KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(5).getName(), is("fulltext_f"));
   }
 
   @Test

@@ -108,6 +108,11 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
       assertThat(recordList.size(), is(0));
 
       recordList = reader.rangeQueryByPrimaryKey(
+          ImmutableList.of("-1"), ComparisonOperator.GTE,
+          ImmutableList.of("0"), ComparisonOperator.LT);
+      assertThat(recordList.size(), is(0));
+
+      recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(0), ComparisonOperator.GTE,
           ImmutableList.of(0), ComparisonOperator.LT);
       assertThat(recordList.size(), is(0));
@@ -176,16 +181,25 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
   }
 
   private void rangeQuery(TableReader reader, int start, int end) {
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, true);
-    rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, true);
+    boolean[][] options = BOOLEAN_OPTIONS;
+    for (int k = 0; k < options.length; k++) {
+      rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LT, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GTE, ComparisonOperator.LTE, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LTE, true,
+          options[k][0], options[k][1]);
+      rangeQuery(reader, start, end, ComparisonOperator.GT, ComparisonOperator.LT, true,
+          options[k][0], options[k][1]);
+    }
   }
 
   private void rangeQuery(TableReader reader, int start, int end,
-                          ComparisonOperator lowerOp, ComparisonOperator upperOp, boolean asc) {
+                          ComparisonOperator lowerOp, ComparisonOperator upperOp, boolean asc,
+                          boolean startAsString, boolean endAsString) {
     List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
-        ImmutableList.of(start), lowerOp, ImmutableList.of(end), upperOp);
+        ImmutableList.of(startAsString ? String.valueOf(start) : start), lowerOp,
+        ImmutableList.of(endAsString ? String.valueOf(end) : end), upperOp);
     int expectedSize = end - start;
     if (expectedSize > 0
         && lowerOp == ComparisonOperator.GT && upperOp == ComparisonOperator.LT) {
@@ -241,6 +255,11 @@ public class RangeQueryMultipleLevelTableReaderTest extends AbstractTest {
 
       List<GenericRecord> recordList = reader.rangeQueryByPrimaryKey(
           ImmutableList.of(0), ComparisonOperator.GTE,
+          null, ComparisonOperator.NOP);
+      assertThat(recordList.size(), is(40000));
+
+      reader.rangeQueryByPrimaryKey(
+          ImmutableList.of("0"), ComparisonOperator.GTE,
           null, ComparisonOperator.NOP);
       assertThat(recordList.size(), is(40000));
 

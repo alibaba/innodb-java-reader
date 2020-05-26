@@ -44,6 +44,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
       + "  `level` int(11) NOT NULL,\n"
       + "  `profile` text CHARSET latin1 NOT NULL,\n"
       + "  `address` varchar(500) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,\n"
+      + "  `email` varchar(100) DEFAULT NULL,\n"
       + "  PRIMARY KEY (`id`),\n"
       + "  UNIQUE KEY `empno` (`empno`),\n"
       + "  KEY `name` (`name`),\n"
@@ -54,6 +55,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
       + "  KEY `deptno` (`deptno`,`level`,`name`),\n"
       + "  KEY `deptno_2` (`deptno`,`level`,`empno`),\n"
       + "  KEY `address` (`address`(255)),\n"
+      + "  KEY `email` (`email`(3)),\n"
       + "  KEY `key_level` (`level`),\n"
       + "  FULLTEXT KEY `profile` (`profile`),\n"
       + "  CONSTRAINT `emp_ibfk_1` FOREIGN KEY (`deptno`) REFERENCES `dept` (`deptno`)\n"
@@ -851,6 +853,14 @@ public class SimpleSkTableReaderTest extends AbstractTest {
             ImmutableList.of("A"), ComparisonOperator.GTE,
             ImmutableList.of("z"), ComparisonOperator.LTE
         );
+
+    // select * from emp FORCE INDEX (address) where address > 'main street';
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySk(testQueryBySk(Arrays.asList(2)),
+            "address",
+            ImmutableList.of("main street"), ComparisonOperator.GTE,
+            ImmutableList.of("main street"), ComparisonOperator.LTE
+        );
   }
 
   //==========================================================================
@@ -890,7 +900,11 @@ public class SimpleSkTableReaderTest extends AbstractTest {
         );
   }
 
-  @Test(expected = ClassCastException.class)
+  /**
+   * Caused by: com.alibaba.innodb.java.reader.exception.ReaderException:
+   * Failed to make type compatible for key: [Yue]
+   */
+  @Test(expected = ReaderException.class)
   public void testQueryBySkLevel56NegateWrongOrdinalClassNotCast() {
     ThreadContext.putSkOrdinal(4);
 
@@ -926,7 +940,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
    */
   @Test(expected = IllegalStateException.class)
   public void testQueryBySkLevel56NegateWrongOrdinal2() {
-    ThreadContext.putSkOrdinal(10);
+    ThreadContext.putSkOrdinal(11);
 
     assertTestOf(this)
         .withSql(sql)
@@ -1039,9 +1053,9 @@ public class SimpleSkTableReaderTest extends AbstractTest {
     func.accept(assertThat);
 
     if (isMysql8Flag.get()) {
-      ThreadContext.putSkRootPageNumber(16L);
+      ThreadContext.putSkRootPageNumber(17L);
     } else {
-      ThreadContext.putSkRootPageNumber(15L);
+      ThreadContext.putSkRootPageNumber(16L);
     }
 
     // select * from emp FORCE INDEX (key_level) where level > 6;
@@ -1154,6 +1168,15 @@ public class SimpleSkTableReaderTest extends AbstractTest {
             ImmutableList.of(100), ComparisonOperator.LT
         );
 
+    projection = ImmutableList.of();
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, true),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+
     // covering index
     projection = ImmutableList.of("age");
     assertThat.withSql(sql)
@@ -1232,6 +1255,305 @@ public class SimpleSkTableReaderTest extends AbstractTest {
             ImmutableList.of(0), ComparisonOperator.GT,
             ImmutableList.of(100), ComparisonOperator.LT
         );
+
+    projection = ImmutableList.of();
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjectionDesc(testQueryBySk(
+            allRowsPkOrderBy("age"), projection, false),
+            "age", projection,
+            ImmutableList.of(0), ComparisonOperator.GT,
+            ImmutableList.of(100), ComparisonOperator.LT
+        );
+  }
+
+  //==========================================================================
+  // getRecordIteratorBySk test, single key: address, projection
+  //==========================================================================
+
+  @Test
+  public void testQueryBySkAddressProjectionMysql56() {
+    testQueryBySkAddressProjection(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkAddressProjectionMysql57() {
+    testQueryBySkAddressProjection(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkAddressProjectionMysql80() {
+    testQueryBySkAddressProjection(a -> a.withMysql80());
+  }
+
+  public void testQueryBySkAddressProjection(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    // select address from emp force index (`address`) order by address;
+    List<String> projection = ImmutableList.of("address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 19, 20, 14, 18, 2, 13),
+            projection, true),
+            "address", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    // select empno, address from emp force index (`address`) order by address;
+    projection = ImmutableList.of("empno", "address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 19, 20, 14, 18, 2, 13),
+            projection, true),
+            "address", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    // select empno, name, address from emp force index (`address`) order by address;
+    projection = ImmutableList.of("empno", "name", "address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 19, 20, 14, 18, 2, 13),
+            projection, true),
+            "address", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    // select id from emp force index (`address`) where address > 'a';
+    projection = ImmutableList.of("id");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(2, 13),
+            projection, true),
+            "address", projection,
+            ImmutableList.of("a"), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    // select empno, address from emp force index (`address`) where address > 'o';
+    projection = ImmutableList.of("address", "empno");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(13),
+            projection, true),
+            "address", projection,
+            ImmutableList.of("o"), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(13),
+            projection, true),
+            "address", projection,
+            ImmutableList.of("老北京胡同Z区"), ComparisonOperator.GTE,
+            ImmutableList.of("老北京胡同Z区"), ComparisonOperator.LTE
+        );
+
+    projection = ImmutableList.of("address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(2),
+            projection, true),
+            "address", projection,
+            ImmutableList.of("main street"), ComparisonOperator.GTE,
+            ImmutableList.of("main street"), ComparisonOperator.LTE
+        );
+
+    projection = ImmutableList.of("address");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            ImmutableList.of(),
+            projection, true),
+            "address", projection,
+            ImmutableList.of("main street"), ComparisonOperator.GT,
+            ImmutableList.of("main street"), ComparisonOperator.LT
+        );
+
+    // TODO mysql will not include NULL addresses but result has
+    // select empno, address from emp force index (`address`) where address < 'o';
+    projection = ImmutableList.of("address", "empno");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 19, 20, 14, 18, 2),
+            projection, true),
+            "address", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of("o"), ComparisonOperator.LT
+        );
+  }
+
+  //==========================================================================
+  // getRecordIteratorBySk test, single key: email, projection
+  //==========================================================================
+
+  @Test
+  public void testQueryBySkEmailProjectionMysql56() {
+    testQueryBySkEmailProjection(a -> a.withMysql56());
+  }
+
+  @Test
+  public void testQueryBySkEmailProjectionMysql57() {
+    testQueryBySkEmailProjection(a -> a.withMysql57());
+  }
+
+  @Test
+  public void testQueryBySkEmailProjectionMysql80() {
+    testQueryBySkEmailProjection(a -> a.withMysql80());
+  }
+
+  /**
+   * <pre>
+   * +----+-------+------------------+
+   * | id | empno | email            |
+   * +----+-------+------------------+
+   * | 14 |   115 | adams@test.com   |
+   * |  1 |   100 | eric@test.com    |
+   * |  7 |   108 | james@test.com   |
+   * | 10 |   111 | jane@test.com    |
+   * |  8 |   109 | john@test.com    |
+   * |  4 |   105 | json@test.com    |
+   * | 18 |   122 | kidd@test.com    |
+   * | 13 |   114 | lara@test.com    |
+   * |  6 |   107 | lucy@test.com    |
+   * | 17 |   121 | martin@test.com  |
+   * |  9 |   110 | miller@test.com  |
+   * |  2 |   101 | neo@test.com     |
+   * | 20 |   124 | oscar@test.com   |
+   * | 12 |   113 | paul@test.com    |
+   * | 11 |   112 | sarah02@test.com |
+   * |  3 |   102 | sarah@test.com   |
+   * | 16 |   120 | scott@test.com   |
+   * | 15 |   116 | smith02@test.com |
+   * |  5 |   106 | smith@test.com   |
+   * | 19 |   123 | yue@test.com     |
+   * +----+-------+------------------+
+   * </pre>
+   */
+  public void testQueryBySkEmailProjection(Consumer<AssertThat> func) {
+    AssertThat assertThat = assertTestOf(this);
+    func.accept(assertThat);
+
+    // TODO mysql will take smith02@test.com ahead of smith@test.com with order by
+    // but actual physical record is not, this is ok, we do not guarantee order
+    // select empno, email from emp force index (email) order by email;
+    List<String> projection = ImmutableList.of("empno", "email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(14, 1, 7, 10, 8, 4, 18, 13, 6, 17, 9, 2, 20, 12, 3, 11, 16, 5, 15, 19),
+            projection, true),
+            "email", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    // although key var len is 3, we still look up to primary key to get record,
+    // covering index should not be enabled.
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(14, 1, 7, 10, 8, 4, 18, 13, 6, 17, 9, 2, 20, 12, 3, 11, 16, 5, 15, 19),
+            projection, true),
+            "email", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("empno", "email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(2, 20, 12, 3, 11, 16, 5, 15, 19),
+            projection, true),
+            "email", projection,
+            ImmutableList.of("mim"), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(14, 1, 7, 10, 8, 4),
+            projection, true),
+            "email", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of("kid"), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("empno", "email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(13, 6, 17, 9, 2, 20, 12, 3, 11),
+            projection, true),
+            "email", projection,
+            ImmutableList.of("kid"), ComparisonOperator.GT,
+            ImmutableList.of("sco"), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(13, 6, 17, 9, 2, 20, 12, 3, 11),
+            projection, true),
+            "email", projection,
+            ImmutableList.of("kid"), ComparisonOperator.GT,
+            ImmutableList.of("sco"), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(12, 3, 11, 16, 5, 15, 19),
+            projection, true),
+            "email", projection,
+            ImmutableList.of("p"), ComparisonOperator.GTE,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(12, 3, 11, 16, 5, 15, 19),
+            projection, true),
+            "email", projection,
+            ImmutableList.of("p"), ComparisonOperator.GT,
+            ImmutableList.of(), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(14, 1, 7, 10, 8, 4),
+            projection, true),
+            "email", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of("k"), ComparisonOperator.LT
+        );
+
+    projection = ImmutableList.of("email");
+    assertThat.withSql(sql)
+        .checkQueryIteratorBySkProjection(testQueryBySk(
+            Arrays.asList(14, 1, 7, 10, 8, 4, 18),
+            projection, true),
+            "email", projection,
+            ImmutableList.of(), ComparisonOperator.GT,
+            ImmutableList.of("kie"), ComparisonOperator.LTE
+        );
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testKeyVarLenOutOfRange() {
+    assertTestOf(this)
+        .withMysql56()
+        .withSql(sql)
+        .checkQueryIteratorBySk(testQueryBySk(ImmutableList.of()),
+            "email",
+            ImmutableList.of("long_email"), ComparisonOperator.GTE,
+            ImmutableList.of(), ComparisonOperator.LTE
+        );
   }
 
   //==========================================================================
@@ -1262,7 +1584,11 @@ public class SimpleSkTableReaderTest extends AbstractTest {
         );
   }
 
-  @Test(expected = ClassCastException.class)
+  /**
+   * Caused by: com.alibaba.innodb.java.reader.exception.ReaderException:
+   * Failed to make type compatible for key: [a]
+   */
+  @Test(expected = ReaderException.class)
   public void testQueryBySkWrongType() {
     assertTestOf(this)
         .withMysql56()
@@ -1406,6 +1732,12 @@ public class SimpleSkTableReaderTest extends AbstractTest {
         for (int i : fieldOrdinal) {
           Comparable k1 = (Comparable) o1[i];
           Comparable k2 = (Comparable) o2[i];
+          if (k1 == null) {
+            return -1;
+          }
+          if (k2 == null) {
+            return 1;
+          }
           if (k1 instanceof String) {
             result = ((String) k1).compareToIgnoreCase((String) k2);
           } else {

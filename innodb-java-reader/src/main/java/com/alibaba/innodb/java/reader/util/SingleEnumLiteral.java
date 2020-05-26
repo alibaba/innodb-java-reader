@@ -5,12 +5,17 @@
  */
 package com.alibaba.innodb.java.reader.util;
 
+import lombok.EqualsAndHashCode;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * ENUM column type result type.
  *
  * @author xu.zx
  */
-public class SingleEnumLiteral {
+@EqualsAndHashCode
+public class SingleEnumLiteral implements Comparable<SingleEnumLiteral> {
 
   private final int ordinal;
 
@@ -27,6 +32,13 @@ public class SingleEnumLiteral {
 
   public String getValue() {
     return value;
+  }
+
+  @Override
+  public int compareTo(SingleEnumLiteral o) {
+    checkNotNull(o);
+    checkNotNull(o.value);
+    return value.compareToIgnoreCase(o.value);
   }
 
   @Override

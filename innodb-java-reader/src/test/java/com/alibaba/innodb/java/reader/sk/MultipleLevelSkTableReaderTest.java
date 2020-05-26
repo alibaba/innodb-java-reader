@@ -71,6 +71,12 @@ public class MultipleLevelSkTableReaderTest extends AbstractTest {
     assertThat.withSql(sql())
         .checkQueryIteratorBySk(expectedRangeQueryPartially(1000, 1, 1023 + 1, 4),
             "mykey",
+            ImmutableList.of("", "0", ""), ComparisonOperator.GTE,
+            ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkQueryIteratorBySk(expectedRangeQueryPartially(1000, 1, 1023 + 1, 4),
+            "mykey",
             ImmutableList.of("", 0, ""), ComparisonOperator.GT,
             ImmutableList.of("1023jjjj", 2, "2jjjj"), ComparisonOperator.LT);
 
@@ -92,6 +98,12 @@ public class MultipleLevelSkTableReaderTest extends AbstractTest {
             "mykey",
             ImmutableList.of("1002ooo", 2, "1002ooo"), ComparisonOperator.GTE,
             ImmutableList.of("1130m", 1, "2m"), ComparisonOperator.LT);
+
+    assertThat.withSql(sql())
+        .checkQueryIteratorBySk(expectedRangeQueryPartially(1002, 3, 1130 + 1, 2),
+            "mykey",
+            ImmutableList.of("1002ooo", "2", "1002ooo"), ComparisonOperator.GTE,
+            ImmutableList.of("1130m", "1", "2m"), ComparisonOperator.LT);
 
     assertThat.withSql(sql())
         .checkQueryIteratorBySk(expectedRangeQueryPartially(1002, 3, 1130 + 1, 2),
