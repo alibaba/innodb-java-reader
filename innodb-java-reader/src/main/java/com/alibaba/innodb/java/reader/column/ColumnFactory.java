@@ -95,11 +95,11 @@ public class ColumnFactory {
     return result.typeClass();
   }
 
-  private static final ColumnParser<Integer> UNSIGNED_TINYINT = new AbstractColumnParser<Integer>() {
+  private static final ColumnParser<Short> UNSIGNED_TINYINT = new AbstractColumnParser<Short>() {
 
     @Override
-    public Integer readFrom(SliceInput input, Column column) {
-      return input.readUnsignedByte();
+    public Short readFrom(SliceInput input, Column column) {
+      return (short) input.readUnsignedByte();
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ColumnFactory {
 
     @Override
     public Class<?> typeClass() {
-      return Integer.class;
+      return Short.class;
     }
   };
 
@@ -133,11 +133,11 @@ public class ColumnFactory {
    *   0x000000f1 ^ 0xffffff00 = 0xfffffff1
    * </pre>
    */
-  private static final ColumnParser<Integer> TINYINT = new AbstractColumnParser<Integer>() {
+  private static final ColumnParser<Byte> TINYINT = new AbstractColumnParser<Byte>() {
 
     @Override
-    public Integer readFrom(SliceInput input, Column column) {
-      return input.readByte() ^ (-1 << (SIZE_OF_BYTE * 8 - 1));
+    public Byte readFrom(SliceInput input, Column column) {
+      return (byte) (input.readByte() ^ (-1 << (SIZE_OF_BYTE * 8 - 1)));
     }
 
     @Override
@@ -147,7 +147,7 @@ public class ColumnFactory {
 
     @Override
     public Class<?> typeClass() {
-      return Integer.class;
+      return Byte.class;
     }
   };
 
@@ -169,11 +169,11 @@ public class ColumnFactory {
     }
   };
 
-  private static final ColumnParser<Integer> SMALLINT = new AbstractColumnParser<Integer>() {
+  private static final ColumnParser<Short> SMALLINT = new AbstractColumnParser<Short>() {
 
     @Override
-    public Integer readFrom(SliceInput input, Column column) {
-      return input.readShort() ^ (-1 << (SIZE_OF_SHORT * 8 - 1));
+    public Short readFrom(SliceInput input, Column column) {
+      return (short) (input.readShort() ^ (-1 << (SIZE_OF_SHORT * 8 - 1)));
     }
 
     @Override
@@ -183,7 +183,7 @@ public class ColumnFactory {
 
     @Override
     public Class<?> typeClass() {
-      return Integer.class;
+      return Short.class;
     }
   };
 

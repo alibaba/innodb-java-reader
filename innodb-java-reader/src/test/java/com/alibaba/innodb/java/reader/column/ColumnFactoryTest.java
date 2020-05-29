@@ -20,9 +20,9 @@ public class ColumnFactoryTest {
 
   @Test
   public void testGetColumnJavaType() {
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.TINYINT).getName(), is(Integer.class.getName()));
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_TINYINT).getName(), is(Integer.class.getName()));
-    assertThat(ColumnFactory.getColumnJavaType(ColumnType.SMALLINT).getName(), is(Integer.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.TINYINT).getName(), is(Byte.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_TINYINT).getName(), is(Short.class.getName()));
+    assertThat(ColumnFactory.getColumnJavaType(ColumnType.SMALLINT).getName(), is(Short.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_SMALLINT).getName(), is(Integer.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.MEDIUMINT).getName(), is(Integer.class.getName()));
     assertThat(ColumnFactory.getColumnJavaType(ColumnType.UNSIGNED_MEDIUMINT).getName(), is(Integer.class.getName()));
@@ -62,11 +62,11 @@ public class ColumnFactoryTest {
   @Test
   public void testGetColumnJavaTypeFunc() {
     assertThat(ColumnFactory.getColumnToJavaTypeFunc(ColumnType.TINYINT).apply("100"),
-        is(100));
+        is((byte) 100));
     assertThat(ColumnFactory.getColumnToJavaTypeFunc(ColumnType.UNSIGNED_TINYINT).apply("100"),
-        is(100));
+        is((short) 100));
     assertThat(ColumnFactory.getColumnToJavaTypeFunc(ColumnType.SMALLINT).apply("100"),
-        is(100));
+        is((short) 100));
     assertThat(ColumnFactory.getColumnToJavaTypeFunc(ColumnType.UNSIGNED_SMALLINT).apply("100"),
         is(100));
     assertThat(ColumnFactory.getColumnToJavaTypeFunc(ColumnType.MEDIUMINT).apply("100"),

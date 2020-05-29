@@ -35,6 +35,7 @@ import static com.alibaba.innodb.java.reader.Constants.COLUMN_ROW_ID;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_JAVA_CHARSET;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_CHARSET;
 import static com.alibaba.innodb.java.reader.Constants.DEFAULT_MYSQL_COLLATION;
+import static com.alibaba.innodb.java.reader.Constants.PRIMARY_KEY_NAME;
 import static com.alibaba.innodb.java.reader.column.ColumnType.CHAR;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FOREIGN_KEY;
 import static com.alibaba.innodb.java.reader.schema.KeyMeta.Type.FULLTEXT_KEY;
@@ -188,7 +189,7 @@ public class TableDef {
     if (column.isPrimaryKey()) {
       checkState(primaryKeyMeta == null, "Primary key is already defined");
       primaryKeyMeta = createKeyMetaInfo(KeyMeta.Type.PRIMARY_KEY.literal(),
-          KeyMeta.Type.PRIMARY_KEY.literal(),
+          PRIMARY_KEY_NAME,
           ImmutableList.of(column.getName()));
     }
     return this;
@@ -250,9 +251,13 @@ public class TableDef {
   }
 
   public TableDef setPrimaryKeyColumns(List<String> pkColumnNames) {
+    return setPrimaryKeyColumns(PRIMARY_KEY_NAME, pkColumnNames);
+  }
+
+  public TableDef setPrimaryKeyColumns(String name, List<String> pkColumnNames) {
     checkState(primaryKeyMeta == null, "Primary key is already defined in column");
     primaryKeyMeta = createKeyMetaInfo(KeyMeta.Type.PRIMARY_KEY.literal(),
-        KeyMeta.Type.PRIMARY_KEY.literal(), pkColumnNames);
+        name, pkColumnNames);
     return this;
   }
 
@@ -279,7 +284,7 @@ public class TableDef {
         "Key type is invalid " + type);
     if (isValidSk(type)) {
       checkArgument(CollectionUtils.isNotEmpty(keyColumnNames),
-          "Key column names is empty for key = " + keyName);
+          "Secondary key column names is empty for key = " + keyName);
     }
 
     ImmutableList.Builder<Column> cols = ImmutableList.builder();
@@ -527,7 +532,7 @@ public class TableDef {
         Optional<KeyMeta> pkMeta = secondaryKeyMetaList.stream().filter(predicate).findFirst();
         if (pkMeta.isPresent()) {
           log.debug("Make key `{}` as primary key", pkMeta.get().getName());
-          setPrimaryKeyColumns(pkMeta.get().getKeyColumnNames());
+          setPrimaryKeyColumns(pkMeta.get().getName(), pkMeta.get().getKeyColumnNames());
           secondaryKeyMetaList.remove(pkMeta.get());
         }
       }

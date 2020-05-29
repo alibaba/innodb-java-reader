@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static com.alibaba.innodb.java.reader.Constants.PRIMARY_KEY_NAME;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -182,7 +183,9 @@ public class TableDefUtilTest {
     assertThat(tableDef.getField("H").getColumn(), is(columnList.get(8)));
     assertThat(tableDef.getField("H").getOrdinal(), is(8));
 
-    assertThat(tableDef.getPrimaryKeyMeta().getName(), is(KeyMeta.Type.PRIMARY_KEY.literal()));
+    assertThat(tableDef.getPrimaryKeyMeta().getName(), is(PRIMARY_KEY_NAME));
+    assertThat(tableDef.getPrimaryKeyMeta().getType(), is(KeyMeta.Type.PRIMARY_KEY));
+    assertThat(tableDef.getPrimaryKeyMeta().isSecondaryKey(), is(false));
     assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
     assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));
@@ -200,6 +203,8 @@ public class TableDefUtilTest {
     assertThat(tableDef.getSecondaryKeyMetaList().get(0).getNumOfColumns(), is(0));
 
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getType(), is(KeyMeta.Type.KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).isSecondaryKey(), is(true));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).isSecondaryKey(), is(true));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getName(), is("key_d"));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getNumOfColumns(), is(1));
     assertThat(tableDef.getSecondaryKeyMetaList().get(1).getKeyColumns(),
@@ -219,6 +224,7 @@ public class TableDefUtilTest {
     tableDef.getSecondaryKeyMetaList().get(1).validate();
 
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getType(), is(KeyMeta.Type.UNIQUE_KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).isSecondaryKey(), is(true));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getName(), is("key_e"));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getNumOfColumns(), is(1));
     assertThat(tableDef.getSecondaryKeyMetaList().get(2).getKeyColumns(),
@@ -233,6 +239,7 @@ public class TableDefUtilTest {
         is(ImmutableList.of(0)));
 
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getType(), is(KeyMeta.Type.INDEX));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).isSecondaryKey(), is(true));
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getName(), is("key_b_e"));
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getNumOfColumns(), is(2));
     assertThat(tableDef.getSecondaryKeyMetaList().get(3).getKeyColumns(),
@@ -247,6 +254,7 @@ public class TableDefUtilTest {
         is(ImmutableList.of(0)));
 
     assertThat(tableDef.getSecondaryKeyMetaList().get(4).getType(), is(KeyMeta.Type.KEY));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).isSecondaryKey(), is(true));
     assertThat(tableDef.getSecondaryKeyMetaList().get(4).getName(), is("key_k"));
     assertThat(tableDef.getSecondaryKeyMetaList().get(4).getNumOfColumns(), is(1));
     assertThat(tableDef.getSecondaryKeyMetaList().get(4).getKeyColumns(),
@@ -556,7 +564,7 @@ public class TableDefUtilTest {
     String sql = "CREATE TABLE `type_newdecimaltest59` (\n"
         + "  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\n"
         + "  `d` decimal(65,30) DEFAULT NULL,\n"
-        + "  UNIQUE KEY `id` (`id`)\n"
+        + "  UNIQUE KEY `key_id` (`id`)\n"
         + ") ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8";
     TableDef tableDef = TableDefUtil.covertToTableDef(sql);
     // have to prepare
@@ -594,6 +602,9 @@ public class TableDefUtilTest {
     assertThat(columnList.get(1).isPrimaryKey(), is(false));
     assertThat(columnList.get(1).isNullable(), is(true));
 
+    assertThat(tableDef.getPrimaryKeyMeta().getName(), is("key_id"));
+    assertThat(tableDef.getPrimaryKeyMeta().getType(), is(KeyMeta.Type.PRIMARY_KEY));
+    assertThat(tableDef.getPrimaryKeyMeta().isSecondaryKey(), is(false));
     assertThat(tableDef.getPrimaryKeyColumns(), is(ImmutableList.of(columnList.get(0))));
     assertThat(tableDef.getPrimaryKeyColumnNum(), is(1));
     assertThat(tableDef.getPrimaryKeyColumnNames(), is(ImmutableList.of("id")));

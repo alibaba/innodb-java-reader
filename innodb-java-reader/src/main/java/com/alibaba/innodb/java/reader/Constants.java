@@ -18,8 +18,6 @@ public interface Constants {
 
   String MIN_VAL = "min_val";
 
-  Object ANY_VAL = new Object();
-
   String DEFAULT_JAVA_CHARSET = "UTF-8";
 
   String DEFAULT_MYSQL_CHARSET = "utf8";
@@ -72,5 +70,7 @@ public interface Constants {
   String COLUMN_ATTRIBUTE_ENUM_KEY = "_ENUM_";
 
   int MAX_ONE_BYTE_ENUM_COUNT = 255;
+
+  String PRIMARY_KEY_NAME = "PRIMARY_KEY";
 
 }

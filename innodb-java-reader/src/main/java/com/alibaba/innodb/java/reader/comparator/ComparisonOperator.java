@@ -5,6 +5,10 @@ package com.alibaba.innodb.java.reader.comparator;
 
 import com.google.common.collect.Maps;
 
+import org.apache.commons.collections.CollectionUtils;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,6 +49,42 @@ public enum ComparisonOperator {
 
   public static boolean containsEq(ComparisonOperator operator) {
     return operator.value.contains("=");
+  }
+
+  public static boolean isLowerBoundOp(String... op) {
+    if (op == null) {
+      return false;
+    }
+    return isLowerBoundOp(Arrays.asList(op));
+  }
+
+  public static boolean isUpperBoundOp(String... op) {
+    if (op == null) {
+      return false;
+    }
+    return isUpperBoundOp(Arrays.asList(op));
+  }
+
+  public static boolean isLowerBoundOp(List<String> op) {
+    if (CollectionUtils.isEmpty(op)) {
+      return false;
+    }
+    return op.stream().allMatch(ComparisonOperator::isLowerBoundOp);
+  }
+
+  public static boolean isUpperBoundOp(List<String> op) {
+    if (CollectionUtils.isEmpty(op)) {
+      return false;
+    }
+    return op.stream().allMatch(ComparisonOperator::isUpperBoundOp);
+  }
+
+  public static boolean isLowerBoundOp(String op) {
+    return op.contains(">");
+  }
+
+  public static boolean isUpperBoundOp(String op) {
+    return op.contains("<");
   }
 
   // ---------- template method ---------- //

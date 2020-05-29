@@ -91,6 +91,10 @@ public class KeyMeta {
     return this;
   }
 
+  public boolean isSecondaryKey() {
+    return type != Type.PRIMARY_KEY;
+  }
+
   public enum Type {
     /**
      * Key type.
