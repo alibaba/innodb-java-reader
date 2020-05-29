@@ -532,7 +532,9 @@ public class ColumnFactory {
     public String readFrom(SliceInput input, Column column) {
       long packedValue = input.unpackBigendian(4);
       String fractionStr = getFractionString(input, column);
-      return String.format("%s%s", TIMESTAMP_FORMAT.format(new Date(packedValue * 1000L)),
+      return String.format("%s%s",
+          packedValue == 0L ? "0000-00-00 00:00:00"
+              : TIMESTAMP_FORMAT.format(new Date(packedValue * 1000L)),
           fractionStr);
     }
 
