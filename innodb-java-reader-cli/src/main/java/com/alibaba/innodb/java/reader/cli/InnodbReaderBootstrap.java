@@ -84,6 +84,11 @@ public class InnodbReaderBootstrap {
   private static boolean SHOW_HEADER = false;
 
   /**
+   * Whether to quote field values.
+   */
+  private static boolean QUOTE = false;
+
+  /**
    * Row field delimiter.
    */
   private static String FIELD_DELIMITER = "\t";
@@ -141,6 +146,9 @@ public class InnodbReaderBootstrap {
 
     options.addOption("iomode", "output-io-mode", true,
         "output io mode, valid mode are: " + ALL_OUTPUT_IO_MODE);
+
+    options.addOption("quote", "quote", false,
+        "set if you want to quote field values");
 
     options.addOption("delimiter", "delimiter", true,
         "field delimiter, default is tab");
@@ -228,6 +236,9 @@ public class InnodbReaderBootstrap {
         OutputIOMode outputIOMode = OutputIOMode.parse(line.getOptionValue("output-io-mode"));
         writer = WriterFactory.build(outputIOMode, outputFilePath);
         writer.open();
+      }
+      if (line.hasOption("quote")) {
+        QUOTE = true;
       }
       if (line.hasOption("delimiter")) {
         FIELD_DELIMITER = line.getOptionValue("delimiter");
@@ -381,7 +392,8 @@ public class InnodbReaderBootstrap {
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
-        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
+        writer.write(
+            CsvPrinter.arrayToString(record.getValues(), b, FIELD_DELIMITER, QUOTE, writer.ifNewLineAfterWrite()));
       }
     }
   }
@@ -396,7 +408,8 @@ public class InnodbReaderBootstrap {
       StringBuilder b = new StringBuilder();
       if (CollectionUtils.isNotEmpty(recordList)) {
         for (GenericRecord record : recordList) {
-          writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
+          writer.write(
+              CsvPrinter.arrayToString(record.getValues(), b, FIELD_DELIMITER, QUOTE, writer.ifNewLineAfterWrite()));
         }
       }
     }
@@ -415,7 +428,8 @@ public class InnodbReaderBootstrap {
           parseStringToKey(reader.getTableDef().getPrimaryKeyColumns(), primaryKey), projection);
       StringBuilder b = new StringBuilder();
       if (record != null) {
-        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
+        writer.write(
+            CsvPrinter.arrayToString(record.getValues(), b, FIELD_DELIMITER, QUOTE, writer.ifNewLineAfterWrite()));
       }
     }
   }
@@ -447,7 +461,8 @@ public class InnodbReaderBootstrap {
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
-        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
+        writer.write(
+            CsvPrinter.arrayToString(record.getValues(), b, FIELD_DELIMITER, QUOTE, writer.ifNewLineAfterWrite()));
       }
     }
   }
@@ -472,7 +487,8 @@ public class InnodbReaderBootstrap {
       StringBuilder b = new StringBuilder();
       while (iterator.hasNext()) {
         GenericRecord record = iterator.next();
-        writer.write(Utils.arrayToString(record.getValues(), b, FIELD_DELIMITER, writer.ifNewLineAfterWrite()));
+        writer.write(
+            CsvPrinter.arrayToString(record.getValues(), b, FIELD_DELIMITER, QUOTE, writer.ifNewLineAfterWrite()));
       }
     }
   }

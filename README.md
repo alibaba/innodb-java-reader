@@ -565,6 +565,8 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
                                          gen-lsn-heatmap,gen-filling-rate-
                                          heatmap,get-all-index-page-fillin
                                          g-rate
+ -quote,--quote                          set if you want to quote field
+                                         values
  -delimiter,--delimiter <arg>            field delimiter, default is tab
  -desc,--desc                            if records sorted in descending
                                          order, works for query all and

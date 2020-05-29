@@ -37,6 +37,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>net.smacke</groupId>
             <artifactId>jaydio</artifactId>
         </dependency>
