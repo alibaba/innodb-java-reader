@@ -73,4 +73,6 @@ public interface Constants {
 
   String PRIMARY_KEY_NAME = "PRIMARY_KEY";
 
+  String ZERO_DATETIME = "0000-00-00 00:00:00";
+
 }

@@ -17,6 +17,8 @@ import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +49,7 @@ import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_3;
 import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_4;
 import static com.alibaba.innodb.java.reader.Constants.MIN_RECORD_5;
 import static com.alibaba.innodb.java.reader.Constants.MIN_VAL;
+import static com.alibaba.innodb.java.reader.Constants.ZERO_DATETIME;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -448,6 +451,14 @@ public class Utils {
     throw new IllegalArgumentException("not possible");
   }
 
+  public static Timestamp convertDateTime(String s, int precision) {
+    // FIXME
+    if (s.startsWith(ZERO_DATETIME)) {
+      return new Timestamp(0L);
+    }
+    return Timestamp.valueOf(Utils.parseDateTimeText(s, precision));
+  }
+
   public static LocalDateTime parseDateTimeText(String s) {
     return parseDateTimeText(s, 0);
   }
@@ -457,6 +468,10 @@ public class Utils {
       throw new IllegalArgumentException("Precision is out of bound");
     }
     return LocalDateTime.parse(s, TIME_FORMAT_TIMESTAMP[precision]);
+  }
+
+  public static Time convertTime(String s, int precision) {
+    return Time.valueOf(Utils.parseTimeText(s, precision));
   }
 
   public static LocalTime parseTimeText(String s) {

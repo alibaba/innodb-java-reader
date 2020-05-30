@@ -6,6 +6,8 @@ import com.alibaba.innodb.java.reader.schema.Column;
 
 import org.junit.Test;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -400,6 +402,13 @@ public class UtilsTest {
   }
 
   @Test
+  public void testConvertDateTimeText() {
+    String s = "2020-05-01 12:15:59";
+    Timestamp dt = Utils.convertDateTime(s, 0);
+    assertThat(dt.toString(), is("2020-05-01 12:15:59.0"));
+  }
+
+  @Test
   public void testParseDateTimeText() {
     String s = "2020-05-01 12:15:59";
     LocalDateTime dt = Utils.parseDateTimeText(s);
@@ -477,6 +486,13 @@ public class UtilsTest {
     s = "12:15:59.500";
     time = Utils.parseTimeText(s, 3);
     assertThat(time.toString(), is("12:15:59.500"));
+  }
+
+  @Test
+  public void testConvertTimeText() {
+    String s = "12:15:59";
+    Time time = Utils.convertTime(s, 0);
+    assertThat(time.toString(), is("12:15:59"));
   }
 
   @Test(expected = IllegalArgumentException.class)
