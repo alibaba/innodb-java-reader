@@ -74,6 +74,9 @@ public class TableReaderImpl implements TableReader {
   }
 
   public TableReaderImpl(String ibdFilePath, TableDef tableDef, KeyComparator keyComparator) {
+    if (ibdFilePath != null) {
+      ibdFilePath = ibdFilePath.trim();
+    }
     this.ibdFilePath = ibdFilePath;
     this.tableDef = tableDef;
     this.keyComparator = keyComparator;
@@ -91,7 +94,7 @@ public class TableReaderImpl implements TableReader {
       indexService = new IndexServiceImpl(storageService, tableDef, keyComparator);
       log.debug("{}", tableDef);
     } catch (IOException e) {
-      throw new ReaderException("Open " + ibdFilePath + " failed", e);
+      throw new ReaderException("Open " + ibdFilePath + " failed " + e.getMessage(), e);
     }
   }
 
