@@ -146,13 +146,6 @@ public class Utils {
     return result;
   }
 
-  public static <T> List<T> makeNotNull(T obj) {
-    if (obj == null) {
-      return ImmutableList.of();
-    }
-    return ImmutableList.of(obj);
-  }
-
   public static <T> List<T> makeNotNull(List<T> list) {
     if (list == null) {
       return ImmutableList.of();

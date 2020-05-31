@@ -27,6 +27,7 @@ import com.alibaba.innodb.java.reader.service.impl.IndexServiceImpl;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_PAGE;
 import static com.alibaba.innodb.java.reader.page.PageType.INDEX;
 import static com.alibaba.innodb.java.reader.util.Utils.makeNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -74,6 +76,9 @@ public class TableReaderImpl implements TableReader {
   }
 
   public TableReaderImpl(String ibdFilePath, TableDef tableDef, KeyComparator keyComparator) {
+    checkArgument(StringUtils.isNotEmpty(ibdFilePath), "ibdFilePath should not be empty");
+    checkArgument(tableDef != null, "tableDef should not be empty");
+    ibdFilePath = ibdFilePath.trim();
     this.ibdFilePath = ibdFilePath;
     this.tableDef = tableDef;
     this.keyComparator = keyComparator;
@@ -89,9 +94,9 @@ public class TableReaderImpl implements TableReader {
       storageService = new FileChannelStorageServiceImpl();
       storageService.open(ibdFilePath);
       indexService = new IndexServiceImpl(storageService, tableDef, keyComparator);
-      log.debug("{}", tableDef);
+      log.debug("Open ibd file:{}, tableDef:{}", ibdFilePath, tableDef);
     } catch (IOException e) {
-      throw new ReaderException("Open " + ibdFilePath + " failed", e);
+      throw new ReaderException("Open " + ibdFilePath + " failed " + e.getMessage(), e);
     }
   }
 

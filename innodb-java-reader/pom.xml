@@ -8,12 +8,12 @@
         <groupId>com.alibaba.database</groupId>
         <artifactId>innodb-java-reader-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>1.0.5-SNAPSHOT</version>
+        <version>1.0.5</version>
     </parent>
 
     <groupId>com.alibaba.database</groupId>
     <artifactId>innodb-java-reader</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
     <name>innodb-java-reader</name>
     <description>innodb-java-reader</description>

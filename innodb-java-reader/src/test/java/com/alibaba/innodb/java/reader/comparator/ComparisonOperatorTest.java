@@ -36,9 +36,13 @@ public class ComparisonOperatorTest {
     assertThat(ComparisonOperator.isUpperBoundOp("<="), is(true));
     assertThat(ComparisonOperator.isUpperBoundOp("<"), is(true));
     assertThat(ComparisonOperator.isLowerBoundOp(Arrays.asList(">=")), is(true));
+    assertThat(ComparisonOperator.isUpperBoundOp(Arrays.asList(">=")), is(false));
     assertThat(ComparisonOperator.isUpperBoundOp(Arrays.asList("<=")), is(true));
+    assertThat(ComparisonOperator.isLowerBoundOp(Arrays.asList("<=")), is(false));
     assertThat(ComparisonOperator.isLowerBoundOp(">=", ">"), is(true));
+    assertThat(ComparisonOperator.isUpperBoundOp(">=", ">"), is(false));
     assertThat(ComparisonOperator.isUpperBoundOp("<=", "<"), is(true));
+    assertThat(ComparisonOperator.isLowerBoundOp("<=", "<"), is(false));
   }
 
 }

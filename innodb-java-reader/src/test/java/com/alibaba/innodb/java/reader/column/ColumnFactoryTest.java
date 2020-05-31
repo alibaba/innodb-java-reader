@@ -147,4 +147,8 @@ public class ColumnFactoryTest {
     ColumnFactory.getColumnJavaType("GEOMETRY").getName();
   }
 
+  @Test(expected = ColumnParseException.class)
+  public void testGetColumnParserNegate() {
+    ColumnFactory.getColumnParser("NOT_SUPPORT");
+  }
 }
