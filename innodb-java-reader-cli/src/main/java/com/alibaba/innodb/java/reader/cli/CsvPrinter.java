@@ -15,66 +15,112 @@
  */
 package com.alibaba.innodb.java.reader.cli;
 
+import com.google.common.collect.Maps;
 import java.io.IOException;
+import java.util.Map;
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.QuoteMode;
 
 /**
  * CSV printer.
- * 
+ *
  * @author xu.zx
  * @author Adam Jurcik
  */
 public class CsvPrinter {
 
-  public static final CSVFormat FIELD_FORMAT_QUOTED;
+  /**
+   * Field delimiter.
+   */
+  private String delimiter;
+
+  /**
+   * Quote mode.
+   */
+  private QuoteMode quoteMode;
+
+  /**
+   * Null value string.
+   */
+  private String nullStr;
+
+  /**
+   * Field value formatting facility.
+   */
+  private CSVFormat valueFormat;
+
+  /**
+   * Row printing target.
+   */
+  private StringBuilder row = new StringBuilder();
+
+  /**
+   * App quote modes mapping to CSV lib quote modes.
+   */
+  private static final Map<QuoteMode, org.apache.commons.csv.QuoteMode> QUOTE_MODES
+      = Maps.newHashMapWithExpectedSize(QuoteMode.values().length);
 
   static {
-    // delimiter is not used
-    FIELD_FORMAT_QUOTED = CSVFormat.newFormat(',')
-        .withNullString("null")
-        .withQuote('"')
-        .withQuoteMode(QuoteMode.ALL_NON_NULL);
+    QUOTE_MODES.put(QuoteMode.ALL, org.apache.commons.csv.QuoteMode.ALL);
+    QUOTE_MODES.put(QuoteMode.NON_NULL, org.apache.commons.csv.QuoteMode.ALL_NON_NULL);
+    QUOTE_MODES.put(QuoteMode.NON_NUMERIC, org.apache.commons.csv.QuoteMode.NON_NUMERIC);
   }
-  
+
   /**
-   * Use {@link StringBuilder} to build string out of an array.
-   * <p>
-   * Sometimes by reusing StringBuilder, we can avoid creating many StringBuilder and good to garbage collection.
+   * Creates a CSV printer.
+   *
+   * @param quoteMode field value quotation mode
+   * @param nullStr   null string
+   */
+  public CsvPrinter(String delimiter, QuoteMode quoteMode, String nullStr) {
+    this.delimiter = delimiter;
+    this.quoteMode = quoteMode;
+    this.nullStr = nullStr;
+
+    // delimiter is not used as the lib enables to use only one character
+    valueFormat = CSVFormat.newFormat(',')
+        .withNullString(nullStr)
+        .withQuote('"');
+
+    if (quoteMode != QuoteMode.NONE) {
+      valueFormat = valueFormat.withQuoteMode(QUOTE_MODES.get(quoteMode));
+    }
+  }
+
+  /**
+   * Prints array of table fields to CSV.
    *
    * @param a         array
-   * @param b         reusable StringBuilder
-   * @param delimiter delimiter
-   * @param quote     whether to quote value
    * @param newLine   if this is a new line, if true, write slash n at the end
    * @return array string
    */
-  public static String arrayToString(Object[] a, StringBuilder b, String delimiter, boolean quote, boolean newLine) {
+  public String arrayToString(Object[] a, boolean newLine) {
     if (a == null) {
       return "null";
     }
     // clean StringBuilder
-    b.delete(0, b.length());
-    for (int i = 0; i < a.length; i++) {
-      if (quote) {
+    row.setLength(0);
+    for (Object value : a) {
+      if (quoteMode != QuoteMode.NONE) {
         try {
-          FIELD_FORMAT_QUOTED.print(a[i], b, true);
+          valueFormat.print(value, row, true);
         } catch (IOException e) {
           // should not happen as StringBuilder does not throw IOException
           throw new IllegalStateException(e);
         }
+      } else if (value == null) {
+          row.append(nullStr);
       } else {
-        b.append(a[i]);
+          row.append(value);
       }
-      b.append(delimiter);
+      row.append(delimiter);
     }
-    if (b.length() > 0) {
-      b.deleteCharAt(b.length() - 1);
+    if (row.length() > 0) {
+      row.deleteCharAt(row.length() - 1);
     }
     if (newLine) {
-      b.append("\n");
+      row.append("\n");
     }
-    return b.toString();
+    return row.toString();
   }
 
 }

@@ -1,21 +1,7 @@
-/*
- * Copyright 2020 Alibaba Group Holding Limited.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.innodb.java.reader;
 
 import com.alibaba.innodb.java.reader.cli.CsvPrinter;
+import com.alibaba.innodb.java.reader.cli.QuoteMode;
 
 import org.junit.Test;
 
@@ -24,11 +10,11 @@ import static org.junit.Assert.assertThat;
 
 /**
  * CSV printer test.
- * 
+ *
  * @author xu.zx
  * @author Adam Jurcik
  */
-public class CsvPrinterTest {  
+public class CsvPrinterTest {
 
   @Test
   public void testArrayToString() {
@@ -38,24 +24,27 @@ public class CsvPrinterTest {
     array[2] = 3.4;
     array[3] = 6.6D;
     array[4] = 10000000L;
+    CsvPrinter p = defaultPrinter();
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ","), is("1,abc,3.4,6.6,10000000"));
+      assertThat(p.arrayToString(array, false), is("1,abc,3.4,6.6,10000000"));
     }
   }
 
   @Test
   public void testArrayToStringEmptyArray() {
     Object[] array = new Object[0];
+    CsvPrinter p = defaultPrinter();
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ","), is(""));
+      assertThat(p.arrayToString(array, false), is(""));
     }
   }
 
   @Test
   public void testArrayToStringNullArray() {
     Object[] array = null;
+    CsvPrinter p = defaultPrinter();
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ","), is("null"));
+      assertThat(p.arrayToString(array, false), is("null"));
     }
   }
 
@@ -63,8 +52,9 @@ public class CsvPrinterTest {
   public void testArrayToStringOneElement() {
     Object[] array = new Object[1];
     array[0] = 1;
+    CsvPrinter p = defaultPrinter();
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ","), is("1"));
+      assertThat(p.arrayToString(array, false), is("1"));
     }
   }
 
@@ -72,8 +62,9 @@ public class CsvPrinterTest {
   public void testArrayToStringOneElementNull() {
     Object[] array = new Object[2];
     array[0] = 1;
+    CsvPrinter p = defaultPrinter();
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ","), is("1,null"));
+      assertThat(p.arrayToString(array, false), is("1,null"));
     }
   }
 
@@ -83,35 +74,84 @@ public class CsvPrinterTest {
     array[0] = 1;
     array[2] = "abc";
     array[4] = 0.0D;
+    CsvPrinter p = defaultPrinter();
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ","), is("1,null,abc,null,0.0"));
+      assertThat(p.arrayToString(array, false), is("1,null,abc,null,0.0"));
     }
   }
 
   @Test
-  public void testArrayToStringOneElementQuote() {
+  public void testArrayToStringQuoteAll() {
+    Object[] array = new Object[6];
+    array[0] = 1;
+    array[1] = "abc";
+    array[2] = 3.4;
+    array[3] = 6.6D;
+    array[4] = 10000000L;
+    array[5] = null;
+    CsvPrinter p = new CsvPrinter(",", QuoteMode.ALL, "null");
+    for (int i = 0; i < 10; i++) {
+      assertThat(p.arrayToString(array, false), is("\"1\",\"abc\",\"3.4\",\"6.6\",\"10000000\",\"null\""));
+    }
+  }
+
+  @Test
+  public void testArrayToStringQuoteNonNull() {
+    Object[] array = new Object[6];
+    array[0] = 1;
+    array[1] = "abc";
+    array[2] = 3.4;
+    array[3] = 6.6D;
+    array[4] = 10000000L;
+    array[5] = null;
+    CsvPrinter p = new CsvPrinter(",", QuoteMode.NON_NULL, "null");
+    for (int i = 0; i < 10; i++) {
+      assertThat(p.arrayToString(array, false), is("\"1\",\"abc\",\"3.4\",\"6.6\",\"10000000\",null"));
+    }
+  }
+
+  @Test
+  public void testArrayToStringQuoteNonNumeric() {
+    Object[] array = new Object[6];
+    array[0] = 1;
+    array[1] = "abc";
+    array[2] = 3.4;
+    array[3] = 6.6D;
+    array[4] = 10000000L;
+    array[5] = null;
+    CsvPrinter p = new CsvPrinter(",", QuoteMode.NON_NUMERIC, "null");
+    for (int i = 0; i < 10; i++) {
+      assertThat(p.arrayToString(array, false), is("1,\"abc\",3.4,6.6,10000000,null"));
+    }
+  }
+
+  @Test
+  public void testArrayToStringQuoteNone() {
+    Object[] array = new Object[6];
+    array[0] = 1;
+    array[1] = "abc";
+    array[2] = 3.4;
+    array[3] = 6.6D;
+    array[4] = 10000000L;
+    array[5] = null;
+    CsvPrinter p = new CsvPrinter(",", QuoteMode.NONE, "null");
+    for (int i = 0; i < 10; i++) {
+      assertThat(p.arrayToString(array, false), is("1,abc,3.4,6.6,10000000,null"));
+    }
+  }
+
+  @Test
+  public void testArrayToStringNullString() {
     Object[] array = new Object[1];
-    array[0] = 1;
+    array[0] = null;
+    CsvPrinter p = new CsvPrinter(",", QuoteMode.NONE, "NULL");
     for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, "1", true), is("\"1\""));
+      assertThat(p.arrayToString(array, false), is("NULL"));
     }
   }
 
-  @Test
-  public void testArrayToStringOneElementNullQuote() {
-    Object[] array = new Object[2];
-    array[0] = 1;
-    for (int i = 0; i < 10; i++) {
-      assertThat(arrayToString(array, ",", true), is("\"1\",null"));
-    }
-  }
-
-  private static String arrayToString(Object[] a, String delimiter) {
-    return arrayToString(a, delimiter, false);
-  }
-
-  private static String arrayToString(Object[] a, String delimiter, boolean quote) {
-    return CsvPrinter.arrayToString(a, new StringBuilder(), delimiter, quote, false);
+  private static CsvPrinter defaultPrinter() {
+    return new CsvPrinter(",", QuoteMode.NONE, "null");
   }
 
 }
