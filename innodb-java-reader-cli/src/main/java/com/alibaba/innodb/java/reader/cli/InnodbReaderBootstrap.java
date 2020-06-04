@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.cli;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import com.alibaba.innodb.java.reader.TableReader;
@@ -116,6 +117,13 @@ public class InnodbReaderBootstrap {
    * </p>range query with >=5, the args will be <code>>=;5;nop;null</code>
    */
   private static String RANGE_QUERY_KEY_DELIMITER = ReaderSystemProperty.RANGE_QUERY_KEY_DELIMITER.value();
+
+  @VisibleForTesting
+  public static void reset() {
+    QUOTE_MODE = QuoteMode.NONE;
+    FIELD_DELIMITER = "\t";
+    NULL_STRING = "null";
+  }
 
   public static void main(String[] arguments) {
     run(arguments);

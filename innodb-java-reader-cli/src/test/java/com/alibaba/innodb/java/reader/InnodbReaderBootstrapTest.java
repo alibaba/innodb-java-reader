@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import com.alibaba.innodb.java.reader.cli.InnodbReaderBootstrap;
+import com.alibaba.innodb.java.reader.cli.QuoteMode;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -84,6 +85,7 @@ public class InnodbReaderBootstrapTest {
   @Before
   public void prepare() {
     SYS_OUT_INTERCEPTOR.clear();
+    InnodbReaderBootstrap.reset();
   }
 
   @Test
@@ -503,6 +505,57 @@ public class InnodbReaderBootstrapTest {
   }
 
   @Test
+  public void testQueryAllQuote() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-all", "-quote-mode", "nonnull"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1000));
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = 1;
+    checkOption.count = 1000;
+    checkOption.projection = ImmutableList.of("id", "a", "b", "c");
+    checkOption.desc = false;
+    checkOption.delimiter = "\t";
+    checkOption.quoteMode = QuoteMode.NON_NULL;
+    check(output, checkOption);
+  }
+
+  @Test
+  public void testQueryAllQuote2() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-all", "-quote-mode", "nonnumeric", "-delimiter", ",", "-projection", "id,a,b"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1000));
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = 1;
+    checkOption.count = 1000;
+    checkOption.projection = ImmutableList.of("id", "a", "b");
+    checkOption.desc = false;
+    checkOption.delimiter = ",";
+    checkOption.quoteMode = QuoteMode.NON_NUMERIC;
+    check(output, checkOption);
+  }
+
+  @Test
+  public void testQueryAllQuote3() {
+    String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
+        "-c", "query-all", "-quote-mode", "all", "-delimiter", ",", "-projection", "id,a,b"};
+    InnodbReaderBootstrap.main(args);
+    List<String> output = SYS_OUT_INTERCEPTOR.getOutput();
+    assertThat(output.size(), is(1000));
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = 1;
+    checkOption.count = 1000;
+    checkOption.projection = ImmutableList.of("id", "a", "b");
+    checkOption.desc = false;
+    checkOption.delimiter = ",";
+    checkOption.quoteMode = QuoteMode.ALL;
+    check(output, checkOption);
+  }
+
+  @Test
   public void testGetAllIndexPageFillingRate() {
     String[] args = {"-ibd-file-path", sourceIbdFilePath, "-create-table-sql-file-path", createTableSqlPath,
         "-c", "get-all-index-page-filling-rate"};
@@ -549,54 +602,137 @@ public class InnodbReaderBootstrapTest {
   }
 
   private void check(List<String> output, int start, int count) {
-    check(output, start, count, "\t", ImmutableList.of("id", "a", "b", "c"), false);
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = start;
+    checkOption.count = count;
+    checkOption.projection = ImmutableList.of("id", "a", "b", "c");
+    checkOption.desc = false;
+    checkOption.delimiter = "\t";
+    check(output, checkOption);
   }
 
   private void check(List<String> output, int start, int count, boolean desc) {
-    check(output, start, count, "\t", ImmutableList.of("id", "a", "b", "c"), desc);
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = start;
+    checkOption.count = count;
+    checkOption.projection = ImmutableList.of("id", "a", "b", "c");
+    checkOption.desc = desc;
+    checkOption.delimiter = "\t";
+    check(output, checkOption);
   }
 
   private void check(List<String> output, int start, int count, String delimiter) {
-    check(output, start, count, delimiter, ImmutableList.of("id", "a", "b", "c"), false);
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = start;
+    checkOption.count = count;
+    checkOption.projection = ImmutableList.of("id", "a", "b", "c");
+    checkOption.desc = false;
+    checkOption.delimiter = delimiter;
+    check(output, checkOption);
   }
 
   private void check(List<String> output, int start, int count, String delimiter, boolean desc) {
-    check(output, start, count, delimiter, ImmutableList.of("id", "a", "b", "c"), desc);
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = start;
+    checkOption.count = count;
+    checkOption.projection = ImmutableList.of("id", "a", "b", "c");
+    checkOption.desc = desc;
+    checkOption.delimiter = delimiter;
+    check(output, checkOption);
   }
 
   private void check(List<String> output, int start, int count, List<String> projection) {
-    check(output, start, count, "\t", projection, false);
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = start;
+    checkOption.count = count;
+    checkOption.projection = projection;
+    checkOption.desc = false;
+    checkOption.delimiter = "\t";
+    check(output, checkOption);
   }
 
   private void check(List<String> output, int start, int count, List<String> projection, boolean desc) {
-    check(output, start, count, "\t", projection, desc);
+    CheckOption checkOption = new CheckOption();
+    checkOption.start = start;
+    checkOption.count = count;
+    checkOption.projection = projection;
+    checkOption.desc = desc;
+    checkOption.delimiter = "\t";
+    check(output, checkOption);
   }
 
-  private void check(List<String> output, int start, int count, String delimiter, List<String> projection,
-                     boolean desc) {
+  private void check(List<String> output, CheckOption checkOption) {
     int iStart = 0;
     int iEnd = 0;
-    if (desc) {
-      iStart = start + count - 1;
-      iEnd = start;
+    if (checkOption.desc) {
+      iStart = checkOption.start + checkOption.count - 1;
+      iEnd = checkOption.start;
     } else {
-      iStart = start;
-      iEnd = start + count;
+      iStart = checkOption.start;
+      iEnd = checkOption.start + checkOption.count;
     }
     int index = 0;
-    for (int i = iStart; desc ? i >= iEnd : i < iEnd; ) {
-      String[] array = output.get(index++).split(delimiter);
-      assertThat(array[0], is(String.valueOf(i)));
-      assertThat(array[1], is(projection.contains("a") ? String.valueOf(i * 2) : "null"));
-      assertThat(array[2], is((projection.contains("b")
-          ? StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 32) : "null")));
-      assertThat(array[3], is((projection.contains("c")
-          ? StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 512) : "null")));
-      if (desc) {
+    List<String> projection = checkOption.projection;
+    QuoteMode quoteMode = checkOption.quoteMode;
+    String nullString = checkOption.nullString;
+    for (int i = iStart; checkOption.desc ? i >= iEnd : i < iEnd; ) {
+      String[] array = output.get(index++).split(checkOption.delimiter);
+      assertThat(array[0], is(quote(quoteMode, String.valueOf(i), true, nullString)));
+      if (projection.contains("a")) {
+        assertThat(array[1], is(quote(quoteMode, String.valueOf(i * 2), true, nullString)));
+      } else {
+        assertThat(array[1], is(quote(quoteMode, null, true, nullString)));
+      }
+
+      if (projection.contains("b")) {
+        String expectedB = StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 32);
+        assertThat(array[2], is(quote(quoteMode, expectedB, false, nullString)));
+      } else {
+        assertThat(array[2], is(quote(quoteMode, null, false, nullString)));
+      }
+
+      if (projection.contains("c")) {
+        String expectedC = StringUtils.repeat(String.valueOf((char) (97 + i % 26)), 512);
+        assertThat(array[3], is(quote(quoteMode, expectedC, false, nullString)));
+      } else {
+        assertThat(array[3], is(quote(quoteMode, null, false, nullString)));
+      }
+      if (checkOption.desc) {
         i--;
       } else {
         i++;
       }
+    }
+  }
+
+  String quote(QuoteMode quoteMode, String value, boolean isNumeric, String nullString) {
+    switch (quoteMode) {
+      case ALL:
+        if (value == null) {
+          value = nullString;
+        }
+        return "\"" + value + "\"";
+      case NON_NULL:
+        if (value == null) {
+          return nullString;
+        } else {
+          return "\"" + value + "\"";
+        }
+      case NON_NUMERIC:
+        if (value == null) {
+          return nullString;
+        } else if (isNumeric) {
+          return value;
+        } else {
+          return "\"" + value + "\"";
+        }
+      case NONE:
+      default:
+        if (value == null) {
+          return nullString;
+        } else {
+          return value;
+        }
     }
   }
 
@@ -606,4 +742,13 @@ public class InnodbReaderBootstrapTest {
     }
   }
 
+  static class CheckOption {
+    int start;
+    int count;
+    String delimiter = "\t";
+    List<String> projection;
+    boolean desc = false;
+    QuoteMode quoteMode = QuoteMode.NONE;
+    String nullString = "null";
+  }
 }
