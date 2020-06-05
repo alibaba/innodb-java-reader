@@ -67,7 +67,7 @@ Supported column types are listed below. Java type mapping refer to [docs](docs/
 <dependency>
   <groupId>com.alibaba.database</groupId>
   <artifactId>innodb-java-reader</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
 </dependency>
 ```
 
@@ -553,9 +553,9 @@ Usage shows as below.
 ````
 usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
        [-delimiter <arg>] [-desc] [-h] [-i <arg>] [-iomode <arg>] [-json]
-       [-jsonpretty] [-o <arg>] [-projection <arg>] [-s <arg>]
-       [-showheader] [-skname <arg>] [-skordinal <arg>] [-skrootpage
-       <arg>]
+       [-jsonpretty] [-nullstring <arg>] [-o <arg>] [-projection <arg>]
+       [-quotemode <arg>] [-s <arg>] [-showheader] [-skname <arg>]
+       [-skordinal <arg>] [-skrootpage <arg>]
  -args <arg>                             arguments
  -c,--command <arg>                      mandatory. command to run, valid
                                          commands are:
@@ -565,20 +565,14 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
                                          gen-lsn-heatmap,gen-filling-rate-
                                          heatmap,get-all-index-page-fillin
                                          g-rate
- -quotemode,--quote-mode <arg>           value quote mode, valid modes
-                                         are:
-                                         all,nonnull,nonnumeric,none
-                                         default is none
  -delimiter,--delimiter <arg>            field delimiter, default is tab
- -nullstring,--null-string <arg>         null value string, default is
-                                         "null"
  -desc,--desc                            if records sorted in descending
                                          order, works for query all and
                                          range query
  -h,--help                               usage
  -i,--ibd-file-path <arg>                mandatory. innodb file path with
                                          suffix of .ibd
- -iomode,--output-io-mode <arg>          output io mode, valid mode are:
+ -iomode,--output-io-mode <arg>          output io mode, valid modes are:
                                          buffer,mmap,direct
  -json,--json-style                      set to true if you would like to
                                          show page info in json format
@@ -586,11 +580,16 @@ usage: java -jar innodb-java-reader-cli.jar [-args <arg>] [-c <arg>]
  -jsonpretty,--json-pretty-style         set to true if you would like to
                                          show page info in json pretty
                                          format style
+ -nullstring,--null-string <arg>         null value string, default is
+                                         "null"
  -o,--output <arg>                       save result to file instead of
                                          console, the argument is the file
                                          path
  -projection,--projection <arg>          projection list with column names
                                          delimited by comma
+ -quotemode,--quote-mode <arg>           value quote mode, valid modes
+                                         are: all,nonnull,nonnumeric,none,
+                                         default is none
  -s,--create-table-sql-file-path <arg>   create table sql file path, the
                                          sql is DDL as SHOW CREATE TABLE
                                          <table_name>, the file can
@@ -822,4 +821,4 @@ TPC-H `LINEITEM` table scan result is as below.
 * Support MySQL 8.0 newly introduced LOB page.
 * Load table metadata from system tablespace.
 * Support compressed table.
-* Support spatial indexes.
+* Support fulltext and spatial indexes.
