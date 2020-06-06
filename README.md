@@ -67,7 +67,7 @@ Supported column types are listed below. Java type mapping refer to [docs](docs/
 <dependency>
   <groupId>com.alibaba.database</groupId>
   <artifactId>innodb-java-reader</artifactId>
-  <version>1.0.6</version>
+  <version>1.0.7</version>
 </dependency>
 ```
 

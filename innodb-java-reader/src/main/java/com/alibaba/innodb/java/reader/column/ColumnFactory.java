@@ -714,6 +714,11 @@ public class ColumnFactory {
           ? input.readUnsignedShort() : (int) input.readByte();
       checkPositionIndex(ordinal, enums.size(), "Ordinal " + ordinal
           + " is out of range for " + enums);
+      // 0 can not be inserted into table, enum ordinal should start from 1,
+      // but sometimes this can be inserted successfully with warning message in MySQL.
+      if (ordinal == 0) {
+        return new SingleEnumLiteral(ordinal, Symbol.EMPTY);
+      }
       return new SingleEnumLiteral(ordinal, enums.get(ordinal - 1));
     }
 
