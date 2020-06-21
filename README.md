@@ -121,7 +121,7 @@ java -jar innodb-java-reader-cli.jar \
 
 The heatmap shows as below.
 
-![](http://neoremind.com/wp-content/uploads/2020/05/table-pk.png)
+![](http://img.neoremind.com/wp-content/uploads/2020/05/table-pk.png)
 
 The pages are allocated and filled perfectly as color changes from blue (LSN is smallest) to red (LSN is biggest), from the beginning of the file towards to the end.
 
@@ -267,7 +267,7 @@ try {
 }
 ``` 
 
-You can also providing a sql file path, the file
+You can also provide a sql file path, the file
 contains multiple SQLs, the table name should match the ibd file name, or else the tool is not able to 
 identify the ibd file to read, you can generate the file by executing `mysqldump -d -u<username> -p<password> -h <hostname> <dbname>` in command-line.
 
@@ -304,7 +304,7 @@ try (TableReader reader = new TableReaderImpl(ibdFilePath, createTableSql)) {
 
 `AbstractPage` is the parent class of all pages. The page definition can be found in `fil0fil.h`. `innodb-java-reader` supports some of the commonly used page types like FspHdr/Xdes page, insert buffer bitmap page, index page, blob page, SDI page (only in MySQL 8.0 or later) and allocated page (unused page).
 
-![](http://neoremind.com/wp-content/uploads/2020/05/abstract-page.png)
+![](http://img.neoremind.com/wp-content/uploads/2020/05/abstract-page.png)
 
 `AbstractPage` base class includes 38 bytes `FilHeader` and 8 bytes `FilTrailer` for all page type. The raw byte array body will be extracted accordingly for sub-classes. You can find the APIs regarding how to access the detailed structure for different types under [page](innodb-java-reader/src/main/java/com/alibaba/innodb/java/reader/page) package in Javadoc.
 
@@ -759,11 +759,11 @@ java -jar innodb-java-reader-cli.jar \
 
 Here is an example if we have a table with random primary key insertion order. Then many pages will be revisited, as illustrated in the image below, most of the pages are "red" colored, which means those pages LSN are close to each other.
 
-![](http://neoremind.com/wp-content/uploads/2020/05/random-pk.png)
+![](http://img.neoremind.com/wp-content/uploads/2020/05/random-pk.png)
 
 Another example will be a table with two indices, one is primary key built by inserting rows in key order, the other is a secondary key with random insertion order. As you can see, the primary key index is written to in ascending order as they are visited from the beginning of the file until the end. Pages of the secondary keys are "red" colored, which means those pages LSN are close to each other.
 
-![](http://neoremind.com/wp-content/uploads/2020/05/table-secondary-index2.png)
+![](http://img.neoremind.com/wp-content/uploads/2020/05/table-secondary-index2.png)
 
 #### Generating filling rate heatmap
 
@@ -814,7 +814,7 @@ Use the executable jar `innodb-java-reader-cli/target/innodb-java-reader-cli.jar
 For benchmark of `innodb-java-reader`, `mysql -e "select.." > output` and `mysqldump`, please [visit here](docs/benchmark.md).
 
 TPC-H `LINEITEM` table scan result is as below.
-![](http://neoremind.com/wp-content/uploads/2020/05/tpch_benchmark.png)
+![](http://img.neoremind.com/wp-content/uploads/2020/05/tpch_benchmark.png)
 
 ## 9 Future works
 
