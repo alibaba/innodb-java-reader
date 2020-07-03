@@ -1,7 +1,5 @@
-/**
- * Apache License Version 2.0.
- *
- * Copy from https://github.com/rolandhe/hiriver
+/*
+ * Copyright (C) 1999-2019 Alibaba Group Holding Limited
  */
 package com.alibaba.innodb.java.reader.util;
 
@@ -45,4 +43,5 @@ public class SingleEnumLiteral implements Comparable<SingleEnumLiteral> {
   public String toString() {
     return value;
   }
+
 }

@@ -6,12 +6,7 @@
     Checkstyle file which allow for custom file/package exclusions
 -->
 <suppressions>
-    <!--we're only including the PG driver temporarily (hopefully) so we don't want to checkstyle it...-->
-    <!--exclude any protobuf generated files-->
     <!--<suppress checks="." files=".[\\/]pbrpc[\\/]TestNoServiceCase.*\.java$"/>-->
-    <suppress checks="." files=".*[\\/]rpc[\\/]protocol[\\/]pbrpc[\\/].*\.java$"/>
-    <suppress checks="." files=".*TestNoServiceCase.*\.java$"/>
+    <suppress checks="." files=".*Ut0Crc32.java$"/>
     <suppress checks="." files=".*AbstractTest.java$"/>
-    <suppress checks="." files=".*ComplexPersonService.*\.java$"/>
-    <suppress checks="." files=".*TestServiceCase.*\.java$"/>
 </suppressions>

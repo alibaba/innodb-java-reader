@@ -20,4 +20,5 @@ public interface Symbol {
   String SINGLE_QUOTE = "'";
   String DOUBLE_QUOTE = "\"";
   String DOT = ".";
+
 }

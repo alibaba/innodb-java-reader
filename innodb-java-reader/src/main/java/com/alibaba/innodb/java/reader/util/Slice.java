@@ -168,4 +168,5 @@ public interface Slice {
   default SliceInput input() {
     return new SliceInput(this);
   }
+
 }

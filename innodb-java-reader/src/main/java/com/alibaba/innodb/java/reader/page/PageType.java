@@ -81,4 +81,5 @@ public enum PageType implements IdAble<Integer> {
   public static PageType parse(int type) {
     return KVS.get(type);
   }
+
 }

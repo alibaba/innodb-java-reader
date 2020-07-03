@@ -22,4 +22,5 @@ public class Line<T extends Number> {
   public void setList(List<T> list) {
     this.list = list;
   }
+
 }

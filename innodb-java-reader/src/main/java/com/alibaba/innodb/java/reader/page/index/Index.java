@@ -117,11 +117,11 @@ public class Index extends AbstractPage {
   private void reportException() throws ReaderException {
     if (this.indexHeader.getIndexId() <= 0L
         && this.indexHeader.getMaxTrxId() <= 0L) {
-      throw new ReaderException("Index header is unreadable, only compact page supported, "
+      throw new ReaderException("Index header is unreadable, only new-style compact page format is supported, "
           + "please make sure the file is a valid InnoDB data file, page="
           + innerPage.toString() + ", index.header = " + this.indexHeader.toString());
     }
-    throw new ReaderException("Only compact page supported, page=" + innerPage.toString()
+    throw new ReaderException("Only new-style compact page format is supported, page=" + innerPage.toString()
         + ", index.header = " + this.indexHeader.toString());
   }
 

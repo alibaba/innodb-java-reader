@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.alibaba.database</groupId>
     <artifactId>innodb-java-reader-parent</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <name>innodb-java-reader-parent</name>
     <packaging>pom</packaging>
     <description>A library and command-line tool to access MySQL InnoDB data file directly in Java</description>
@@ -303,7 +303,7 @@
                         <rulesets>
                             <ruleset>rulesets/java/ali-comment.xml</ruleset>
                             <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
-                            <ruleset>rulesets/java/ali-constant.xml</ruleset>
+                            <!--  <ruleset>rulesets/java/ali-constant.xml</ruleset> -->
                             <ruleset>rulesets/java/ali-exception.xml</ruleset>
                             <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>
                             <ruleset>rulesets/java/ali-naming.xml</ruleset>

@@ -409,7 +409,7 @@ public class IndexServiceImpl implements IndexService {
         }
       };
     } finally {
-      // we assume the caller would call clean(), but here we remove one key aggressively
+      // we assume the caller would call clean(), but here we remove them aggressively
       ThreadContext.remove(ThreadContext.SK_ORDINAL_KEY);
       ThreadContext.remove(ThreadContext.SK_ROOT_PAGE_NUMBER);
     }
@@ -1415,4 +1415,5 @@ public class IndexServiceImpl implements IndexService {
     }
     return true;
   }
+
 }

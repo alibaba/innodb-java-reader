@@ -83,7 +83,7 @@ public class FileChannelStorageServiceImpl implements StorageService {
   @Override
   public FilHeader loadPageHeader(long pageNumber) throws ReaderException {
     try {
-      // GC-less, get thread local buffer for reusing
+      // GC-less, leverage thread local buffer for reusing
       ByteBuffer buffer = pageHeaderBufferThreadLocal.get();
       buffer.clear();
       fileChannel.read(buffer, pageNumber * SIZE_OF_PAGE);

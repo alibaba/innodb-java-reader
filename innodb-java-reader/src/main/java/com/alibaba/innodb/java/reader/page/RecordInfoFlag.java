@@ -3,11 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.page;
 
-import com.google.common.collect.Maps;
-
 import com.alibaba.innodb.java.reader.util.IdAble;
-
-import java.util.Map;
 
 /**
  * Record header flag.
@@ -19,7 +15,7 @@ public enum RecordInfoFlag implements IdAble<Integer> {
   /** min record flag */
   MIN_REC(1, "this record is the minimum record in a non-leaf level of the B+Tree"),
   /** record delete flag */
-  DELETE_MARKED(2, "will be actually deleted by a purge operation in the future");
+  DELETE_MARKED(2, "this record will be actually deleted by a purge operation in the future");
 
   private int type;
 
@@ -43,18 +39,14 @@ public enum RecordInfoFlag implements IdAble<Integer> {
     return type;
   }
 
-  // ---------- template method ---------- //
-
-  private static Map<Integer, RecordInfoFlag> KVS = Maps.newHashMapWithExpectedSize(values().length);
-
-  static {
-    for (RecordInfoFlag recordType : values()) {
-      KVS.put(recordType.type(), recordType);
-    }
-  }
-
   public static RecordInfoFlag parse(int type) {
-    return KVS.get(type);
+    if (type == MIN_REC.type) {
+      return MIN_REC;
+    } else if (type == DELETE_MARKED.type) {
+      return DELETE_MARKED;
+    }
+    return null;
   }
+
 }
 

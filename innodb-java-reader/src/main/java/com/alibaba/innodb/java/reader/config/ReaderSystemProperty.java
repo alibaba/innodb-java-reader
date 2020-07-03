@@ -32,10 +32,10 @@ import java.util.stream.Stream;
 /**
  * A specific system property that is used to configure various aspects of the framework.
  * <p>
- *
- * @author Acknowledge Apache Calcite.
+ * This is the static configuration which should be loaded when JVM starts to ensure thread-safety.
  *
  * @param <T> the type of the property value
+ * @author Acknowledge Apache Calcite.
  */
 public final class ReaderSystemProperty<T> {
 
@@ -53,12 +53,32 @@ public final class ReaderSystemProperty<T> {
       booleanProperty("innodb.java.reader.enable.file.length.check", false);
 
   /**
+   * This takes effect only when {@link #ENABLE_PAGE_CHECKSUM_CHECK} is set to true.
+   * <p>
+   * Refer to https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html#sysvar_innodb_checksum_algorithm
+   * <p>
+   * In MySQL 5.7 or later, <code>crc32</code> checksum algorithm is the default value
+   * for <code>innodb_checksum_algorithm</code>.
+   * Here is this framework, <code>crc32</code> will be used. If the checksum does not match,
+   * you can enable this configuration to use <code>innodb</code> checksum algorithm to validate
+   * again, this is useful in MySQL 5.6.
+   */
+  public static final ReaderSystemProperty<Boolean> ENABLE_INNODB_PAGE_CHECKSUM_ALGORITHM =
+      booleanProperty("innodb.java.reader.enable.innodb.page.checksum.algorithm", true);
+
+  /**
+   * Whether to enable innodb page level checksum validation.
+   */
+  public static final ReaderSystemProperty<Boolean> ENABLE_PAGE_CHECKSUM_CHECK =
+      booleanProperty("innodb.java.reader.enable.page.checksum.check", false);
+
+  /**
    * Whether to enable throwing exception when reading mysql8.0 new lob page, because
    * currently this does not implement yet.
    */
   public static final ReaderSystemProperty<Boolean> ENABLE_THROW_EXCEPTION_FOR_UNSUPPORTED_MYSQL80_LOB =
       booleanProperty("innodb.java.reader.enable.throw.exception.for.unsupported.mysql80.lob",
-          true);
+          false);
 
   /**
    * CHAR type will have \20 padding, but for mysql dump command, the head and tail padding are

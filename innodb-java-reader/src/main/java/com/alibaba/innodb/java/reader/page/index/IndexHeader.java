@@ -105,6 +105,11 @@ public class IndexHeader {
     //      index[:format] = (index[:n_heap_format] & 1<<15) == 0 ?
     //        :redundant : :compact
     indexHeader.setNumOfHeapRecords(flag & (0x7fff));
+
+    // @see page0cur.cc UNIV_INLINE ulint page_is_comp(const page_t* page)
+    // Determine whether the page is in new-style compact format.
+    // @return nonzero if the page is in compact format, zero if it is in
+    // old-style format
     indexHeader.setFormat(PageFormat.parse((flag & 0x8000) >> 15));
 
     indexHeader.setFirstGarbageRecOffset(input.readUnsignedShort());

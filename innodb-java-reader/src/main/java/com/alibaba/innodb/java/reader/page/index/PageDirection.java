@@ -62,4 +62,5 @@ public enum PageDirection implements IdAble<Integer> {
   public static PageDirection parse(int type) {
     return KVS.get(type);
   }
+
 }
