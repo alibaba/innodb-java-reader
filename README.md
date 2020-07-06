@@ -7,7 +7,7 @@
 [![javadoc](https://javadoc.io/badge2/com.alibaba.database/innodb-java-reader/javadoc.svg)](https://javadoc.io/doc/com.alibaba.database/innodb-java-reader)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides some basic read-only features like examining pages, looking up record by primary key, secondary key and generating page heatmap by LSN or filling rate. This project is useful for prototyping and learning MySQL. Moreover, this can be a tool to dump table data by offloading from MySQL process under some conditions.
+innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides read-only features like examining pages, looking up record by primary key, secondary key and generating page heatmap by LSN or filling rate. Innodb-java-reader can be a tool to dump/query table by offloading from MySQL process under some conditions. Moreover, this project is useful for prototyping and learning MySQL.
 
 [1. Background](#1-background)
 
@@ -31,13 +31,13 @@ innodb-java-reader is a java implementation to access MySQL InnoDB storage engin
 
 InnoDB is a general-purpose storage engine that balances high reliability and high performance in MySQL, since 5.6 InnoDB has become the default MySQL storage engine.
 
-Everybody knows MySQL is a row oriented OLTP database with B+ tree clustered index to store records. In Alibaba, I encountered one MySQL performance issue, and this led me to deep dive into InnoDB internal mechanism, but it turned out to be hard since the source code is too complex to know every detail. There are few internal documentations either.
+Everybody knows MySQL is a row oriented OLTP database with B+ tree clustered index to store records. In Alibaba, I encountered one performance issue related to MySQL, and this led me to deep dive into InnoDB internal mechanism. To better understand how InnoDB stores data, I introduce this project, and I choose Java language to implement because it is widely used and more understandable. Some of the works are inspired by [Jeremy Cole](https://blog.jcole.us/)'s blog about InnoDB, which helps me a lot. 
 
-To better understand how InnoDB stores data, I introduce the project for prototyping, and I choose Java language to implement because it is widely used and more understandable. Some of the works are inspired by [Jeremy Cole](https://blog.jcole.us/)'s blog about InnoDB, which helps me a lot, many thanks to Jcole.
+Currently this project is production-ready and is able to work in real environment.
 
 ## 2. Prerequisites
 
-* MySQL 5.6, 5.7 or 8.0.
+* Supported MySQL version: 5.6, 5.7, 8.0.
 * Make sure [InnoDB row format](https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html) is either `COMPACT` or `DYNAMIC`.
 * Enable `innodb_file_per_table` , which will create standalone `*.ibd` file for each table.
 * InnoDB file page size is set to 16K.
@@ -265,7 +265,7 @@ try {
 } finally {
   reader.close();
 }
-``` 
+```
 
 You can also provide a sql file path, the file
 contains multiple SQLs, the table name should match the ibd file name, or else the tool is not able to 
