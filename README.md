@@ -46,7 +46,7 @@ Currently this project is production-ready and is able to work in real environme
 
 The row format of a table determines how rows are physically stored, which in turn can affect the performance of queries and DML operations. `innodb-java-reader` supports `COMPACT` or `DYNAMIC` page format and can work smartly to choose the right page format decoder to read pages.
 
-`innodb-java-reader` supports operations like examining pages' information, looking up record by primary key, range querying by primary key, querying records by page number, dumping table and generating page heatmap & filling rate.
+`innodb-java-reader` supports operations like examining pages' information, looking up record by primary key and secondary key, range querying by primary key and secondary key, querying records by page number, dumping table and generating page heatmap & filling rate.
 
 Supported column types are listed below. Java type mapping refer to [docs](docs/mysql_to_java_type.md).
 
