@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -342,7 +343,13 @@ public class AbstractTest {
   }
 
   protected static String expectedLocalTime(String dateTime) {
-    ZoneRules rules = ZoneId.systemDefault().getRules();
+    String zoneId;
+    if (StringUtils.isNotEmpty(ReaderSystemProperty.SERVER_TIME_ZONE.value())) {
+      zoneId = TimeZone.getTimeZone(ReaderSystemProperty.SERVER_TIME_ZONE.value().trim()).getID();
+    } else {
+      zoneId = ZoneId.systemDefault().getId();
+    }
+    ZoneRules rules = ZoneId.of(zoneId).getRules();
     LocalDateTime ldt = Utils.parseDateTimeText(dateTime);
     Instant instant = ldt.toInstant(ZoneOffset.of("+00:00"));
     ZoneOffset zoneOffset;
