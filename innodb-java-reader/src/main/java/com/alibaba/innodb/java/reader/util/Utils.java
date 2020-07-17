@@ -7,6 +7,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
+import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
 import com.alibaba.innodb.java.reader.schema.Column;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -19,14 +20,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -432,6 +438,20 @@ public class Utils {
       throw new IllegalArgumentException("Precision is out of bound");
     }
     return LocalTime.parse(s, TIME_FORMAT_TIME[precision]);
+  }
+
+  public static TimeZone getTimeZone() {
+    if (StringUtils.isEmpty(ReaderSystemProperty.SERVER_TIME_ZONE.value())) {
+      if (ReaderSystemProperty.DISABLE_DAYLIGHT_SAVINGS_TIME.value()) {
+        // TODO here we have to ignore daylight savings, are there any better ways?
+        ZoneRules rules = ZoneId.systemDefault().getRules();
+        ZoneOffset standardOffset = rules.getStandardOffset(Instant.now());
+        return TimeZone.getTimeZone("GMT" + standardOffset.getId());
+      } else {
+        return TimeZone.getDefault();
+      }
+    }
+    return TimeZone.getTimeZone(ReaderSystemProperty.SERVER_TIME_ZONE.value().trim());
   }
 
 }

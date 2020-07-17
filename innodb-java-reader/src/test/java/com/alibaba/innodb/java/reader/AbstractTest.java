@@ -4,6 +4,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
+import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 import com.alibaba.innodb.java.reader.schema.provider.impl.SqlFileTableDefProvider;
@@ -342,9 +343,15 @@ public class AbstractTest {
 
   protected static String expectedLocalTime(String dateTime) {
     ZoneRules rules = ZoneId.systemDefault().getRules();
-    ZoneOffset standardOffset = rules.getStandardOffset(Instant.now());
     LocalDateTime ldt = Utils.parseDateTimeText(dateTime);
-    OffsetDateTime odt = ldt.toInstant(ZoneOffset.of("+00:00")).atOffset(standardOffset);
+    Instant instant = ldt.toInstant(ZoneOffset.of("+00:00"));
+    ZoneOffset zoneOffset;
+    if (ReaderSystemProperty.DISABLE_DAYLIGHT_SAVINGS_TIME.value()) {
+      zoneOffset = rules.getStandardOffset(instant);
+    } else {
+      zoneOffset = rules.getOffset(instant);
+    }
+    OffsetDateTime odt = instant.atOffset(zoneOffset);
     return odt.format(Utils.TIME_FORMAT_TIMESTAMP[0]);
   }
 

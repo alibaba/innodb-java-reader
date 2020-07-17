@@ -106,6 +106,13 @@ public final class ReaderSystemProperty<T> {
   public static final ReaderSystemProperty<String> SERVER_TIME_ZONE =
       stringProperty("innodb.java.reader.server.timezone", "");
 
+  /**
+   * Whether to ignore daylight savings time when converting TIMESTAMP type.
+   */
+  public static final ReaderSystemProperty<Boolean> DISABLE_DAYLIGHT_SAVINGS_TIME =
+      booleanProperty("innodb.java.reader.disable.daylight.savings.time",
+          false);
+
   private static ReaderSystemProperty<Boolean> booleanProperty(String key,
                                                                boolean defaultValue) {
     // Note that "" -> true (convenient for command-lines flags like '-Dflag')

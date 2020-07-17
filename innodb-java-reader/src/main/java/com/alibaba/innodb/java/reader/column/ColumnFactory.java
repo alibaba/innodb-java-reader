@@ -3,7 +3,6 @@
  */
 package com.alibaba.innodb.java.reader.column;
 
-import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
 import com.alibaba.innodb.java.reader.exception.ColumnParseException;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.BitLiteral;
@@ -14,22 +13,16 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Symbol;
 import com.alibaba.innodb.java.reader.util.Utils;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.zone.ZoneRules;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.function.Function;
 
 import static com.alibaba.innodb.java.reader.Constants.MAX_ONE_BYTE_ENUM_COUNT;
@@ -66,7 +59,7 @@ public class ColumnFactory {
    * system default timezone.
    */
   private static final FastDateFormat TIMESTAMP_FORMAT
-      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss", getTimeZone());
+      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss", Utils.getTimeZone());
 
   /**
    * Prevent instantiation.
@@ -955,13 +948,4 @@ public class ColumnFactory {
     TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);
   }
 
-  private static TimeZone getTimeZone() {
-    if (StringUtils.isEmpty(ReaderSystemProperty.SERVER_TIME_ZONE.value())) {
-      // TODO here we have to ignore daylight savings, are there any better ways?
-      ZoneRules rules = ZoneId.systemDefault().getRules();
-      ZoneOffset standardOffset = rules.getStandardOffset(Instant.now());
-      return TimeZone.getTimeZone("GMT" + standardOffset.getId());
-    }
-    return TimeZone.getTimeZone(ReaderSystemProperty.SERVER_TIME_ZONE.value().trim());
-  }
 }
