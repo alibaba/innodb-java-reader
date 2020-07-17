@@ -20,8 +20,9 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -340,10 +341,10 @@ public class AbstractTest {
   }
 
   protected static String expectedLocalTime(String dateTime) {
-    ZoneOffset zoneOffset = ZonedDateTime.now().getOffset();
+    ZoneRules rules = ZoneId.systemDefault().getRules();
+    ZoneOffset standardOffset = rules.getStandardOffset(Instant.now());
     LocalDateTime ldt = Utils.parseDateTimeText(dateTime);
-    Instant instant = Instant.ofEpochSecond(ldt.toEpochSecond(ZoneOffset.of("+00:00")));
-    OffsetDateTime odt = instant.atOffset(zoneOffset);
+    OffsetDateTime odt = ldt.toInstant(ZoneOffset.of("+00:00")).atOffset(standardOffset);
     return odt.format(Utils.TIME_FORMAT_TIMESTAMP[0]);
   }
 

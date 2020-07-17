@@ -75,4 +75,8 @@ public interface Constants {
 
   String ZERO_DATETIME = "0000-00-00 00:00:00";
 
+  byte[] BYTES_OF_INFIMUM = "infimum\0".getBytes();
+
+  byte[] BYTES_OF_SUPREMUM = "supremum".getBytes();
+
 }

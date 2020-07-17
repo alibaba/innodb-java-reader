@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.alibaba.innodb.java.reader.page.index.GenericRecord;
 import com.alibaba.innodb.java.reader.page.index.Index;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,6 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Record iterator.
+ * <p>
+ * The iterator works in <b>tuple-at-a-time</b> iteration model per paper of
+ * <i>MonetDB/X100: Hyper-Pipelining Query Execution</i>, this is common in OLTP scenario.
+ * Emit one row when calling {@link #next()}, check if the iteration has more rows when
+ * calling {@link #hasNext()}.
  *
  * @author xu.zx
  */
@@ -44,7 +49,7 @@ public class RecordIterator implements Iterator<GenericRecord> {
   }
 
   public static RecordIterator create(GenericRecord singleRecord) {
-    return new RecordIterator(singleRecord == null ? ImmutableList.of() : Arrays.asList(singleRecord));
+    return new RecordIterator(singleRecord == null ? ImmutableList.of() : Collections.singletonList(singleRecord));
   }
 
   /**

@@ -8,8 +8,12 @@ import com.alibaba.innodb.java.reader.page.AbstractPage;
 import com.alibaba.innodb.java.reader.page.InnerPage;
 import com.alibaba.innodb.java.reader.schema.TableDef;
 
+import java.util.Arrays;
+
 import lombok.Data;
 
+import static com.alibaba.innodb.java.reader.Constants.BYTES_OF_INFIMUM;
+import static com.alibaba.innodb.java.reader.Constants.BYTES_OF_SUPREMUM;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_FIL_TRAILER;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_MUM_RECORD;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_PAGE;
@@ -52,8 +56,9 @@ public class Index extends AbstractPage {
     RecordHeader infimumHeader = RecordHeader.fromSlice(sliceInput);
     this.infimum = new GenericRecord(infimumHeader, tableDef, innerPage.getPageNumber());
     this.infimum.setPrimaryKeyPosition(sliceInput.position());
-    String infimumString = sliceInput.readUTF8String(SIZE_OF_MUM_RECORD);
-    checkState("infimum\0".equals(infimumString));
+    // we replace "infimum\0".equals(sliceInput.readUTF8String(SIZE_OF_MUM_RECORD))
+    // with the following snippet to make it more performant
+    checkState(Arrays.equals(sliceInput.readByteArray(SIZE_OF_MUM_RECORD), BYTES_OF_INFIMUM));
 
     // 5 (record header) + 8 ("supremum") = 13 bytes
     // end offset = 107 + 13 = 120
@@ -61,8 +66,9 @@ public class Index extends AbstractPage {
     RecordHeader supremumHeader = RecordHeader.fromSlice(sliceInput);
     this.supremum = new GenericRecord(supremumHeader, tableDef, innerPage.getPageNumber());
     this.supremum.setPrimaryKeyPosition(sliceInput.position());
-    String supremumString = sliceInput.readUTF8String(SIZE_OF_MUM_RECORD);
-    checkState("supremum".equals(supremumString));
+    // we replace "supremum".equals(sliceInput.readUTF8String(SIZE_OF_MUM_RECORD))
+    // with the following snippet to make it more performant
+    checkState(Arrays.equals(sliceInput.readByteArray(SIZE_OF_MUM_RECORD), BYTES_OF_SUPREMUM));
 
     // read page directory
     // reverse order from trailer, 2 bytes of relative offset of one record

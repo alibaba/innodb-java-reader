@@ -3,6 +3,7 @@
  */
 package com.alibaba.innodb.java.reader.column;
 
+import com.alibaba.innodb.java.reader.config.ReaderSystemProperty;
 import com.alibaba.innodb.java.reader.exception.ColumnParseException;
 import com.alibaba.innodb.java.reader.schema.Column;
 import com.alibaba.innodb.java.reader.util.BitLiteral;
@@ -13,10 +14,15 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.Symbol;
 import com.alibaba.innodb.java.reader.util.Utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -54,10 +60,13 @@ public class ColumnFactory {
   /**
    * MySQL converts TIMESTAMP values from the current time zone to UTC for storage,
    * and back from UTC to the current time zone for retrieval.
-   * (This does not occur for other types such as DATETIME.)
+   * (This does not occur for other types such as DATETIME.).
+   * <p>
+   * Here user can set MySQL server timezone in properties, this will override the
+   * system default timezone.
    */
   private static final FastDateFormat TIMESTAMP_FORMAT
-      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss", TimeZone.getDefault());
+      = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss", getTimeZone());
 
   /**
    * Prevent instantiation.
@@ -946,4 +955,13 @@ public class ColumnFactory {
     TYPE_TO_COLUMN_PARSER_MAP = Collections.unmodifiableMap(typeToColumnParserMap);
   }
 
+  private static TimeZone getTimeZone() {
+    if (StringUtils.isEmpty(ReaderSystemProperty.SERVER_TIME_ZONE.value())) {
+      // TODO here we have to ignore daylight savings, are there any better ways?
+      ZoneRules rules = ZoneId.systemDefault().getRules();
+      ZoneOffset standardOffset = rules.getStandardOffset(Instant.now());
+      return TimeZone.getTimeZone("GMT" + standardOffset.getId());
+    }
+    return TimeZone.getTimeZone(ReaderSystemProperty.SERVER_TIME_ZONE.value().trim());
+  }
 }

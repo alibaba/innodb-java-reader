@@ -100,6 +100,12 @@ public final class ReaderSystemProperty<T> {
   public static final ReaderSystemProperty<String> RANGE_QUERY_KEY_DELIMITER =
       stringProperty("innodb.java.reader.range.query.key.delimiter", ";");
 
+  /**
+   * MySQL server timezone.
+   */
+  public static final ReaderSystemProperty<String> SERVER_TIME_ZONE =
+      stringProperty("innodb.java.reader.server.timezone", "");
+
   private static ReaderSystemProperty<Boolean> booleanProperty(String key,
                                                                boolean defaultValue) {
     // Note that "" -> true (convenient for command-lines flags like '-Dflag')
