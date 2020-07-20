@@ -7,7 +7,7 @@
 [![javadoc](https://javadoc.io/badge2/com.alibaba.database/innodb-java-reader/javadoc.svg)](https://javadoc.io/doc/com.alibaba.database/innodb-java-reader)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides read-only features like examining pages, looking up record by primary key, secondary key and generating page heatmap by LSN or filling rate. Innodb-java-reader can be a tool to dump/query table by offloading from MySQL process under some conditions. Moreover, this project is useful for prototyping and learning MySQL.
+innodb-java-reader is a java implementation to access MySQL InnoDB storage engine file directly. With the library or command-line tool, it provides read-only features like examining pages, looking up record by primary key, secondary key and generating page heatmap by LSN or filling rate. Innodb-java-reader can be a tool to dump/query table by offloading from MySQL server. Moreover, this project is useful for prototyping and learning MySQL.
 
 [1. Background](#1-background)
 
@@ -29,9 +29,7 @@ innodb-java-reader is a java implementation to access MySQL InnoDB storage engin
 
 ## 1. Background
 
-InnoDB is a general-purpose storage engine that balances high reliability and high performance in MySQL, since 5.6 InnoDB has become the default MySQL storage engine.
-
-Everybody knows MySQL is a row oriented OLTP database with B+ tree clustered index to store records. In Alibaba, I encountered one performance issue related to MySQL, and this led me to deep dive into InnoDB internal mechanism. To better understand how InnoDB stores data, I introduce this project, and I choose Java language to implement because it is widely used and more understandable. Some of the works are inspired by [Jeremy Cole](https://blog.jcole.us/)'s blog about InnoDB, which helps me a lot. 
+InnoDB is a general-purpose storage engine that balances high reliability and high performance in MySQL, since 5.6 InnoDB has become the default MySQL storage engine. In Alibaba, I encountered one performance issue related to MySQL, and this led me to deep dive into InnoDB internal mechanism. To better understand how InnoDB stores data, I introduce this project, and I choose Java language to implement because it is widely used and more understandable. Some of the works are inspired by [Jeremy Cole](https://blog.jcole.us/)'s blog about InnoDB, which helps me a lot. 
 
 Currently this project is production-ready and is able to work in real environment.
 
@@ -67,7 +65,7 @@ Supported column types are listed below. Java type mapping refer to [docs](docs/
 <dependency>
   <groupId>com.alibaba.database</groupId>
   <artifactId>innodb-java-reader</artifactId>
-  <version>1.0.8</version>
+  <version>1.0.10</version>
 </dependency>
 ```
 
@@ -821,4 +819,3 @@ TPC-H `LINEITEM` table scan result is as below.
 * Support MySQL 8.0 newly introduced LOB page.
 * Load table metadata from system tablespace.
 * Support compressed table.
-* Support fulltext and spatial indexes.
