@@ -101,13 +101,35 @@ public final class ReaderSystemProperty<T> {
       stringProperty("innodb.java.reader.range.query.key.delimiter", ";");
 
   /**
-   * MySQL server timezone.
+   * MySQL query session timezone for TIMESTAMP value. But since it is constant, we name it
+   * <code>server.timezone</code>.
+   * <p>
+   * Per-session time zones. Each client that connects has its own session time zone setting,
+   * given by the session time_zone variable. Initially, the session variable takes its value
+   * from the global time_zone variable, but the client can change its own time zone with
+   * this statement:
+   * <p>
+   * SET time_zone = timezone;
+   * <p>
+   * The session time zone setting affects display and storage of time values that are
+   * zone-sensitive. This includes the values displayed by functions such as NOW() or CURTIME(),
+   * and values stored in and retrieved from TIMESTAMP columns. Values for TIMESTAMP columns are
+   * converted from the session time zone to UTC for storage, and from UTC to the session time
+   * zone for retrieval.
+   * <p>
+   * The session time zone setting does not affect values displayed by functions such as
+   * UTC_TIMESTAMP() or values in DATE, TIME, or DATETIME columns. Nor are values in those data
+   * types stored in UTC; the time zone applies for them only when converting from TIMESTAMP values.
+   * If you want locale-specific arithmetic for DATE, TIME, or DATETIME values, convert them to UTC,
+   * perform the arithmetic, and then convert back.
+   *
+   * @see <a href="https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html">doc</a>
    */
   public static final ReaderSystemProperty<String> SERVER_TIME_ZONE =
       stringProperty("innodb.java.reader.server.timezone", "");
 
   /**
-   * If server timezone is not set, this indicates whether to ignore
+   * If {@link #SERVER_TIME_ZONE} is not set, this indicates whether to ignore
    * daylight savings time when converting TIMESTAMP type.
    */
   public static final ReaderSystemProperty<Boolean> DISABLE_DAYLIGHT_SAVINGS_TIME =
