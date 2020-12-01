@@ -15,6 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
@@ -25,6 +27,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.zone.ZoneRules;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -435,28 +438,48 @@ public class AbstractTest {
     };
   }
 
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface FieldOrder {
+    int value();
+  }
   @Data
   public static class Employee {
+    @FieldOrder(1)
     public final int id;
+    @FieldOrder(2)
     public final long empno;
+    @FieldOrder(3)
     public final String name;
+    @FieldOrder(4)
     public final int deptno;
+    @FieldOrder(5)
     public final String gender;
+    @FieldOrder(6)
     public final String birthdate;
+    @FieldOrder(7)
     public final String city;
+    @FieldOrder(8)
     public final int salary;
+    @FieldOrder(9)
     public final int age;
+    @FieldOrder(10)
     public final String joindate;
+    @FieldOrder(11)
     public final int level;
     @ToString.Exclude
+    @FieldOrder(12)
     public final String profile;
+    @FieldOrder(13)
     public final String address;
+    @FieldOrder(14)
     public final String email;
   }
 
   @Data
   public static class Department {
+    @FieldOrder(1)
     public final int deptno;
+    @FieldOrder(2)
     public final String name;
   }
 
@@ -464,6 +487,20 @@ public class AbstractTest {
     return TABLES.get(array, () -> {
       Class<?> clazz = array.getClass().getComponentType();
       Field[] fields = getInstanceFields(clazz);
+      
+      Arrays.sort(fields, (o1, o2) -> {
+        FieldOrder or1 = o1.getAnnotation(FieldOrder.class);
+        FieldOrder or2 = o2.getAnnotation(FieldOrder.class);
+        if (or1 != null) {
+          if (or2 != null) {
+            return or1.value() - or2.value();
+          } else {
+            return -1;
+          }
+        }
+        return 1;
+      });
+
       List<Object[]> result = new ArrayList<>(array.length);
       for (int i = 0; i < array.length; i++) {
         Object[] temp = new Object[fields.length];
