@@ -442,6 +442,7 @@ public class AbstractTest {
   public @interface FieldOrder {
     int value();
   }
+  
   @Data
   public static class Employee {
     @FieldOrder(1)
@@ -491,14 +492,7 @@ public class AbstractTest {
       Arrays.sort(fields, (o1, o2) -> {
         FieldOrder or1 = o1.getAnnotation(FieldOrder.class);
         FieldOrder or2 = o2.getAnnotation(FieldOrder.class);
-        if (or1 != null) {
-          if (or2 != null) {
-            return or1.value() - or2.value();
-          } else {
-            return -1;
-          }
-        }
-        return 1;
+        return or1.value() - or2.value();
       });
 
       List<Object[]> result = new ArrayList<>(array.length);
