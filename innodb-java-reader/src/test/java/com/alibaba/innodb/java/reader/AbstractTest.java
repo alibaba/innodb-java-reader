@@ -439,48 +439,48 @@ public class AbstractTest {
   }
 
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface FieldOrder {
+  public @interface Ordinal {
     int value();
   }
   
   @Data
   public static class Employee {
-    @FieldOrder(1)
+    @Ordinal(0)
     public final int id;
-    @FieldOrder(2)
+    @Ordinal(1)
     public final long empno;
-    @FieldOrder(3)
+    @Ordinal(2)
     public final String name;
-    @FieldOrder(4)
+    @Ordinal(3)
     public final int deptno;
-    @FieldOrder(5)
+    @Ordinal(4)
     public final String gender;
-    @FieldOrder(6)
+    @Ordinal(5)
     public final String birthdate;
-    @FieldOrder(7)
+    @Ordinal(6)
     public final String city;
-    @FieldOrder(8)
+    @Ordinal(7)
     public final int salary;
-    @FieldOrder(9)
+    @Ordinal(8)
     public final int age;
-    @FieldOrder(10)
+    @Ordinal(9)
     public final String joindate;
-    @FieldOrder(11)
+    @Ordinal(10)
     public final int level;
     @ToString.Exclude
-    @FieldOrder(12)
+    @Ordinal(11)
     public final String profile;
-    @FieldOrder(13)
+    @Ordinal(12)
     public final String address;
-    @FieldOrder(14)
+    @Ordinal(13)
     public final String email;
   }
 
   @Data
   public static class Department {
-    @FieldOrder(1)
+    @Ordinal(0)
     public final int deptno;
-    @FieldOrder(2)
+    @Ordinal(1)
     public final String name;
   }
 
@@ -490,8 +490,8 @@ public class AbstractTest {
       Field[] fields = getInstanceFields(clazz);
       
       Arrays.sort(fields, (o1, o2) -> {
-        FieldOrder or1 = o1.getAnnotation(FieldOrder.class);
-        FieldOrder or2 = o2.getAnnotation(FieldOrder.class);
+        Ordinal or1 = o1.getAnnotation(Ordinal.class);
+        Ordinal or2 = o2.getAnnotation(Ordinal.class);
         return or1.value() - or2.value();
       });
 
