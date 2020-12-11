@@ -26,11 +26,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.zone.ZoneRules;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -487,6 +483,13 @@ public class AbstractTest {
     return TABLES.get(array, () -> {
       Class<?> clazz = array.getClass().getComponentType();
       Field[] fields = getInstanceFields(clazz);
+
+      Arrays.sort(fields, (o1, o2) -> {
+        Ordinal or1 = o1.getAnnotation(Ordinal.class);
+        Ordinal or2 = o2.getAnnotation(Ordinal.class);
+        return or1.value() - or2.value();
+      });
+
       List<Object[]> result = new ArrayList<>(array.length);
       for (int i = 0; i < array.length; i++) {
         Object[] temp = new Object[fields.length];
