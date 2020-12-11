@@ -15,6 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
@@ -435,28 +437,49 @@ public class AbstractTest {
     };
   }
 
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Ordinal {
+    int value();
+  }
+
   @Data
   public static class Employee {
+    @Ordinal(0)
     public final int id;
+    @Ordinal(1)
     public final long empno;
+    @Ordinal(2)
     public final String name;
+    @Ordinal(3)
     public final int deptno;
+    @Ordinal(4)
     public final String gender;
+    @Ordinal(5)
     public final String birthdate;
+    @Ordinal(6)
     public final String city;
+    @Ordinal(7)
     public final int salary;
+    @Ordinal(8)
     public final int age;
+    @Ordinal(9)
     public final String joindate;
+    @Ordinal(10)
     public final int level;
     @ToString.Exclude
+    @Ordinal(11)
     public final String profile;
+    @Ordinal(12)
     public final String address;
+    @Ordinal(13)
     public final String email;
   }
 
   @Data
   public static class Department {
+    @Ordinal(0)
     public final int deptno;
+    @Ordinal(1)
     public final String name;
   }
 
