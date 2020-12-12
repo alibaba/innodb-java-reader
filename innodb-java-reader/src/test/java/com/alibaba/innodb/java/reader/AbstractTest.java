@@ -525,8 +525,7 @@ public class AbstractTest {
   protected static int getFieldOrdinal(Class<?> clazz, String fieldName) {
     try {
       Field field = clazz.getDeclaredField(fieldName);
-      Ordinal order = field.getAnnotation(Ordinal.class);
-      return order.value();
+      return  field.getAnnotation(Ordinal.class).value();
     } catch (NoSuchFieldException e) {
       return -1;
     }
