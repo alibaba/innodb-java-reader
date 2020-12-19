@@ -531,16 +531,12 @@ public class AbstractTest {
   }
 
   protected static int getFieldOrdinal(Class<?> clazz, String fieldName) {
-    int ordinal = 0;
-    Field[] fields = clazz.getDeclaredFields();
-    for (Field field : fields) {
-      if (field.getName().equals(fieldName)) {
-        return ordinal;
-      }
-      ++ordinal;
+    try {
+      Field field = clazz.getDeclaredField(fieldName);
+      return  field.getAnnotation(Ordinal.class).value();
+    } catch (NoSuchFieldException e) {
+      return -1;
     }
-
-    return -1;
   }
 
   protected static boolean hasSuperClass(Class<?> clazz) {
