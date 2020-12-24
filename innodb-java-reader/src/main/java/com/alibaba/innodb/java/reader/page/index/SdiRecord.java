@@ -4,8 +4,9 @@ import com.alibaba.innodb.java.reader.util.SliceInput;
 import com.alibaba.innodb.java.reader.util.ZlibUtil;
 import lombok.Data;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
+import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_REC_HEADER;
 
 /**
  * @author jie xu
@@ -31,7 +32,7 @@ public class SdiRecord {
 
   private String content;
 
-  public SdiRecord(SliceInput sliceInput, RecordHeader recordHeader) throws IOException {
+  public SdiRecord(SliceInput sliceInput, RecordHeader recordHeader) {
     this.recordHeader = recordHeader;
     int position = sliceInput.position();
     this.contentLength = parseContentLength(sliceInput);
@@ -57,13 +58,13 @@ public class SdiRecord {
 
   private int parseContentLength(SliceInput sliceInput) {
     int resu = 0;
-    sliceInput.decrPosition(6);
+    sliceInput.decrPosition(SIZE_OF_REC_HEADER + 1);
     int first = sliceInput.readUnsignedByte();
     if ((first & 0x80) != 0) {
       resu = (first & 0x3f) << 8;
       if ((first & 0x40) != 0x00) {
-        //todo big data length parse
-        throw new RuntimeException("unsupported length");
+        //todo big data length, read from overflowPage (BLOB page?)
+        throw new RuntimeException("unsupported record length");
       } else {
         sliceInput.decrPosition(2);
         int second = sliceInput.readUnsignedByte();

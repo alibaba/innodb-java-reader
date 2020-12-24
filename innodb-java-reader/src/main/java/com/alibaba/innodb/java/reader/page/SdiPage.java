@@ -49,7 +49,6 @@ public class SdiPage extends AbstractPage {
     this.supremumHeader = RecordHeader.fromSlice(sliceInput);
     checkState(Arrays.equals(sliceInput.readByteArray(SIZE_OF_MUM_RECORD), BYTES_OF_SUPREMUM));
 
-    int endOfSupremum = sliceInput.position();
     int dirSlotNum = this.indexHeader.getNumOfDirSlots();
     dirSlots = new int[dirSlotNum];
     sliceInput.setPosition(SIZE_OF_PAGE - SIZE_OF_FIL_TRAILER - dirSlotNum * SIZE_OF_PAGE_DIR_SLOT);
@@ -59,7 +58,7 @@ public class SdiPage extends AbstractPage {
     sliceInput.setPosition(dirSlots[0]);
     RecordHeader recordHeader = null;
     while (true) {
-      sliceInput.decrPosition(5);
+      sliceInput.decrPosition(SIZE_OF_REC_HEADER);
       recordHeader = RecordHeader.fromSlice(sliceInput);
       if (recordHeader.getRecordType() == RecordType.INFIMUM) {
         sliceInput.setPosition(sliceInput.position() + recordHeader.getNextRecOffset());
@@ -68,14 +67,10 @@ public class SdiPage extends AbstractPage {
       if (recordHeader.getRecordType() == RecordType.SUPREMUM) {
         break;
       }
-      try {
-        int pos = sliceInput.position();
-        SdiRecord record = new SdiRecord(sliceInput, recordHeader);
-        this.sdiRecordList.add(record);
-        sliceInput.setPosition(pos + recordHeader.getNextRecOffset());
-      } catch (Exception ex) {
-        throw new RuntimeException(ex);
-      }
+      int pos = sliceInput.position();
+      SdiRecord record = new SdiRecord(sliceInput, recordHeader);
+      this.sdiRecordList.add(record);
+      sliceInput.setPosition(pos + recordHeader.getNextRecOffset());
     }
   }
 
