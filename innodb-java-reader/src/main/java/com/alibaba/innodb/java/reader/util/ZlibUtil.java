@@ -10,33 +10,28 @@ import java.util.zip.Inflater;
  * @created 2020/12/22
  **/
 public class ZlibUtil {
+  private static final int BUF_SIZE = 1024;
   public static byte[] decompress(byte[] data) {
-    byte[] output = new byte[0];
-
     Inflater decompresser = new Inflater();
     decompresser.reset();
     decompresser.setInput(data);
-
     ByteArrayOutputStream o = new ByteArrayOutputStream(data.length);
     try {
-      byte[] buf = new byte[1024];
+      byte[] buf = new byte[BUF_SIZE];
       while (!decompresser.finished()) {
         int i = decompresser.inflate(buf);
         o.write(buf, 0, i);
       }
-      output = o.toByteArray();
+      return o.toByteArray();
     } catch (Exception e) {
-      output = data;
-      e.printStackTrace();
+        throw new RuntimeException(e);
     } finally {
       try {
+        decompresser.end();
         o.close();
-      } catch (IOException e) {
-        e.printStackTrace();
+      } catch (IOException ignored) {
+
       }
     }
-
-    decompresser.end();
-    return output;
   }
 }
