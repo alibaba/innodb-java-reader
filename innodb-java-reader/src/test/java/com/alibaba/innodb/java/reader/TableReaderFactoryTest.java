@@ -292,6 +292,13 @@ public class TableReaderFactoryTest extends AbstractTest {
   }
 
   @Test
+  public void testParseSqlWithCollate() {
+    String sql = "CREATE TABLE ttt(id int) DEFAULT CHARSET = utf8 COLLATE = utf8_bin";
+    TableDefProvider tableDefProvider = new SqlTableDefProvider(sql);
+    tableDefProvider.load();
+  }
+
+  @Test
   public void testTableDefProviderTableWithExactDataFilePath() {
     TableDefProvider tableDefProvider = new SqlFileTableDefProvider(
         "src/test/resources/test.sql");
