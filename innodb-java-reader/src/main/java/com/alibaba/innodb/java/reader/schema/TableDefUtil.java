@@ -132,6 +132,8 @@ public class TableDefUtil {
       }
       if (StringUtils.isNotEmpty(col.getColDataType().getCharacterSet())) {
         column.setCharset(col.getColDataType().getCharacterSet());
+      } else {
+        column.setCharset(tableDef.getDefaultCharset());
       }
       column.setNullable(true);
       if (col.getColumnSpecStrings() != null) {
