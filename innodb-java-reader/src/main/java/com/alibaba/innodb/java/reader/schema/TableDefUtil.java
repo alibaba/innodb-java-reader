@@ -85,7 +85,12 @@ public class TableDefUtil {
         indexOfCollate = tableOptions.indexOf("collate");
       }
       if (indexOfCollate > 0) {
-        tableDef.setCollation((String) tableOptions.get(indexOfCollate + 1));
+        String collateNextOne = (String) tableOptions.get(indexOfCollate + 1);
+        if (!"=".equals(collateNextOne)) {
+          tableDef.setCollation(collateNextOne);
+        } else {
+          tableDef.setCollation((String) tableOptions.get(indexOfCollate + 2));
+        }
       }
     }
   }
