@@ -172,6 +172,10 @@ public class TableDef {
       nullableColumnList.add(column);
       nullableColumnNum++;
     }
+    if (column.getCharset() == null) {
+      column.setCharset(this.getDefaultCharset());
+      column.setCollation(this.getCollation());
+    }
     if (column.isVariableLength()) {
       variableLengthColumnList.add(column);
       variableLengthColumnNum++;
