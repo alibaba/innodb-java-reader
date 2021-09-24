@@ -172,10 +172,14 @@ public class TableDef {
       nullableColumnList.add(column);
       nullableColumnNum++;
     }
+    if (column.getCharset() == null) {
+      column.setCharset(this.getDefaultCharset());
+      column.setCollation(this.getCollation());
+    }
     if (column.isVariableLength()) {
       variableLengthColumnList.add(column);
       variableLengthColumnNum++;
-    } else if (CHAR.equals(column.getType()) && maxBytesPerChar > 1) {
+    } else if (CHAR.equals(column.getType()) && column.getMaxBytesPerChar() > 1) {
       // 多字符集则设置为varchar的读取方式
       column.setVarLenChar(true);
       variableLengthColumnList.add(column);

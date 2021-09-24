@@ -10,7 +10,6 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.alibaba.innodb.java.reader.Constants.PRIMARY_KEY_NAME;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -94,7 +93,7 @@ public class TableDefUtilTest {
     assertThat(columnList.get(3).isNullable(), is(false));
     assertThat(columnList.get(3).getCharset(), is("utf8mb4"));
     assertThat(columnList.get(3).getJavaCharset(), is("UTF-8"));
-    assertThat(columnList.get(3).getCollation(), nullValue());
+    assertThat(columnList.get(3).getCollation(), is("utf8mb4_general_ci"));
     assertThat(columnList.get(3).isCollationCaseSensitive(), is(false));
 
     assertThat(columnList.get(4).getOrdinal(), is(4));
@@ -497,7 +496,7 @@ public class TableDefUtilTest {
     assertThat(columnList.get(0).isNullable(), is(true));
     assertThat(columnList.get(0).getCharset(), is("latin2"));
     assertThat(columnList.get(0).getJavaCharset(), is("ISO8859_2"));
-    assertThat(columnList.get(0).getCollation(), nullValue());
+    assertThat(columnList.get(0).getCollation(), is("latin2_bin"));
     // use table default collation
     assertThat(columnList.get(0).isCollationCaseSensitive(), is(true));
   }
