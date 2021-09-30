@@ -618,4 +618,28 @@ public class TableDefUtilTest {
     assertThat(tableDef.getSecondaryKeyMetaMap().size(), is(0));
   }
 
+  @Test
+  public void testKeyWithoutName() {
+    String sql = "CREATE TABLE `key_without_name` (\n"
+        + "  `keyWithoutName1` VARCHAR(16) NOT NULL,\n"
+        + "  `keyWithoutName2` VARCHAR(16) NOT NULL,\n"
+        + "  `keyWithoutName3` VARCHAR(16) NOT NULL,\n"
+        + "  `keyWithoutName4` VARCHAR(16) NOT NULL,\n"
+        + "  `keyWithoutName5` VARCHAR(16) NOT NULL,\n"
+        + "  UNIQUE KEY (`keyWithoutName1`),\n"
+        + "  UNIQUE KEY (`keyWithoutName1`, `keyWithoutName2`),\n"
+        + "  UNIQUE KEY (`keyWithoutName1`, `keyWithoutName2`, `keyWithoutName3`),\n"
+        + "  UNIQUE KEY (`keyWithoutName4`),\n"
+        + "  UNIQUE KEY `namedKey` (`keyWithoutName5`)\n"
+        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8";
+    TableDef tableDef = TableDefUtil.covertToTableDef(sql);
+    System.out.println(tableDef);
+
+    assertThat(tableDef.getSecondaryKeyMetaList().get(0).getName(), is("keyWithoutName1"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(1).getName(), is("keyWithoutName1_2"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(2).getName(), is("keyWithoutName1_3"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(3).getName(), is("keyWithoutName4"));
+    assertThat(tableDef.getSecondaryKeyMetaList().get(4).getName(), is("namedKey"));
+  }
+
 }
