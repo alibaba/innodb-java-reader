@@ -1,15 +1,20 @@
 package com.alibaba.innodb.java.reader.service.impl;
 
 import com.alibaba.innodb.java.reader.AbstractTest;
+import com.alibaba.innodb.java.reader.exception.PageLoadException;
 import com.alibaba.innodb.java.reader.service.StorageService;
 import com.alibaba.innodb.java.reader.util.Utils;
 
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_FIL_HEADER;
 import static com.alibaba.innodb.java.reader.SizeOf.SIZE_OF_PAGE;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
@@ -40,6 +45,36 @@ public class FileChannelStorageServiceImplTest extends AbstractTest {
       log.info("load {} pages {} times ({}) using {}ms", numOfPages, runTimes,
           Utils.humanReadableBytes(SIZE_OF_PAGE * numOfPages * runTimes), elapsedTimeInMs);
     }
+  }
+
+  @Test(expected = PageLoadException.class)
+  public void testLoadPageRejectsTruncatedPage() throws IOException {
+    Path file = createSyntheticFile(SIZE_OF_PAGE - 1);
+    try (StorageService storageService = new FileChannelStorageServiceImpl()) {
+      storageService.open(file.toString());
+      storageService.loadPage(0);
+    } finally {
+      Files.deleteIfExists(file);
+    }
+  }
+
+  @Test(expected = PageLoadException.class)
+  public void testLoadPageHeaderRejectsTruncatedHeader() throws IOException {
+    Path file = createSyntheticFile(SIZE_OF_FIL_HEADER - 1);
+    try (StorageService storageService = new FileChannelStorageServiceImpl()) {
+      storageService.open(file.toString());
+      storageService.loadPageHeader(0);
+    } finally {
+      Files.deleteIfExists(file);
+    }
+  }
+
+  private Path createSyntheticFile(int length) throws IOException {
+    Path targetDirectory = Paths.get("target").toAbsolutePath();
+    Files.createDirectories(targetDirectory);
+    Path file = Files.createTempFile(targetDirectory, "truncated-page-", ".ibd");
+    Files.write(file, new byte[length]);
+    return file;
   }
 
 }
