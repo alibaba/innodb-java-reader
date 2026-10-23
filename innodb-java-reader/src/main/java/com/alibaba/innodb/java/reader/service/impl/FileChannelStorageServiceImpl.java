@@ -12,6 +12,7 @@ import com.alibaba.innodb.java.reader.service.StorageService;
 import com.alibaba.innodb.java.reader.util.Slices;
 import com.alibaba.innodb.java.reader.util.Utils;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class FileChannelStorageServiceImpl implements StorageService {
   public InnerPage loadPage(long pageNumber) throws ReaderException {
     try {
       ByteBuffer buffer = ByteBuffer.allocate(SIZE_OF_PAGE);
-      fileChannel.read(buffer, pageNumber * SIZE_OF_PAGE);
+      readFully(buffer, pageNumber);
       return new InnerPage(pageNumber, Slices.fromByteBuffer(buffer));
     } catch (IOException e) {
       throw new PageLoadException("Load page number " + pageNumber + " failed", e);
@@ -86,10 +87,26 @@ public class FileChannelStorageServiceImpl implements StorageService {
       // GC-less, leverage thread local buffer for reusing
       ByteBuffer buffer = pageHeaderBufferThreadLocal.get();
       buffer.clear();
-      fileChannel.read(buffer, pageNumber * SIZE_OF_PAGE);
+      readFully(buffer, pageNumber);
       return FilHeader.fromSlice(Slices.fromByteBuffer(buffer).input());
     } catch (IOException e) {
       throw new PageLoadException("Load page number " + pageNumber + " failed", e);
+    }
+  }
+
+  private void readFully(ByteBuffer buffer, long pageNumber) throws IOException {
+    long position = pageNumber * SIZE_OF_PAGE;
+    while (buffer.hasRemaining()) {
+      int bytesRead = fileChannel.read(buffer, position);
+      if (bytesRead < 0) {
+        throw new EOFException("Unexpected end of file while reading page " + pageNumber
+            + ", " + buffer.remaining() + " bytes remain");
+      }
+      if (bytesRead == 0) {
+        throw new IOException("No bytes read while reading page " + pageNumber
+            + ", " + buffer.remaining() + " bytes remain");
+      }
+      position += bytesRead;
     }
   }
 
